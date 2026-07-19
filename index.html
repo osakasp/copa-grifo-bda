@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Copa Grifo BDA â€” Chaveamento</title>
+<title>Copa Grifo BDA — Chaveamento</title>
 <meta name="theme-color" content="#0E0F13">
-<meta name="description" content="Chaveamento oficial da Copa Grifo BDA â€” sorteio, resultados e classificaÃ§Ã£o do torneio do ClÃ£ BDA.">
-<meta property="og:title" content="Copa Grifo BDA â€” Chaveamento">
-<meta property="og:description" content="ðŸ¦… Onde somente os mais fortes chegam ao topo! Acompanhe o mata-mata do ClÃ£ BDA.">
+<meta name="description" content="Chaveamento oficial da Copa Grifo BDA — sorteio, resultados e classificação do torneio do Clã BDA.">
+<meta property="og:title" content="Copa Grifo BDA — Chaveamento">
+<meta property="og:description" content="🦅 Onde somente os mais fortes chegam ao topo! Acompanhe o mata-mata do Clã BDA.">
 <meta property="og:type" content="website">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -157,7 +157,7 @@ input:focus{outline:2px solid var(--gold);outline-offset:1px}
 #muralForm input,#muralForm textarea{padding:11px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:13px;font-family:inherit;resize:none}
 #cSend{border:none;border-radius:10px;padding:12px;background:var(--gold);color:#14120A;font-weight:700;font-size:13px;cursor:pointer}
 
-/* tabela de classificaÃ§Ã£o */
+/* tabela de classificação */
 .stTable{width:100%;border-collapse:collapse;font-size:12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:0 0 12px}
 .stTable th{font-size:9px;letter-spacing:.1em;color:var(--ink-dim);text-transform:uppercase;padding:8px 5px;border-bottom:1px solid var(--line)}
 .stTable td{padding:8px 5px;text-align:center;border-bottom:1px dashed var(--line)}
@@ -168,7 +168,7 @@ input:focus{outline:2px solid var(--gold);outline-offset:1px}
 select.extraInput{min-height:auto;margin-top:0;margin-bottom:10px;appearance:none;-webkit-appearance:none}
 .rndHead{font-family:'Cinzel',serif;font-size:11px;letter-spacing:.15em;color:var(--gold);text-transform:uppercase;margin:14px 2px 8px}
 
-/* mÃ³dulos profissionais */
+/* módulos profissionais */
 .dashboard{padding:14px 0 110px}.gridStats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.statCard{background:linear-gradient(155deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:12px;padding:14px}.statCard .v{font:800 26px 'Cinzel',serif;color:var(--gold-hi)}.statCard .k{font-size:10px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.15em;margin-top:4px}.sectionTitle{font:800 15px 'Cinzel',serif;color:var(--gold);margin:18px 0 10px;letter-spacing:.08em}.rankRow{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px;margin-bottom:8px}.rankRow .pos{font-weight:800;color:var(--gold)}.rankRow .pts{font-weight:800;color:var(--gold-hi)}.emptyBox{padding:28px 16px;text-align:center;color:var(--ink-dim);border:1px dashed var(--line);border-radius:12px}.goalInputs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.goalInputs textarea,.extraInput{width:100%;min-height:72px;resize:vertical;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:12px}.extraInput{min-height:auto;margin-top:8px}.miniLabel{font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:.12em;margin:8px 0 5px}.adminBar{display:flex;gap:8px;margin-top:12px}.adminBar button{flex:1;border-radius:10px;padding:10px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-weight:700}.lockedNote{font-size:11px;color:var(--ink-dim);margin-top:8px}.installBanner{display:none;margin:12px 14px 0;max-width:492px;padding:12px;border:1px solid var(--gold);border-radius:12px;background:#211c0d;align-items:center;gap:10px}.installBanner button{margin-left:auto;border:0;border-radius:8px;background:var(--gold);padding:9px 12px;font-weight:800;color:#14120A}
 
 </style>
@@ -176,17 +176,17 @@ select.extraInput{min-height:auto;margin-top:0;margin-bottom:10px;appearance:non
 <body>
 
 <header>
-  <button id="btnLock">ðŸ”’</button>
-  <div class="crest">ðŸ¦…</div>
+  <button id="btnLock">🔒</button>
+  <div class="crest">🦅</div>
   <h1>COPA GRIFO BDA</h1>
   <div class="tagline">Onde somente os mais fortes chegam ao topo</div>
   <div id="progress"><div id="progressFill"></div></div>
   <div id="progressLbl"></div>
 </header>
-<div class="installBanner" id="installBanner"><span>ðŸ“± Instale a Copa Grifo como aplicativo</span><button id="installBtn">Instalar</button></div>
+<div class="installBanner" id="installBanner"><span>📱 Instale a Copa Grifo como aplicativo</span><button id="installBtn">Instalar</button></div>
 
 <div id="championBanner"><div class="inner">
-  <div class="lbl">ðŸ† CampeÃ£o</div>
+  <div class="lbl">🏆 Campeão</div>
   <div class="name" id="championName"></div>
 </div></div>
 
@@ -195,38 +195,38 @@ select.extraInput{min-height:auto;margin-top:0;margin-bottom:10px;appearance:non
 <div id="treeScroll" style="display:none"><div id="tree"></div></div>
 
 <div class="actions"><div class="inner">
-  <button class="big" id="btnShare">ðŸ“‹ Texto</button>
-  <button class="big" id="btnImg">ðŸ–¼ï¸ Imagem</button>
-  <button class="big" id="btnLink">ðŸ”—</button>
-  <button class="big" id="btnTeams">ðŸ‘¥</button>
-  <button class="big" id="btnDraw">ðŸŽ²</button>
-  <button class="big" id="btnReset">â†º</button>
+  <button class="big" id="btnShare">📋 Texto</button>
+  <button class="big" id="btnImg">🖼️ Imagem</button>
+  <button class="big" id="btnLink">🔗</button>
+  <button class="big" id="btnTeams">👥</button>
+  <button class="big" id="btnDraw">🎲</button>
+  <button class="big" id="btnReset">↺</button>
 </div></div>
 
 <div id="overlay">
   <div class="sheet">
     <h3 id="mTitle"></h3>
-    <div class="dtrow"><label>ðŸ“… Prazo</label><input type="date" id="mDate"></div>
-    <div class="dtrow"><label>ðŸ•’ HorÃ¡rio</label><input type="time" id="mTime"></div>
-    <input class="extraInput" id="mVenue" maxlength="60" placeholder="ðŸŸï¸ EstÃ¡dio ou local da partida">
+    <div class="dtrow"><label>📅 Prazo</label><input type="date" id="mDate"></div>
+    <div class="dtrow"><label>🕒 Horário</label><input type="time" id="mTime"></div>
+    <input class="extraInput" id="mVenue" maxlength="60" placeholder="🏟️ Estádio ou local da partida">
     <div class="minput">
       <label id="mLabelA"></label>
       <button class="wo-btn" id="mWoA">W.O.</button>
-      <input type="number" inputmode="numeric" min="0" id="mScoreA" placeholder="â€“">
+      <input type="number" inputmode="numeric" min="0" id="mScoreA" placeholder="–">
     </div>
     <div class="minput">
       <label id="mLabelB"></label>
       <button class="wo-btn" id="mWoB">W.O.</button>
-      <input type="number" inputmode="numeric" min="0" id="mScoreB" placeholder="â€“">
+      <input type="number" inputmode="numeric" min="0" id="mScoreB" placeholder="–">
     </div>
     <div id="penBox">
-      <div class="pt">âš–ï¸ Empate â€” decisÃ£o por pÃªnaltis</div>
-      <div class="minput"><label id="mPenLabelA"></label><input type="number" inputmode="numeric" min="0" id="mPenA" placeholder="â€“"></div>
-      <div class="minput"><label id="mPenLabelB"></label><input type="number" inputmode="numeric" min="0" id="mPenB" placeholder="â€“"></div>
+      <div class="pt">⚖️ Empate — decisão por pênaltis</div>
+      <div class="minput"><label id="mPenLabelA"></label><input type="number" inputmode="numeric" min="0" id="mPenA" placeholder="–"></div>
+      <div class="minput"><label id="mPenLabelB"></label><input type="number" inputmode="numeric" min="0" id="mPenB" placeholder="–"></div>
     </div>
-    <div class="miniLabel">âš½ Gols: um jogador por linha</div>
+    <div class="miniLabel">⚽ Gols: um jogador por linha</div>
     <div class="goalInputs"><textarea id="mGoalsA" placeholder="Jogadores do time A"></textarea><textarea id="mGoalsB" placeholder="Jogadores do time B"></textarea></div>
-    <input class="extraInput" id="mMvp" maxlength="50" placeholder="ðŸ… MVP da partida">
+    <input class="extraInput" id="mMvp" maxlength="50" placeholder="🏅 MVP da partida">
     <div class="mact">
       <button class="btn-red" id="mClear">Limpar</button>
       <button class="btn-dim" id="mCancel">Cancelar</button>
@@ -237,17 +237,17 @@ select.extraInput{min-height:auto;margin-top:0;margin-bottom:10px;appearance:non
 
 <div id="teamsOverlay">
   <div class="sheet">
-    <h3>ðŸ‘¥ Times da Copa</h3>
-    <div class="miniLabel">ðŸ† Formato do campeonato</div>
+    <h3>👥 Times da Copa</h3>
+    <div class="miniLabel">🏆 Formato do campeonato</div>
     <select class="extraInput" id="fmtSel">
-      <option value="KO">âš”ï¸ Mata-mata</option>
-      <option value="LIGA1">ðŸ“ˆ Pontos corridos â€” turno Ãºnico</option>
-      <option value="LIGA2">ðŸ“ˆ Pontos corridos â€” ida e volta</option>
-      <option value="GRUPOS">ðŸŒ Grupos + Mata-mata</option>
+      <option value="KO">⚔️ Mata-mata</option>
+      <option value="LIGA1">📈 Pontos corridos — turno único</option>
+      <option value="LIGA2">📈 Pontos corridos — ida e volta</option>
+      <option value="GRUPOS">🌍 Grupos + Mata-mata</option>
     </select>
     <div id="teamsHint">Toque no escudo para trocar a imagem do time. Mudar o formato ou a lista de times refaz o campeonato (de 2 a 32 times).</div>
     <div id="teamsList"></div>
-    <button id="btnAddTeam">ï¼‹ Adicionar time</button>
+    <button id="btnAddTeam">＋ Adicionar time</button>
     <div class="mact">
       <button class="btn-dim" id="tCancel">Cancelar</button>
       <button class="btn-gold" id="tApply">Aplicar</button>
@@ -257,7 +257,7 @@ select.extraInput{min-height:auto;margin-top:0;margin-bottom:10px;appearance:non
 
 <div id="drawOverlay">
   <div id="drawBox">
-    <h3>ðŸŽ² Sorteio</h3>
+    <h3>🎲 Sorteio</h3>
     <div id="drawList"></div>
     <button id="drawClose">Fechar</button>
   </div>
@@ -265,15 +265,15 @@ select.extraInput{min-height:auto;margin-top:0;margin-bottom:10px;appearance:non
 
 <div id="loginOverlay">
   <div class="sheet">
-    <h3>ðŸ” Entrar na Copa</h3>
+    <h3>🔐 Entrar na Copa</h3>
     <div style="font-size:12px;color:var(--ink-dim);margin-bottom:12px;line-height:1.5">Entre com e-mail e senha para comentar. O administrador entra com a conta cadastrada como admin.</div>
-    <input class="extraInput" type="email" id="lEmail" placeholder="âœ‰ï¸ E-mail" autocomplete="email">
-    <input class="extraInput" type="password" id="lPass" placeholder="ðŸ”‘ Senha (mÃ­n. 6 dÃ­gitos)" autocomplete="current-password">
+    <input class="extraInput" type="email" id="lEmail" placeholder="✉️ E-mail" autocomplete="email">
+    <input class="extraInput" type="password" id="lPass" placeholder="🔑 Senha (mín. 6 dígitos)" autocomplete="current-password">
     <div class="mact">
       <button class="btn-dim" id="lCancel">Cancelar</button>
       <button class="btn-gold" id="lLogin">Entrar</button>
     </div>
-    <button class="login-alt" id="lSignup">ï¼‹ Criar conta nova</button>
+    <button class="login-alt" id="lSignup">＋ Criar conta nova</button>
   </div>
 </div>
 
@@ -281,7 +281,7 @@ select.extraInput{min-height:auto;margin-top:0;margin-bottom:10px;appearance:non
   <div class="sheet">
     <h3 id="pinTitle"></h3>
     <div id="pinHint" style="font-size:12px;color:var(--ink-dim);margin-bottom:12px;line-height:1.5"></div>
-    <input type="password" inputmode="numeric" id="pinInput" maxlength="8" placeholder="â€¢â€¢â€¢â€¢">
+    <input type="password" inputmode="numeric" id="pinInput" maxlength="8" placeholder="••••">
     <div class="mact">
       <button class="btn-dim" id="pinCancel">Cancelar</button>
       <button class="btn-gold" id="pinOk">Entrar</button>
@@ -295,14 +295,14 @@ select.extraInput{min-height:auto;margin-top:0;margin-bottom:10px;appearance:non
 <div id="toast"></div>
 
 <script>
-const DEFAULT_TEAMS=['REDBULL BDA','SÃ£o Paulo BDA','BDA GOLDEN FC','Cajueiro BDA','Vasco da gama bda','INDEPENDENTE FC BDA','JOGOBUGADO BDA','Zombie Fc BDA','FLAMESTRE FC BDA','HELLYEAH BDA','MACIEIRA BDA','Sport Recife BDA','IMORTAIS FC BDA','mozamigos bda','FLORENCE REAL FC BDA','BDA URDLS','CV CRUZ BDA','INTER BRASIL BDA','MILAN AC BDA'];
+const DEFAULT_TEAMS=['REDBULL BDA','São Paulo BDA','BDA GOLDEN FC','Cajueiro BDA','Vasco da gama bda','INDEPENDENTE FC BDA','JOGOBUGADO BDA','Zombie Fc BDA','FLAMESTRE FC BDA','HELLYEAH BDA','MACIEIRA BDA','Sport Recife BDA','IMORTAIS FC BDA','mozamigos bda','FLORENCE REAL FC BDA','BDA URDLS','CV CRUZ BDA','INTER BRASIL BDA','MILAN AC BDA'];
 const EXTRA_TABS=['ALL','TABLE','MURAL','STATS','SCORERS','RANK','HALL'];
 
 /* ============================================================
-   FIREBASE (login + sincronizaÃ§Ã£o em tempo real) â€” OPCIONAL
-   1. Crie um projeto grÃ¡tis em https://console.firebase.google.com
+   FIREBASE (login + sincronização em tempo real) — OPCIONAL
+   1. Crie um projeto grátis em https://console.firebase.google.com
    2. Ative Authentication > E-mail/senha e crie o Firestore
-   3. Cole abaixo a configuraÃ§Ã£o do seu app web (ConfiguraÃ§Ãµes do projeto)
+   3. Cole abaixo a configuração do seu app web (Configurações do projeto)
    4. Coloque seu e-mail em ADMIN_EMAILS
    Sem configurar, o site continua funcionando no modo local com PIN.
    ============================================================ */
@@ -329,12 +329,12 @@ let M={};
 let PH=[];
 let comments=[];
 let format='KO';        // KO | LIGA | GRUPOS
-let leagueTurns=1;      // 1 = turno Ãºnico, 2 = ida e volta
-let groups=[];          // Ã­ndices dos times por grupo (formato GRUPOS)
-let koGenerated=false;  // mata-mata dos grupos jÃ¡ gerado?
+let leagueTurns=1;      // 1 = turno único, 2 = ida e volta
+let groups=[];          // índices dos times por grupo (formato GRUPOS)
+let koGenerated=false;  // mata-mata dos grupos já gerado?
 let drawCompleted=false; // enquanto falso, os times e confrontos ficam ocultos
 
-/* ---------- geraÃ§Ã£o dinÃ¢mica do chaveamento ---------- */
+/* ---------- geração dinâmica do chaveamento ---------- */
 function blank(ph,next){return {ph:ph,a:null,b:null,next:next,sa:null,sb:null,pa:null,pb:null,wo:null,dt:null,time:null,venue:null,goalsA:[],goalsB:[],mvp:null,ko:true};}
 function pow2ceil(n){let p=1;while(p<n)p*=2;return p;}
 
@@ -356,16 +356,16 @@ function roundRobin(idxs,doubleTurn){
 }
 
 function roundMeta(matches){
-  if(matches===1)return {name:'Final',emoji:'ðŸ†'};
-  if(matches===2)return {name:'Semis',emoji:'ðŸ”¥'};
-  if(matches===4)return {name:'Quartas',emoji:'ðŸ¥Š'};
-  if(matches===8)return {name:'Oitavas',emoji:'ðŸŸï¸'};
-  return {name:'1Âª Fase',emoji:'ðŸŽ¯'};
+  if(matches===1)return {name:'Final',emoji:'🏆'};
+  if(matches===2)return {name:'Semis',emoji:'🔥'};
+  if(matches===4)return {name:'Quartas',emoji:'🥊'};
+  if(matches===8)return {name:'Oitavas',emoji:'🏟️'};
+  return {name:'1ª Fase',emoji:'🎯'};
 }
 function matchName(phId,i,matches){
   if(phId==='PRE')return 'Preliminar '+(i+1);
-  if(phId.indexOf('RD')===0)return 'Rodada '+(parseInt(phId.slice(2),10)+1)+' Â· Jogo '+(i+1);
-  if(/^G\d+$/.test(phId))return 'Grupo '+String.fromCharCode(65+parseInt(phId.slice(1),10))+' Â· Jogo '+(i+1);
+  if(phId.indexOf('RD')===0)return 'Rodada '+(parseInt(phId.slice(2),10)+1)+' · Jogo '+(i+1);
+  if(/^G\d+$/.test(phId))return 'Grupo '+String.fromCharCode(65+parseInt(phId.slice(1),10))+' · Jogo '+(i+1);
   if(matches===1)return 'Grande Final';
   if(matches===2)return 'Semifinal '+(i+1);
   if(matches===4)return 'Quartas '+(i+1);
@@ -397,7 +397,7 @@ function koStructure(o){
   while(size>=2){rounds.push({r:r,matches:size/2});size/=2;r++;}
 
   if(prelim>0){
-    KPH.push({id:'PRE',name:'Preliminar',emoji:'âš”ï¸'});
+    KPH.push({id:'PRE',name:'Preliminar',emoji:'⚔️'});
     for(let i=0;i<prelim;i++){
       const slot=byes+i;
       const m=blank('PRE',['R0_'+Math.floor(slot/2),slot%2===0?'a':'b']);
@@ -427,7 +427,7 @@ function leagueStructure(o,turns){
   const LM={},LPH=[];
   const rounds=roundRobin(o,turns===2);
   rounds.forEach((pairs,r)=>{
-    LPH.push({id:'RD'+r,name:'R'+(r+1),emoji:'ðŸ“…'});
+    LPH.push({id:'RD'+r,name:'R'+(r+1),emoji:'📅'});
     pairs.forEach((pr,i)=>{
       const m=blank('RD'+r,null);
       m.ko=false;m.idx=i;m.total=pairs.length;
@@ -435,7 +435,7 @@ function leagueStructure(o,turns){
       LM['RD'+r+'_'+i]=m;
     });
   });
-  LPH.push({id:'TABLE',name:'Tabela',emoji:'ðŸ“ˆ'});
+  LPH.push({id:'TABLE',name:'Tabela',emoji:'📈'});
   return {M:LM,PH:LPH};
 }
 
@@ -445,7 +445,7 @@ function groupsStructure(o){
   o.forEach((t,i)=>groups[i%g].push(t));
   const GM={},GPH=[];
   groups.forEach((gr,gi)=>{
-    GPH.push({id:'G'+gi,name:'Grupo '+String.fromCharCode(65+gi),emoji:'ðŸ›¡ï¸'});
+    GPH.push({id:'G'+gi,name:'Grupo '+String.fromCharCode(65+gi),emoji:'🛡️'});
     const rounds=roundRobin(gr,false);
     let idx=0,pend=[];
     rounds.forEach(pairs=>pairs.forEach(pr=>{
@@ -468,15 +468,15 @@ function buildBracket(o){
   else if(format==='GRUPOS'){s=groupsStructure(o);}
   else{s=koStructure(o);}
   M=s.M;PH=s.PH.slice();
-  if(format==='KO')PH.push({id:'ALL',name:'Ãrvore',emoji:'ðŸŒ³'});
-  PH.push({id:'MURAL',name:'Mural',emoji:'ðŸ’¬'});
-  PH.push({id:'STATS',name:'EstatÃ­sticas',emoji:'ðŸ“Š'});
-  PH.push({id:'SCORERS',name:'Artilharia',emoji:'âš½'});
-  PH.push({id:'RANK',name:'Ranking',emoji:'ðŸŒŽ'});
-  PH.push({id:'HALL',name:'Hall',emoji:'ðŸ…'});
+  if(format==='KO')PH.push({id:'ALL',name:'Árvore',emoji:'🌳'});
+  PH.push({id:'MURAL',name:'Mural',emoji:'💬'});
+  PH.push({id:'STATS',name:'Estatísticas',emoji:'📊'});
+  PH.push({id:'SCORERS',name:'Artilharia',emoji:'⚽'});
+  PH.push({id:'RANK',name:'Ranking',emoji:'🌎'});
+  PH.push({id:'HALL',name:'Hall',emoji:'🏅'});
 }
 
-/* classificaÃ§Ã£o (liga e grupos) */
+/* classificação (liga e grupos) */
 function standingsFor(matchIds,teamIdxs){
   const S={};
   teamIdxs.forEach(i=>{S[i]={i:i,P:0,J:0,V:0,E:0,D:0,GP:0,GC:0};});
@@ -518,11 +518,11 @@ function generateGroupKO(){
   const s=koStructure(qualified);
   Object.assign(M,s.M);
   const at=PH.findIndex(p=>p.id==='MURAL');
-  const ins=s.PH.concat([{id:'ALL',name:'Ãrvore',emoji:'ðŸŒ³'}]);
+  const ins=s.PH.concat([{id:'ALL',name:'Árvore',emoji:'🌳'}]);
   PH.splice(at<0?PH.length:at,0,...ins);
   koGenerated=true;
   activePhase=s.PH[0]?s.PH[0].id:activePhase;
-  toast('Mata-mata gerado com os classificados âš”ï¸');
+  toast('Mata-mata gerado com os classificados ⚔️');
   render();
 }
 function champIdx(){
@@ -542,7 +542,7 @@ function finalId(){
 }
 function totalMatches(){return Object.keys(M).length;}
 
-/* ---------- persistÃªncia ---------- */
+/* ---------- persistência ---------- */
 let store=null;
 try{store=window.localStorage;}catch(e){store=null;}
 function persist(){
@@ -560,7 +560,7 @@ function cloudSave(){
   clearTimeout(cloudTimer);
   cloudTimer=setTimeout(()=>{
     db.collection('copa').doc('current').set({teams:teams,order:order,M:M,PH:PH,f:format,lt:leagueTurns,g:groups,kg:koGenerated,dr:drawCompleted})
-      .catch(()=>toast('âš ï¸ Falha ao salvar na nuvem'));
+      .catch(()=>toast('⚠️ Falha ao salvar na nuvem'));
   },700);
 }
 function applyFormatMeta(d){
@@ -581,7 +581,7 @@ function cloudSubscribe(){
     applyFormatMeta(d);
     applyingRemote=false;
     render();
-  },()=>toast('âš ï¸ Sem conexÃ£o com a nuvem'));
+  },()=>toast('⚠️ Sem conexão com a nuvem'));
   db.collection('comments').orderBy('d').limit(200).onSnapshot(s=>{
     comments=s.docs.map(x=>Object.assign({id:x.id},x.data()));
     if(activePhase==='MURAL')renderMural();
@@ -598,7 +598,7 @@ function cloudSubscribe(){
   buildBracket(order);
 })();
 
-/* ---------- utilitÃ¡rios ---------- */
+/* ---------- utilitários ---------- */
 function tn(i){return (i!=null&&teams[i])?teams[i].n:'?';}
 const BADGE_COLORS=['#D4A62A','#C0682F','#5B8C5A','#4E7CB8','#9A5BA8','#B3342E','#3AA6A6','#B8B24E','#7A6FCB','#CC7A9E'];
 function badgeColor(name){let h=0;for(let i=0;i<name.length;i++){h=(h*31+name.charCodeAt(i))>>>0;}return BADGE_COLORS[h%BADGE_COLORS.length];}
@@ -658,10 +658,10 @@ function setPin(p){try{if(store)store.setItem('copa-grifo-bda-pin',p);}catch(e){
 function updateAdminUI(){
   const lock=document.getElementById('btnLock');
   if(CLOUD){
-    lock.textContent=currentUser?(adminOn?'ðŸ”“ Admin':'ðŸ‘¤ '+(currentUser.email||'').split('@')[0].slice(0,10)):'ðŸ”’ Entrar';
+    lock.textContent=currentUser?(adminOn?'🔓 Admin':'👤 '+(currentUser.email||'').split('@')[0].slice(0,10)):'🔒 Entrar';
     lock.className=adminOn?'adm-on':'';
   }else{
-    lock.textContent=adminOn?'ðŸ”“ Admin':'ðŸ”’';
+    lock.textContent=adminOn?'🔓 Admin':'🔒';
     lock.className=adminOn?'adm-on':'';
     try{sessionStorage.setItem('cg-adm',adminOn?'1':'0');}catch(e){}
   }
@@ -672,10 +672,10 @@ function isAdminEmail(u){
 }
 function authErr(e){
   const c=(e&&e.code)||'';
-  if(c.indexOf('invalid-email')>=0)return 'E-mail invÃ¡lido';
+  if(c.indexOf('invalid-email')>=0)return 'E-mail inválido';
   if(c.indexOf('user-not-found')>=0||c.indexOf('wrong-password')>=0||c.indexOf('invalid-credential')>=0)return 'E-mail ou senha incorretos';
-  if(c.indexOf('email-already-in-use')>=0)return 'E-mail jÃ¡ cadastrado â€” use Entrar';
-  if(c.indexOf('weak-password')>=0)return 'Senha muito fraca (mÃ­n. 6)';
+  if(c.indexOf('email-already-in-use')>=0)return 'E-mail já cadastrado — use Entrar';
+  if(c.indexOf('weak-password')>=0)return 'Senha muito fraca (mín. 6)';
   if(c.indexOf('too-many-requests')>=0)return 'Muitas tentativas, aguarde um pouco';
   return 'Erro ao entrar';
 }
@@ -695,7 +695,7 @@ document.getElementById('lLogin').onclick=()=>{
   const pw=document.getElementById('lPass').value;
   if(!em||!pw){toast('Preencha e-mail e senha');return;}
   auth.signInWithEmailAndPassword(em,pw)
-    .then(()=>{loginOv.classList.remove('show');toast('Conectado âœ…');})
+    .then(()=>{loginOv.classList.remove('show');toast('Conectado ✅');})
     .catch(e=>toast(authErr(e)));
 };
 document.getElementById('lSignup').onclick=()=>{
@@ -703,7 +703,7 @@ document.getElementById('lSignup').onclick=()=>{
   const pw=document.getElementById('lPass').value;
   if(!em||!pw){toast('Preencha e-mail e senha');return;}
   auth.createUserWithEmailAndPassword(em,pw)
-    .then(()=>{loginOv.classList.remove('show');toast('Conta criada ðŸ¦…');})
+    .then(()=>{loginOv.classList.remove('show');toast('Conta criada 🦅');})
     .catch(e=>toast(authErr(e)));
 };
 let pinMode='enter';
@@ -718,9 +718,9 @@ document.getElementById('btnLock').onclick=()=>{
   }
   if(adminOn){adminOn=false;updateAdminUI();render();toast('Modo visitante');return;}
   pinMode=getPin()?'enter':'create';
-  document.getElementById('pinTitle').textContent=pinMode==='create'?'ðŸ” Criar PIN de admin':'ðŸ” PIN de administrador';
+  document.getElementById('pinTitle').textContent=pinMode==='create'?'🔐 Criar PIN de admin':'🔐 PIN de administrador';
   document.getElementById('pinHint').textContent=pinMode==='create'
-    ?'Defina um PIN de 4 a 8 dÃ­gitos. SÃ³ quem tiver o PIN poderÃ¡ alterar resultados, times e sorteio neste aparelho.'
+    ?'Defina um PIN de 4 a 8 dígitos. Só quem tiver o PIN poderá alterar resultados, times e sorteio neste aparelho.'
     :'Digite o PIN para entrar no modo administrador.';
   document.getElementById('pinInput').value='';
   document.getElementById('pinOverlay').classList.add('show');
@@ -731,20 +731,20 @@ document.getElementById('pinOverlay').onclick=e=>{if(e.target===document.getElem
 document.getElementById('pinOk').onclick=()=>{
   const v=document.getElementById('pinInput').value.trim();
   if(pinMode==='create'){
-    if(v.length<4||v.length>8||!/^\d+$/.test(v)){toast('PIN deve ter de 4 a 8 dÃ­gitos');return;}
+    if(v.length<4||v.length>8||!/^\d+$/.test(v)){toast('PIN deve ter de 4 a 8 dígitos');return;}
     setPin(v);adminOn=true;
-    toast('PIN criado â€” vocÃª Ã© o admin ðŸ‘‘');
+    toast('PIN criado — você é o admin 👑');
   }else{
     if(v!==getPin()){toast('PIN incorreto');return;}
     adminOn=true;
-    toast('Modo administrador ðŸ‘‘');
+    toast('Modo administrador 👑');
   }
   document.getElementById('pinOverlay').classList.remove('show');
   updateAdminUI();
   render();
 };
 
-/* ---------- mural de comentÃ¡rios ---------- */
+/* ---------- mural de comentários ---------- */
 function fmtWhen(d){
   const dt=new Date(d);
   return String(dt.getDate()).padStart(2,'0')+'/'+String(dt.getMonth()+1).padStart(2,'0')+' '+String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0');
@@ -754,17 +754,17 @@ function renderMural(){
   if(!list)return;
   list.innerHTML='';
   if(comments.length===0){
-    list.innerHTML='<div class="mural-empty">Nenhum comentÃ¡rio ainda. Seja o primeiro! ðŸ’¬</div>';
+    list.innerHTML='<div class="mural-empty">Nenhum comentário ainda. Seja o primeiro! 💬</div>';
   }
   comments.forEach((c,i)=>{
     const d=document.createElement('div');
     d.className='cmt';
-    d.innerHTML='<div class="who">'+(c.adm?'ðŸ‘‘ ':'')+esc(c.n)+(c.adm?' <span class="adm-tag">ADMIN</span>':'')+'<span class="when">'+fmtWhen(c.d)+'</span></div><div class="msg">'+esc(c.t)+'</div>';
+    d.innerHTML='<div class="who">'+(c.adm?'👑 ':'')+esc(c.n)+(c.adm?' <span class="adm-tag">ADMIN</span>':'')+'<span class="when">'+fmtWhen(c.d)+'</span></div><div class="msg">'+esc(c.t)+'</div>';
     if(adminOn){
       const x=document.createElement('button');
-      x.className='cmt-del';x.textContent='âœ•';
+      x.className='cmt-del';x.textContent='✕';
       x.onclick=()=>{
-        if(!confirm('Apagar este comentÃ¡rio?'))return;
+        if(!confirm('Apagar este comentário?'))return;
         if(CLOUD&&c.id){db.collection('comments').doc(c.id).delete().catch(()=>toast('Erro ao apagar'));}
         else{comments.splice(i,1);persist();renderMural();}
       };
@@ -777,12 +777,12 @@ function sendComment(){
   const n=document.getElementById('cName').value.trim();
   const t=document.getElementById('cMsg').value.trim();
   if(!n){toast('Coloque seu nome');return;}
-  if(!t){toast('Escreva o comentÃ¡rio');return;}
+  if(!t){toast('Escreva o comentário');return;}
   if(CLOUD){
     if(!currentUser){toast('Entre para comentar');loginOv.classList.add('show');return;}
     db.collection('comments').add({n:n,t:t,d:Date.now(),adm:adminOn,uid:currentUser.uid})
       .then(()=>{document.getElementById('cMsg').value='';})
-      .catch(()=>toast('Erro ao enviar comentÃ¡rio'));
+      .catch(()=>toast('Erro ao enviar comentário'));
     try{if(store)store.setItem('cg-name',n);}catch(e){}
     return;
   }
@@ -817,7 +817,7 @@ function render(){
     tabsEl.innerHTML='';
     phasesEl.style.display='block';
     treeScroll.style.display='none';
-    phasesEl.innerHTML='<section class="preDraw"><div class="icon">ðŸŽ²</div><h2>SORTEIO AINDA NÃƒO REALIZADO</h2><p>Os times e os confrontos permanecem em sigilo. O chaveamento serÃ¡ revelado somente apÃ³s o sorteio oficial da Copa Grifo BDA.</p>'+(adminOn?'<div class="adminHint">Use ðŸ‘¥ para organizar os participantes e ðŸŽ² para iniciar o sorteio.</div>':'')+'</section>';
+    phasesEl.innerHTML='<section class="preDraw"><div class="icon">🎲</div><h2>SORTEIO AINDA NÃO REALIZADO</h2><p>Os times e os confrontos permanecem em sigilo. O chaveamento será revelado somente após o sorteio oficial da Copa Grifo BDA.</p>'+(adminOn?'<div class="adminHint">Use 👥 para organizar os participantes e 🎲 para iniciar o sorteio.</div>':'')+'</section>';
     document.getElementById('progressFill').style.width='0%';
     document.getElementById('progressLbl').textContent='Aguardando sorteio oficial';
     document.getElementById('championBanner').style.display='none';
@@ -855,7 +855,7 @@ function render(){
       if(format==='GRUPOS'&&/^G\d+$/.test(p.id)&&adminOn&&!koGenerated&&groupsComplete()){
         const b=document.createElement('button');
         b.className='login-alt';
-        b.textContent='âš”ï¸ Gerar mata-mata com os classificados';
+        b.textContent='⚔️ Gerar mata-mata com os classificados';
         b.onclick=generateGroupKO;
         div.appendChild(b);
       }
@@ -871,7 +871,7 @@ function render(){
   if(champ!=null){
     syncHall();
     cb.style.display='block';
-    document.getElementById('championName').textContent='ðŸ¦… '+tn(champ);
+    document.getElementById('championName').textContent='🦅 '+tn(champ);
     if(!hadChampion){hadChampion=true;confetti();}
   }else{cb.style.display='none';hadChampion=false;}
   persist();
@@ -890,12 +890,12 @@ function card(id){
     let cls='tname'+(tbd?' tbd':'');
     if(w!=null){cls+=(side===ls?' lose':' win');}
     const sc=m.wo===side?'<span class="wo-flag">W.O.</span>':
-      (m['s'+side]!=null?'<span class="score">'+m['s'+side]+'</span>':'<span class="score" style="color:var(--ink-dim)">â€“</span>');
+      (m['s'+side]!=null?'<span class="score">'+m['s'+side]+'</span>':'<span class="score" style="color:var(--ink-dim)">–</span>');
     const pen=(m.pa!=null&&m.pb!=null&&m.sa===m.sb&&m.wo==null)?'<span class="score pen">('+m['p'+side]+')</span>':'';
     return '<div class="row">'+badgeHtml(idx,tbd)+'<span class="'+cls+'">'+(tbd?tbdLabel(id,side):esc(tn(idx)))+'</span><span>'+sc+pen+'</span></div>';
   }).join('');
   const dt=fmtDate(m.dt);
-  el.innerHTML='<div class="mid"><span>'+matchName(m.ph,m.idx,m.total)+'</span>'+(dt?'<span class="dt">ðŸ“… atÃ© '+dt+'</span>':'')+'</div>'+rows;
+  el.innerHTML='<div class="mid"><span>'+matchName(m.ph,m.idx,m.total)+'</span>'+(dt?'<span class="dt">📅 até '+dt+'</span>':'')+'</div>'+rows;
   el.onclick=()=>openModal(id);
   return el;
 }
@@ -915,7 +915,7 @@ function renderTree(){
         const tbd=idx==null;
         let cls=tbd?'t':(w!=null?(side===ls?'l':'w'):'');
         const sc=m.wo===side?'WO':(m['s'+side]!=null?m['s'+side]:'');
-        return '<div><span class="'+cls+'">'+(tbd?'â€”':esc(tn(idx)))+'</span><span class="'+cls+'">'+sc+'</span></div>';
+        return '<div><span class="'+cls+'">'+(tbd?'—':esc(tn(idx)))+'</span><span class="'+cls+'">'+sc+'</span></div>';
       }).join('');
       d.onclick=()=>openModal(k);
       col.appendChild(d);
@@ -930,7 +930,7 @@ const ov=document.getElementById('overlay');
 function openModal(id){
   const m=M[id];
   editId=id;
-  if(m.a==null||m.b==null){toast('Aguardando definiÃ§Ã£o dos times');return;}
+  if(m.a==null||m.b==null){toast('Aguardando definição dos times');return;}
   document.getElementById('mTitle').textContent=matchName(m.ph,m.idx,m.total);
   document.getElementById('mLabelA').textContent=tn(m.a);
   document.getElementById('mLabelB').textContent=tn(m.b);
@@ -1008,7 +1008,7 @@ document.getElementById('mSave').onclick=()=>{
     m.wo=null;m.sa=+sa;m.sb=+sb;
     if(m.sa===m.sb&&m.ko!==false){
       const pa=document.getElementById('mPenA').value,pb=document.getElementById('mPenB').value;
-      if(pa===''||pb===''||pa===pb){toast('Empate: informe pÃªnaltis (sem novo empate)');return;}
+      if(pa===''||pb===''||pa===pb){toast('Empate: informe pênaltis (sem novo empate)');return;}
       m.pa=+pa;m.pb=+pb;
     }else{m.pa=null;m.pb=null;}
   }
@@ -1044,14 +1044,14 @@ function renderTeamsList(){
     inp.type='text';inp.value=t.n;inp.maxLength=40;
     inp.oninput=()=>{t.n=inp.value;if(!t.img){badge.style.background=badgeColor(t.n);badge.textContent=initials(t.n);}};
     const rm=document.createElement('button');
-    rm.className='rm';rm.textContent='âœ•';
+    rm.className='rm';rm.textContent='✕';
     rm.onclick=()=>{tempTeams.splice(i,1);structChanged=true;renderTeamsList();};
     row.appendChild(badge);row.appendChild(inp);row.appendChild(rm);
     list.appendChild(row);
   });
 }
 document.getElementById('btnAddTeam').onclick=()=>{
-  if(tempTeams.length>=32){toast('MÃ¡ximo de 32 times');return;}
+  if(tempTeams.length>=32){toast('Máximo de 32 times');return;}
   tempTeams.push({n:'Novo time '+(tempTeams.length+1),img:null});
   structChanged=true;
   renderTeamsList();
@@ -1074,7 +1074,7 @@ document.getElementById('imgPicker').onchange=function(){
       renderTeamsList();
       toast('Escudo atualizado');
     };
-    im.onerror=()=>toast('NÃ£o foi possÃ­vel ler a imagem');
+    im.onerror=()=>toast('Não foi possível ler a imagem');
     im.src=rd.result;
   };
   rd.readAsDataURL(f);
@@ -1083,13 +1083,13 @@ document.getElementById('tCancel').onclick=()=>tOv.classList.remove('show');
 tOv.onclick=e=>{if(e.target===tOv)tOv.classList.remove('show');};
 document.getElementById('tApply').onclick=()=>{
   const clean=tempTeams.filter(t=>t.n.trim()!=='');
-  if(clean.length<2){toast('MÃ­nimo de 2 times');return;}
+  if(clean.length<2){toast('Mínimo de 2 times');return;}
   const sel=document.getElementById('fmtSel').value;
   const newFormat=sel==='LIGA1'||sel==='LIGA2'?'LIGA':sel;
   const newTurns=sel==='LIGA2'?2:1;
   const fmtChanged=newFormat!==format||(newFormat==='LIGA'&&newTurns!==leagueTurns);
   if(structChanged||clean.length!==teams.length||fmtChanged){
-    if(!confirm('O campeonato serÃ¡ refeito no formato escolhido e os resultados apagados. Continuar?'))return;
+    if(!confirm('O campeonato será refeito no formato escolhido e os resultados apagados. Continuar?'))return;
     teams=clean.map(t=>({n:t.n.trim(),img:t.img}));
     format=newFormat;leagueTurns=newTurns;
     order=teams.map((_,i)=>i);
@@ -1104,7 +1104,7 @@ document.getElementById('tApply').onclick=()=>{
 };
 
 
-/* ---------- estatÃ­sticas, artilharia, ranking, hall e mural ---------- */
+/* ---------- estatísticas, artilharia, ranking, hall e mural ---------- */
 function tournamentStats(){
   const ms=Object.values(M), played=ms.filter(decided), goals=played.reduce((n,m)=>n+(m.sa||0)+(m.sb||0),0);
   return {games:played.length,total:ms.length,goals,avg:played.length?(goals/played.length).toFixed(2):'0',wo:played.filter(m=>m.wo).length,pens:played.filter(m=>m.pa!=null).length,scheduled:ms.filter(m=>m.dt&&!decided(m)).length};
@@ -1128,23 +1128,23 @@ function syncHall(){
   const rec={key,edition:'Copa Grifo BDA',champion:tn(c),date:new Date().toLocaleDateString('pt-BR')};
   const ix=hall.findIndex(x=>x.key===key);if(ix>=0)hall[ix]=rec;else hall.unshift(rec);saveHall(hall.slice(0,50));
 }
-function rankHtml(rows,suffix){return rows.length?rows.map((r,i)=>'<div class="rankRow"><span class="pos">'+(i+1)+'Âº</span><span>'+esc(r[0])+'</span><span class="pts">'+r[1]+' '+suffix+'</span></div>').join(''):'<div class="emptyBox">Nenhum dado registrado.</div>';}
+function rankHtml(rows,suffix){return rows.length?rows.map((r,i)=>'<div class="rankRow"><span class="pos">'+(i+1)+'º</span><span>'+esc(r[0])+'</span><span class="pts">'+r[1]+' '+suffix+'</span></div>').join(''):'<div class="emptyBox">Nenhum dado registrado.</div>';}
 function renderDashboard(type){
   phasesEl.innerHTML='';const d=document.createElement('section');d.className='dashboard';
   if(type==='STATS'){
-    const x=tournamentStats();d.innerHTML='<div class="gridStats">'+[['Jogos',x.games+'/'+x.total],['Gols',x.goals],['MÃ©dia',x.avg],['PÃªnaltis',x.pens],['W.O.',x.wo],['Agendados',x.scheduled]].map(a=>'<div class="statCard"><div class="v">'+a[1]+'</div><div class="k">'+a[0]+'</div></div>').join('')+'</div><div class="sectionTitle">ðŸ… MVPs registrados</div>';
+    const x=tournamentStats();d.innerHTML='<div class="gridStats">'+[['Jogos',x.games+'/'+x.total],['Gols',x.goals],['Média',x.avg],['Pênaltis',x.pens],['W.O.',x.wo],['Agendados',x.scheduled]].map(a=>'<div class="statCard"><div class="v">'+a[1]+'</div><div class="k">'+a[0]+'</div></div>').join('')+'</div><div class="sectionTitle">🏅 MVPs registrados</div>';
     const mvps=Object.values(M).filter(m=>m.mvp).map(m=>[m.mvp,matchName(m.ph,m.idx,m.total)]);d.innerHTML+=rankHtml(mvps,'');
   }else if(type==='SCORERS'){
-    d.innerHTML='<div class="sectionTitle">âš½ Artilharia da Copa</div>'+rankHtml(scorerTable(),'gol'+(scorerTable()[0]?.[1]===1?'':'s'))+'<div class="lockedNote">Os nomes sÃ£o contabilizados a partir do campo â€œGolsâ€ em cada partida.</div>';
+    d.innerHTML='<div class="sectionTitle">⚽ Artilharia da Copa</div>'+rankHtml(scorerTable(),'gol'+(scorerTable()[0]?.[1]===1?'':'s'))+'<div class="lockedNote">Os nomes são contabilizados a partir do campo “Gols” em cada partida.</div>';
   }else if(type==='RANK'){
-    d.innerHTML='<div class="sectionTitle">ðŸŒŽ Ranking BDA</div>'+rankHtml(currentRanking(),'pts')+'<div class="lockedNote">PontuaÃ§Ã£o: participaÃ§Ã£o 10, vitÃ³ria 10, vice 25, campeÃ£o 50 e tÃ­tulo histÃ³rico 100.</div>';
+    d.innerHTML='<div class="sectionTitle">🌎 Ranking BDA</div>'+rankHtml(currentRanking(),'pts')+'<div class="lockedNote">Pontuação: participação 10, vitória 10, vice 25, campeão 50 e título histórico 100.</div>';
   }else if(type==='TABLE'){
     const st=standingsFor(leagueMatchIds(),order);
-    d.innerHTML='<div class="sectionTitle">ðŸ“ˆ ClassificaÃ§Ã£o â€” Pontos Corridos</div>'+tableHtml(st,0)+'<div class="lockedNote">VitÃ³ria 3 pts, empate 1 pt. Desempate: saldo de gols e gols prÃ³. W.O. conta como 3Ã—0.</div>';
+    d.innerHTML='<div class="sectionTitle">📈 Classificação — Pontos Corridos</div>'+tableHtml(st,0)+'<div class="lockedNote">Vitória 3 pts, empate 1 pt. Desempate: saldo de gols e gols pró. W.O. conta como 3×0.</div>';
   }else if(type==='MURAL'){
-    d.innerHTML='<div class="sectionTitle">ðŸ’¬ Mural da Copa</div><div id="muralList"></div><div id="muralForm"><input type="text" id="cName" maxlength="24" placeholder="Seu nome"><textarea id="cMsg" maxlength="280" rows="2" placeholder="Escreva um comentÃ¡rio..."></textarea><button id="cSend">Enviar ðŸ’¬</button></div><div class="lockedNote">Os comentÃ¡rios ficam neste aparelho e vÃ£o junto no link ðŸ”— quando o admin compartilha.</div>';
+    d.innerHTML='<div class="sectionTitle">💬 Mural da Copa</div><div id="muralList"></div><div id="muralForm"><input type="text" id="cName" maxlength="24" placeholder="Seu nome"><textarea id="cMsg" maxlength="280" rows="2" placeholder="Escreva um comentário..."></textarea><button id="cSend">Enviar 💬</button></div><div class="lockedNote">Os comentários ficam neste aparelho e vão junto no link 🔗 quando o admin compartilha.</div>';
   }else{
-    const hall=getHall();d.innerHTML='<div class="sectionTitle">ðŸ… Hall da Fama</div>'+(hall.length?hall.map((h,i)=>'<div class="rankRow"><span class="pos">ðŸ†</span><span><b>'+esc(h.champion)+'</b><br><small>'+esc(h.edition)+' â€¢ '+esc(h.date)+'</small></span><span class="pts">'+(i+1)+'Âª</span></div>').join(''):'<div class="emptyBox">O campeÃ£o aparecerÃ¡ aqui quando a final for concluÃ­da.</div>');
+    const hall=getHall();d.innerHTML='<div class="sectionTitle">🏅 Hall da Fama</div>'+(hall.length?hall.map((h,i)=>'<div class="rankRow"><span class="pos">🏆</span><span><b>'+esc(h.champion)+'</b><br><small>'+esc(h.edition)+' • '+esc(h.date)+'</small></span><span class="pts">'+(i+1)+'ª</span></div>').join(''):'<div class="emptyBox">O campeão aparecerá aqui quando a final for concluída.</div>');
   }
   phasesEl.appendChild(d);
   if(type==='MURAL'){
@@ -1156,51 +1156,51 @@ function renderDashboard(type){
 
 /* ---------- compartilhar texto ---------- */
 function buildText(){
-  let out='ðŸ¦…ðŸ† COPA GRIFO BDA â€” CHAVEAMENTO ðŸ†ðŸ¦…\n';
+  let out='🦅🏆 COPA GRIFO BDA — CHAVEAMENTO 🏆🦅\n';
   PH.filter(p=>!EXTRA_TABS.includes(p.id)).forEach(p=>{
     out+='\n'+p.emoji+' '+p.name.toUpperCase()+'\n';
     matchesOf(p.id).forEach(k=>{
       const m=M[k];
       const a=m.a!=null?tn(m.a):tbdLabel(k,'a'),b=m.b!=null?tn(m.b):tbdLabel(k,'b');
-      let line='â€¢ '+a+' Ã— '+b;
-      if(m.wo==='a')line='â€¢ '+a+' (W.O.) Ã— '+b+' âœ…';
-      else if(m.wo==='b')line='â€¢ '+a+' âœ… Ã— '+b+' (W.O.)';
+      let line='• '+a+' × '+b;
+      if(m.wo==='a')line='• '+a+' (W.O.) × '+b+' ✅';
+      else if(m.wo==='b')line='• '+a+' ✅ × '+b+' (W.O.)';
       else if(m.sa!=null&&m.sb!=null){
-        line='â€¢ '+a+' '+m.sa+' Ã— '+m.sb+' '+b;
-        if(m.pa!=null)line+=' (pÃªn. '+m.pa+'â€“'+m.pb+')';
+        line='• '+a+' '+m.sa+' × '+m.sb+' '+b;
+        if(m.pa!=null)line+=' (pên. '+m.pa+'–'+m.pb+')';
       }
       const dt=fmtDate(m.dt);
-      if(dt&&!decided(m))line+=' â€” ðŸ“… atÃ© '+dt+(m.time?' Ã s '+m.time:'');
-      if(m.venue)line+=' â€” ðŸŸï¸ '+m.venue;
+      if(dt&&!decided(m))line+=' — 📅 até '+dt+(m.time?' às '+m.time:'');
+      if(m.venue)line+=' — 🏟️ '+m.venue;
       out+=line+'\n';
     });
   });
   if(format==='LIGA'){
     const st=standingsFor(leagueMatchIds(),order);
-    out+='\nðŸ“ˆ CLASSIFICAÃ‡ÃƒO\n';
-    st.forEach((s,i)=>{out+=(i+1)+'Âº '+tn(s.i)+' â€” '+s.P+' pts (SG '+(s.GP-s.GC)+')\n';});
+    out+='\n📈 CLASSIFICAÇÃO\n';
+    st.forEach((s,i)=>{out+=(i+1)+'º '+tn(s.i)+' — '+s.P+' pts (SG '+(s.GP-s.GC)+')\n';});
   }
   if(format==='GRUPOS'){
     groups.forEach((gr,gi)=>{
       const st=standingsFor(groupMatchIds(gi),gr);
-      out+='\nðŸ›¡ï¸ GRUPO '+String.fromCharCode(65+gi)+'\n';
-      st.forEach((s,i)=>{out+=(i+1)+'Âº '+tn(s.i)+' â€” '+s.P+' pts\n';});
+      out+='\n🛡️ GRUPO '+String.fromCharCode(65+gi)+'\n';
+      st.forEach((s,i)=>{out+=(i+1)+'º '+tn(s.i)+' — '+s.P+' pts\n';});
     });
   }
   const champ=champIdx();
-  if(champ!=null)out+='\nðŸ† CAMPEÃƒO: '+tn(champ)+' ðŸ¦…\n';
-  out+='\nðŸ”¥ Onde somente os mais fortes chegam ao topo!';
+  if(champ!=null)out+='\n🏆 CAMPEÃO: '+tn(champ)+' 🦅\n';
+  out+='\n🔥 Onde somente os mais fortes chegam ao topo!';
   return out;
 }
-document.getElementById('btnShare').onclick=()=>{if(!drawCompleted){toast('O sorteio ainda nÃ£o foi realizado');return;}copy(buildText());};
+document.getElementById('btnShare').onclick=()=>{if(!drawCompleted){toast('O sorteio ainda não foi realizado');return;}copy(buildText());};
 function copy(t){
   if(navigator.clipboard&&navigator.clipboard.writeText){
-    navigator.clipboard.writeText(t).then(()=>toast('Copiado! Cola no grupo ðŸ¦…'),()=>fallbackCopy(t));
+    navigator.clipboard.writeText(t).then(()=>toast('Copiado! Cola no grupo 🦅'),()=>fallbackCopy(t));
   }else fallbackCopy(t);
 }
 function fallbackCopy(t){
   const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);
-  ta.select();try{document.execCommand('copy');toast('Copiado! Cola no grupo ðŸ¦…');}catch(e){toast('NÃ£o foi possÃ­vel copiar');}
+  ta.select();try{document.execCommand('copy');toast('Copiado! Cola no grupo 🦅');}catch(e){toast('Não foi possível copiar');}
   document.body.removeChild(ta);
 }
 
@@ -1238,7 +1238,7 @@ function drawBadge(c,cx,cy,r,idx,imgs){
   c.textBaseline='alphabetic';
 }
 document.getElementById('btnImg').onclick=()=>{
-  if(!drawCompleted){toast('O sorteio ainda nÃ£o foi realizado');return;}
+  if(!drawCompleted){toast('O sorteio ainda não foi realizado');return;}
   loadImgs().then(imgs=>{
     const W=1080;
     const phaseList=PH.filter(p=>!EXTRA_TABS.includes(p.id));
@@ -1252,7 +1252,7 @@ document.getElementById('btnImg').onclick=()=>{
     grad.addColorStop(0,'rgba(212,166,42,.18)');grad.addColorStop(1,'transparent');
     c.fillStyle=grad;c.fillRect(0,0,W,600);
     c.textAlign='center';
-    c.font='90px serif';c.fillText('ðŸ¦…',W/2,110);
+    c.font='90px serif';c.fillText('🦅',W/2,110);
     c.fillStyle='#F0D37A';c.font='800 52px Cinzel, serif';
     c.fillText('COPA GRIFO BDA',W/2,185);
     c.fillStyle='#8B8A80';c.font='20px sans-serif';
@@ -1280,13 +1280,13 @@ document.getElementById('btnImg').onclick=()=>{
         const wB=c.measureText(nameB).width;
         drawBadge(c,W/2+70+wB+32,y+25,18,m.b,imgs);
         c.textAlign='center';c.fillStyle='#D4A62A';c.font='800 28px sans-serif';
-        let mid='Ã—';
-        if(m.wo==='a')mid='WO Ã—';else if(m.wo==='b')mid='Ã— WO';
-        else if(m.sa!=null&&m.sb!=null){mid=m.sa+' Ã— '+m.sb;}
+        let mid='×';
+        if(m.wo==='a')mid='WO ×';else if(m.wo==='b')mid='× WO';
+        else if(m.sa!=null&&m.sb!=null){mid=m.sa+' × '+m.sb;}
         c.fillText(mid,W/2,y+34);
         if(m.pa!=null&&m.pb!=null&&m.sa===m.sb){
           c.font='600 18px sans-serif';c.fillStyle='#8B8A80';
-          c.fillText('pÃªn. '+m.pa+'â€“'+m.pb,W/2,y+56);
+          c.fillText('pên. '+m.pa+'–'+m.pb,W/2,y+56);
         }
         y+=64;
       });
@@ -1296,14 +1296,14 @@ document.getElementById('btnImg').onclick=()=>{
       c.strokeStyle='#D4A62A';c.lineWidth=2;
       roundRect(c,W/2-380,y-10,760,96,14);c.stroke();
       c.textAlign='center';c.fillStyle='#D4A62A';c.font='700 22px Cinzel, serif';
-      c.fillText('ðŸ†  C A M P E Ãƒ O  ðŸ†',W/2,y+26);
+      c.fillText('🏆  C A M P E Ã O  🏆',W/2,y+26);
       c.fillStyle='#F0D37A';c.font='800 40px Cinzel, serif';
       c.fillText(trunc(c,tn(champ),640),W/2,y+70);
       drawBadge(c,W/2-c.measureText(trunc(c,tn(champ),640)).width/2-45,y+58,24,champ,imgs);
       y+=100;
     }
     c.textAlign='center';c.fillStyle='#8B8A80';c.font='18px sans-serif';
-    c.fillText('ðŸ¦… Copa Grifo BDA',W/2,H-35);
+    c.fillText('🦅 Copa Grifo BDA',W/2,H-35);
     cv.toBlob(blob=>{
       const file=new File([blob],'copa-grifo-bda.png',{type:'image/png'});
       if(navigator.canShare&&navigator.canShare({files:[file]})){
@@ -1314,8 +1314,8 @@ document.getElementById('btnImg').onclick=()=>{
 };
 function trunc(c,txt,max){
   if(c.measureText(txt).width<=max)return txt;
-  while(txt.length>2&&c.measureText(txt+'â€¦').width>max)txt=txt.slice(0,-1);
-  return txt+'â€¦';
+  while(txt.length>2&&c.measureText(txt+'…').width>max)txt=txt.slice(0,-1);
+  return txt+'…';
 }
 function roundRect(c,x,y,w,h,r){
   c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);
@@ -1325,10 +1325,10 @@ function downloadBlob(blob){
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);a.download='copa-grifo-bda.png';
   document.body.appendChild(a);a.click();a.remove();
-  toast('Imagem gerada ðŸ–¼ï¸');
+  toast('Imagem gerada 🖼️');
 }
 
-/* ---------- link compartilhÃ¡vel (estado na URL) ---------- */
+/* ---------- link compartilhável (estado na URL) ---------- */
 function stateToHash(){
   const lite={t:teams.map(t=>t.n),o:order,m:{},c:comments.slice(-30),f:format,lt:leagueTurns,g:groups,kg:koGenerated,dr:drawCompleted};
   for(const k in M){
@@ -1416,12 +1416,12 @@ function showDrawReveal(){
   const items=[];
   if(format==='GRUPOS'){
     groups.forEach((gr,gi)=>{
-      items.push(['ðŸ›¡ï¸ Grupo '+String.fromCharCode(65+gi),gr.map(i=>tn(i)).join('  â€¢  ')]);
+      items.push(['🛡️ Grupo '+String.fromCharCode(65+gi),gr.map(i=>tn(i)).join('  •  ')]);
     });
   }else if(format==='LIGA'){
     matchesOf('RD0').forEach(k=>{
       const m=M[k];
-      items.push(['ðŸ“… Rodada 1',tn(m.a)+'  Ã—  '+tn(m.b)]);
+      items.push(['📅 Rodada 1',tn(m.a)+'  ×  '+tn(m.b)]);
     });
   }else{
     PH.filter(p=>p.id==='PRE'||p.id==='R0').forEach(p=>{
@@ -1429,7 +1429,7 @@ function showDrawReveal(){
         const m=M[k];
         const a=m.a!=null?tn(m.a):tbdLabel(k,'a');
         const b=m.b!=null?tn(m.b):tbdLabel(k,'b');
-        items.push([p.emoji+' '+matchName(m.ph,m.idx,m.total),a+'  Ã—  '+b]);
+        items.push([p.emoji+' '+matchName(m.ph,m.idx,m.total),a+'  ×  '+b]);
       });
     });
   }
@@ -1481,13 +1481,13 @@ function toast(msg){
   clearTimeout(t._to);t._to=setTimeout(()=>t.classList.remove('show'),2200);
 }
 
-const SPECIAL_TABS=[{id:'MURAL',name:'Mural',emoji:'ðŸ’¬'},{id:'STATS',name:'EstatÃ­sticas',emoji:'ðŸ“Š'},{id:'SCORERS',name:'Artilharia',emoji:'âš½'},{id:'RANK',name:'Ranking',emoji:'ðŸŒŽ'},{id:'HALL',name:'Hall',emoji:'ðŸ…'}];
+const SPECIAL_TABS=[{id:'MURAL',name:'Mural',emoji:'💬'},{id:'STATS',name:'Estatísticas',emoji:'📊'},{id:'SCORERS',name:'Artilharia',emoji:'⚽'},{id:'RANK',name:'Ranking',emoji:'🌎'},{id:'HALL',name:'Hall',emoji:'🏅'}];
 SPECIAL_TABS.forEach(t=>{if(!PH.some(p=>p.id===t.id))PH.push(t);});
 if(CLOUD){
   cloudSubscribe();
 }else if(loadFromHash()){
   history.replaceState(null,'',location.pathname+location.search);
-  toast('Resultados carregados do link ðŸ”—');
+  toast('Resultados carregados do link 🔗');
 }
 let deferredInstall=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;document.getElementById('installBanner').style.display='flex';});
 document.getElementById('installBtn').onclick=async()=>{if(!deferredInstall)return;deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;document.getElementById('installBanner').style.display='none';};
