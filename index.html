@@ -15,6 +15,9 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A6%85%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
 :root{
   --bg:#0E0F13; --panel:#171922; --panel2:#1E2130;
@@ -85,8 +88,9 @@ button.big{flex:1;border:none;border-radius:12px;padding:14px 6px;font-size:13px
 #btnDraw,#btnLink{background:var(--panel2);color:var(--gold-hi);border:1px solid var(--line);flex:0 0 auto;padding:14px 13px}
 #btnReset{background:var(--panel2);color:var(--ink-dim);border:1px solid var(--line);flex:0 0 auto;padding:14px 13px}
 
-#overlay,#drawOverlay,#teamsOverlay{display:none;position:fixed;inset:0;background:rgba(8,9,12,.86);z-index:10;align-items:flex-end;justify-content:center}
-#overlay.show,#drawOverlay.show,#teamsOverlay.show{display:flex}
+#overlay,#drawOverlay,#teamsOverlay,#pinOverlay,#loginOverlay{display:none;position:fixed;inset:0;background:rgba(8,9,12,.86);z-index:10;align-items:flex-end;justify-content:center}
+#overlay.show,#drawOverlay.show,#teamsOverlay.show,#pinOverlay.show,#loginOverlay.show{display:flex}
+.login-alt{margin-top:10px;border:1px dashed var(--gold);background:transparent;color:var(--gold-hi);border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;flex:0 0 auto}
 #drawOverlay{align-items:center;padding:20px;z-index:15}
 .sheet{background:var(--panel2);border:1px solid var(--line);border-bottom:none;border-radius:16px 16px 0 0;width:100%;max-width:520px;padding:20px 18px 26px;max-height:88vh;overflow-y:auto;display:flex;flex-direction:column}
 .sheet h3{font-family:'Cinzel',serif;font-size:15px;color:var(--gold);letter-spacing:.1em;margin-bottom:14px;text-transform:uppercase;flex:0 0 auto}
@@ -130,6 +134,24 @@ input:focus{outline:2px solid var(--gold);outline-offset:1px}
 #toast.show{opacity:1}
 #confetti{position:fixed;inset:0;pointer-events:none;z-index:25}
 
+/* admin */
+#btnLock{position:absolute;top:12px;right:12px;z-index:2;background:var(--panel2);border:1px solid var(--line);color:var(--gold-hi);border-radius:10px;padding:8px 11px;font-size:13px;font-weight:700;cursor:pointer}
+#btnLock.adm-on{border-color:var(--gold);box-shadow:0 0 12px rgba(212,166,42,.35)}
+#pinInput{padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:22px;text-align:center;letter-spacing:.4em;width:100%}
+
+/* mural */
+#muralList{margin-bottom:14px}
+.mural-empty{text-align:center;color:var(--ink-dim);font-size:13px;padding:26px 0;font-style:italic}
+.cmt{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.cmt .who{font-size:12px;font-weight:700;color:var(--gold-hi);margin-bottom:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.cmt .when{font-size:10px;color:var(--ink-dim);font-weight:400;margin-left:auto}
+.cmt .adm-tag{font-size:9px;background:var(--gold);color:#14120A;border-radius:6px;padding:1px 6px;letter-spacing:.1em}
+.cmt .msg{font-size:13px;line-height:1.45;word-wrap:break-word}
+.cmt-del{position:absolute;bottom:8px;right:10px;border:none;background:transparent;color:var(--red);font-size:12px;cursor:pointer;padding:4px}
+#muralForm{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+#muralForm input,#muralForm textarea{padding:11px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:13px;font-family:inherit;resize:none}
+#cSend{border:none;border-radius:10px;padding:12px;background:var(--gold);color:#14120A;font-weight:700;font-size:13px;cursor:pointer}
+
 /* módulos profissionais */
 .dashboard{padding:14px 0 110px}.gridStats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.statCard{background:linear-gradient(155deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:12px;padding:14px}.statCard .v{font:800 26px 'Cinzel',serif;color:var(--gold-hi)}.statCard .k{font-size:10px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.15em;margin-top:4px}.sectionTitle{font:800 15px 'Cinzel',serif;color:var(--gold);margin:18px 0 10px;letter-spacing:.08em}.rankRow{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px;margin-bottom:8px}.rankRow .pos{font-weight:800;color:var(--gold)}.rankRow .pts{font-weight:800;color:var(--gold-hi)}.emptyBox{padding:28px 16px;text-align:center;color:var(--ink-dim);border:1px dashed var(--line);border-radius:12px}.goalInputs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.goalInputs textarea,.extraInput{width:100%;min-height:72px;resize:vertical;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:12px}.extraInput{min-height:auto;margin-top:8px}.miniLabel{font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:.12em;margin:8px 0 5px}.adminBar{display:flex;gap:8px;margin-top:12px}.adminBar button{flex:1;border-radius:10px;padding:10px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-weight:700}.lockedNote{font-size:11px;color:var(--ink-dim);margin-top:8px}.installBanner{display:none;margin:12px 14px 0;max-width:492px;padding:12px;border:1px solid var(--gold);border-radius:12px;background:#211c0d;align-items:center;gap:10px}.installBanner button{margin-left:auto;border:0;border-radius:8px;background:var(--gold);padding:9px 12px;font-weight:800;color:#14120A}
 
@@ -138,6 +160,7 @@ input:focus{outline:2px solid var(--gold);outline-offset:1px}
 <body>
 
 <header>
+  <button id="btnLock">🔒</button>
   <div class="crest">🦅</div>
   <h1>COPA GRIFO BDA</h1>
   <div class="tagline">Onde somente os mais fortes chegam ao topo</div>
@@ -217,6 +240,32 @@ input:focus{outline:2px solid var(--gold);outline-offset:1px}
   </div>
 </div>
 
+<div id="loginOverlay">
+  <div class="sheet">
+    <h3>🔐 Entrar na Copa</h3>
+    <div style="font-size:12px;color:var(--ink-dim);margin-bottom:12px;line-height:1.5">Entre com e-mail e senha para comentar. O administrador entra com a conta cadastrada como admin.</div>
+    <input class="extraInput" type="email" id="lEmail" placeholder="✉️ E-mail" autocomplete="email">
+    <input class="extraInput" type="password" id="lPass" placeholder="🔑 Senha (mín. 6 dígitos)" autocomplete="current-password">
+    <div class="mact">
+      <button class="btn-dim" id="lCancel">Cancelar</button>
+      <button class="btn-gold" id="lLogin">Entrar</button>
+    </div>
+    <button class="login-alt" id="lSignup">＋ Criar conta nova</button>
+  </div>
+</div>
+
+<div id="pinOverlay">
+  <div class="sheet">
+    <h3 id="pinTitle"></h3>
+    <div id="pinHint" style="font-size:12px;color:var(--ink-dim);margin-bottom:12px;line-height:1.5"></div>
+    <input type="password" inputmode="numeric" id="pinInput" maxlength="8" placeholder="••••">
+    <div class="mact">
+      <button class="btn-dim" id="pinCancel">Cancelar</button>
+      <button class="btn-gold" id="pinOk">Entrar</button>
+    </div>
+  </div>
+</div>
+
 <input type="file" id="imgPicker" accept="image/*" style="display:none">
 
 <canvas id="confetti"></canvas>
@@ -224,11 +273,38 @@ input:focus{outline:2px solid var(--gold);outline-offset:1px}
 
 <script>
 const DEFAULT_TEAMS=['REDBULL BDA','São Paulo BDA','BDA GOLDEN FC','Cajueiro BDA','Vasco da gama bda','INDEPENDENTE FC BDA','JOGOBUGADO BDA','Zombie Fc BDA','FLAMESTRE FC BDA','HELLYEAH BDA','MACIEIRA BDA','Sport Recife BDA','IMORTAIS FC BDA','mozamigos bda','FLORENCE REAL FC BDA','BDA URDLS','CV CRUZ BDA','INTER BRASIL BDA','MILAN AC BDA'];
+const EXTRA_TABS=['ALL','MURAL','STATS','SCORERS','RANK','HALL'];
+
+/* ============================================================
+   FIREBASE (login + sincronização em tempo real) — OPCIONAL
+   1. Crie um projeto grátis em https://console.firebase.google.com
+   2. Ative Authentication > E-mail/senha e crie o Firestore
+   3. Cole abaixo a configuração do seu app web (Configurações do projeto)
+   4. Coloque seu e-mail em ADMIN_EMAILS
+   Sem configurar, o site continua funcionando no modo local com PIN.
+   ============================================================ */
+const FIREBASE_CONFIG={
+  apiKey:"AIzaSyBYl8neT-NXWeTGp1kmfYcBPXa3zdwDxW4",
+  authDomain:"copa-grifo-bda.firebaseapp.com",
+  projectId:"copa-grifo-bda",
+  storageBucket:"copa-grifo-bda.firebasestorage.app",
+  messagingSenderId:"742082042064",
+  appId:"1:742082042064:web:0b1a8bd7244907ca4f66d5"
+};
+const ADMIN_EMAILS=['miniamikaren@gmail.com'];
+const CLOUD=typeof firebase!=='undefined'&&FIREBASE_CONFIG.apiKey&&FIREBASE_CONFIG.apiKey.indexOf('AIza')===0;
+let auth=null,db=null,currentUser=null;
+if(CLOUD){
+  firebase.initializeApp(FIREBASE_CONFIG);
+  auth=firebase.auth();
+  db=firebase.firestore();
+}
 
 let teams=DEFAULT_TEAMS.map(n=>({n:n,img:null}));
 let order=teams.map((_,i)=>i);
 let M={};
 let PH=[];
+let comments=[];
 
 /* ---------- geração dinâmica do chaveamento ---------- */
 function blank(ph,next){return {ph:ph,a:null,b:null,next:next,sa:null,sb:null,pa:null,pb:null,wo:null,dt:null,time:null,venue:null,goalsA:[],goalsB:[],mvp:null};}
@@ -299,6 +375,7 @@ function buildBracket(o){
     M['R0_'+Math.floor(s/2)][s%2===0?'a':'b']=o[s];
   }
   PH.push({id:'ALL',name:'Árvore',emoji:'🌳'});
+  PH.push({id:'MURAL',name:'Mural',emoji:'💬'});
   PH.push({id:'STATS',name:'Estatísticas',emoji:'📊'});
   PH.push({id:'SCORERS',name:'Artilharia',emoji:'⚽'});
   PH.push({id:'RANK',name:'Ranking',emoji:'🌎'});
@@ -315,14 +392,39 @@ function totalMatches(){return Object.keys(M).length;}
 let store=null;
 try{store=window.localStorage;}catch(e){store=null;}
 function persist(){
-  try{if(store)store.setItem('copa-grifo-bda-v3',JSON.stringify({teams:teams,order:order,M:M,PH:PH}));}catch(e){}
+  try{if(store)store.setItem('copa-grifo-bda-v3',JSON.stringify({teams:teams,order:order,M:M,PH:PH,c:comments}));}catch(e){}
+  cloudSave();
+}
+let cloudTimer=null,applyingRemote=false;
+function cloudSave(){
+  if(!CLOUD||!adminOn||applyingRemote)return;
+  clearTimeout(cloudTimer);
+  cloudTimer=setTimeout(()=>{
+    db.collection('copa').doc('current').set({teams:teams,order:order,M:M,PH:PH})
+      .catch(()=>toast('⚠️ Falha ao salvar na nuvem'));
+  },700);
+}
+function cloudSubscribe(){
+  db.collection('copa').doc('current').onSnapshot(s=>{
+    if(!s.exists)return;
+    const d=s.data();
+    if(!d.teams||!d.M||!d.PH||!d.order)return;
+    applyingRemote=true;
+    teams=d.teams;order=d.order;M=d.M;PH=d.PH;
+    applyingRemote=false;
+    render();
+  },()=>toast('⚠️ Sem conexão com a nuvem'));
+  db.collection('comments').orderBy('d').limit(200).onSnapshot(s=>{
+    comments=s.docs.map(x=>Object.assign({id:x.id},x.data()));
+    if(activePhase==='MURAL')renderMural();
+  });
 }
 (function load(){
   try{
     const saved=store&&store.getItem('copa-grifo-bda-v3');
     if(saved){
       const d=JSON.parse(saved);
-      if(d.teams&&d.M&&d.PH&&d.order){teams=d.teams;order=d.order;M=d.M;PH=d.PH;return;}
+      if(d.teams&&d.M&&d.PH&&d.order){teams=d.teams;order=d.order;M=d.M;PH=d.PH;comments=d.c||[];return;}
     }
   }catch(e){}
   buildBracket(order);
@@ -375,6 +477,149 @@ function tbdLabel(id,side){
   return 'A definir';
 }
 
+/* ---------- administrador (PIN) ---------- */
+let adminOn=false;
+try{adminOn=sessionStorage.getItem('cg-adm')==='1';}catch(e){}
+function getPin(){try{return store&&store.getItem('copa-grifo-bda-pin');}catch(e){return null;}}
+function setPin(p){try{if(store)store.setItem('copa-grifo-bda-pin',p);}catch(e){}}
+function updateAdminUI(){
+  const lock=document.getElementById('btnLock');
+  if(CLOUD){
+    lock.textContent=currentUser?(adminOn?'🔓 Admin':'👤 '+(currentUser.email||'').split('@')[0].slice(0,10)):'🔒 Entrar';
+    lock.className=adminOn?'adm-on':'';
+  }else{
+    lock.textContent=adminOn?'🔓 Admin':'🔒';
+    lock.className=adminOn?'adm-on':'';
+    try{sessionStorage.setItem('cg-adm',adminOn?'1':'0');}catch(e){}
+  }
+  ['btnTeams','btnDraw','btnReset'].forEach(id=>{document.getElementById(id).style.display=adminOn?'':'none';});
+}
+function isAdminEmail(u){
+  return !!(u&&u.email)&&ADMIN_EMAILS.map(e=>String(e).toLowerCase()).indexOf(u.email.toLowerCase())>=0;
+}
+function authErr(e){
+  const c=(e&&e.code)||'';
+  if(c.indexOf('invalid-email')>=0)return 'E-mail inválido';
+  if(c.indexOf('user-not-found')>=0||c.indexOf('wrong-password')>=0||c.indexOf('invalid-credential')>=0)return 'E-mail ou senha incorretos';
+  if(c.indexOf('email-already-in-use')>=0)return 'E-mail já cadastrado — use Entrar';
+  if(c.indexOf('weak-password')>=0)return 'Senha muito fraca (mín. 6)';
+  if(c.indexOf('too-many-requests')>=0)return 'Muitas tentativas, aguarde um pouco';
+  return 'Erro ao entrar';
+}
+const loginOv=document.getElementById('loginOverlay');
+if(CLOUD){
+  auth.onAuthStateChanged(u=>{
+    currentUser=u;
+    adminOn=isAdminEmail(u);
+    updateAdminUI();
+    render();
+  });
+}
+document.getElementById('lCancel').onclick=()=>loginOv.classList.remove('show');
+loginOv.onclick=e=>{if(e.target===loginOv)loginOv.classList.remove('show');};
+document.getElementById('lLogin').onclick=()=>{
+  const em=document.getElementById('lEmail').value.trim();
+  const pw=document.getElementById('lPass').value;
+  if(!em||!pw){toast('Preencha e-mail e senha');return;}
+  auth.signInWithEmailAndPassword(em,pw)
+    .then(()=>{loginOv.classList.remove('show');toast('Conectado ✅');})
+    .catch(e=>toast(authErr(e)));
+};
+document.getElementById('lSignup').onclick=()=>{
+  const em=document.getElementById('lEmail').value.trim();
+  const pw=document.getElementById('lPass').value;
+  if(!em||!pw){toast('Preencha e-mail e senha');return;}
+  auth.createUserWithEmailAndPassword(em,pw)
+    .then(()=>{loginOv.classList.remove('show');toast('Conta criada 🦅');})
+    .catch(e=>toast(authErr(e)));
+};
+let pinMode='enter';
+document.getElementById('btnLock').onclick=()=>{
+  if(CLOUD){
+    if(currentUser){
+      if(confirm('Sair da conta '+(currentUser.email||'')+'?'))auth.signOut();
+      return;
+    }
+    loginOv.classList.add('show');
+    return;
+  }
+  if(adminOn){adminOn=false;updateAdminUI();render();toast('Modo visitante');return;}
+  pinMode=getPin()?'enter':'create';
+  document.getElementById('pinTitle').textContent=pinMode==='create'?'🔐 Criar PIN de admin':'🔐 PIN de administrador';
+  document.getElementById('pinHint').textContent=pinMode==='create'
+    ?'Defina um PIN de 4 a 8 dígitos. Só quem tiver o PIN poderá alterar resultados, times e sorteio neste aparelho.'
+    :'Digite o PIN para entrar no modo administrador.';
+  document.getElementById('pinInput').value='';
+  document.getElementById('pinOverlay').classList.add('show');
+  setTimeout(()=>document.getElementById('pinInput').focus(),150);
+};
+document.getElementById('pinCancel').onclick=()=>document.getElementById('pinOverlay').classList.remove('show');
+document.getElementById('pinOverlay').onclick=e=>{if(e.target===document.getElementById('pinOverlay'))document.getElementById('pinOverlay').classList.remove('show');};
+document.getElementById('pinOk').onclick=()=>{
+  const v=document.getElementById('pinInput').value.trim();
+  if(pinMode==='create'){
+    if(v.length<4||v.length>8||!/^\d+$/.test(v)){toast('PIN deve ter de 4 a 8 dígitos');return;}
+    setPin(v);adminOn=true;
+    toast('PIN criado — você é o admin 👑');
+  }else{
+    if(v!==getPin()){toast('PIN incorreto');return;}
+    adminOn=true;
+    toast('Modo administrador 👑');
+  }
+  document.getElementById('pinOverlay').classList.remove('show');
+  updateAdminUI();
+  render();
+};
+
+/* ---------- mural de comentários ---------- */
+function fmtWhen(d){
+  const dt=new Date(d);
+  return String(dt.getDate()).padStart(2,'0')+'/'+String(dt.getMonth()+1).padStart(2,'0')+' '+String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0');
+}
+function renderMural(){
+  const list=document.getElementById('muralList');
+  if(!list)return;
+  list.innerHTML='';
+  if(comments.length===0){
+    list.innerHTML='<div class="mural-empty">Nenhum comentário ainda. Seja o primeiro! 💬</div>';
+  }
+  comments.forEach((c,i)=>{
+    const d=document.createElement('div');
+    d.className='cmt';
+    d.innerHTML='<div class="who">'+(c.adm?'👑 ':'')+esc(c.n)+(c.adm?' <span class="adm-tag">ADMIN</span>':'')+'<span class="when">'+fmtWhen(c.d)+'</span></div><div class="msg">'+esc(c.t)+'</div>';
+    if(adminOn){
+      const x=document.createElement('button');
+      x.className='cmt-del';x.textContent='✕';
+      x.onclick=()=>{
+        if(!confirm('Apagar este comentário?'))return;
+        if(CLOUD&&c.id){db.collection('comments').doc(c.id).delete().catch(()=>toast('Erro ao apagar'));}
+        else{comments.splice(i,1);persist();renderMural();}
+      };
+      d.appendChild(x);
+    }
+    list.appendChild(d);
+  });
+}
+function sendComment(){
+  const n=document.getElementById('cName').value.trim();
+  const t=document.getElementById('cMsg').value.trim();
+  if(!n){toast('Coloque seu nome');return;}
+  if(!t){toast('Escreva o comentário');return;}
+  if(CLOUD){
+    if(!currentUser){toast('Entre para comentar');loginOv.classList.add('show');return;}
+    db.collection('comments').add({n:n,t:t,d:Date.now(),adm:adminOn,uid:currentUser.uid})
+      .then(()=>{document.getElementById('cMsg').value='';})
+      .catch(()=>toast('Erro ao enviar comentário'));
+    try{if(store)store.setItem('cg-name',n);}catch(e){}
+    return;
+  }
+  comments.push({n:n,t:t,d:Date.now(),adm:adminOn});
+  try{if(store)store.setItem('cg-name',n);}catch(e){}
+  document.getElementById('cMsg').value='';
+  persist();
+  renderMural();
+}
+
 /* ---------- render ---------- */
 const tabsEl=document.getElementById('tabs');
 const phasesEl=document.getElementById('phases');
@@ -400,14 +645,14 @@ function render(){
     tabsEl.appendChild(b);
   });
   const showTree=activePhase==='ALL';
-  const special=['STATS','SCORERS','RANK','HALL'].includes(activePhase);
+  const special=['MURAL','STATS','SCORERS','RANK','HALL'].includes(activePhase);
   phasesEl.style.display=showTree?'none':'block';
   treeScroll.style.display=showTree?'block':'none';
   if(showTree){renderTree();}
   else if(special){renderDashboard(activePhase);}
   else{
     phasesEl.innerHTML='';
-    PH.filter(p=>!['ALL','STATS','SCORERS','RANK','HALL'].includes(p.id)).forEach(p=>{
+    PH.filter(p=>!EXTRA_TABS.includes(p.id)).forEach(p=>{
       const div=document.createElement('div');
       div.className='phase'+(p.id===activePhase?' show':'');
       matchesOf(p.id).forEach(k=>div.appendChild(card(k)));
@@ -456,7 +701,7 @@ function card(id){
 function renderTree(){
   const tree=document.getElementById('tree');
   tree.innerHTML='';
-  PH.filter(p=>!['ALL','STATS','SCORERS','RANK','HALL'].includes(p.id)).forEach(p=>{
+  PH.filter(p=>!EXTRA_TABS.includes(p.id)).forEach(p=>{
     const col=document.createElement('div');
     col.className='tcol';
     col.innerHTML='<h4>'+p.emoji+' '+p.name+'</h4>';
@@ -500,6 +745,13 @@ function openModal(id){
   document.getElementById('mGoalsB').value=(m.goalsB||[]).join('\n');
   document.getElementById('mMvp').value=m.mvp??'';
   setWo(m.wo??null);
+  const ro=!adminOn;
+  ['mScoreA','mScoreB','mPenA','mPenB','mDate','mTime','mVenue','mGoalsA','mGoalsB','mMvp'].forEach(i=>{document.getElementById(i).disabled=ro;});
+  document.getElementById('mWoA').style.display=ro?'none':'';
+  document.getElementById('mWoB').style.display=ro?'none':'';
+  document.getElementById('mClear').style.display=ro?'none':'';
+  document.getElementById('mSave').style.display=ro?'none':'';
+  document.getElementById('mCancel').textContent=ro?'Fechar':'Cancelar';
   syncPenBox();
   ov.classList.add('show');
 }
@@ -522,6 +774,7 @@ document.getElementById('mCancel').onclick=()=>ov.classList.remove('show');
 ov.onclick=e=>{if(e.target===ov)ov.classList.remove('show');};
 
 document.getElementById('mClear').onclick=()=>{
+  if(!adminOn)return;
   const m=M[editId];
   m.sa=null;m.sb=null;m.pa=null;m.pb=null;m.wo=null;m.dt=null;m.time=null;m.venue=null;m.goalsA=[];m.goalsB=[];m.mvp=null;
   clearDownstream(editId);
@@ -530,6 +783,7 @@ document.getElementById('mClear').onclick=()=>{
   render();
 };
 document.getElementById('mSave').onclick=()=>{
+  if(!adminOn){toast('Somente o administrador pode salvar');return;}
   const m=M[editId];
   m.dt=document.getElementById('mDate').value||null;
   m.time=document.getElementById('mTime').value||null;
@@ -564,6 +818,7 @@ document.getElementById('mSave').onclick=()=>{
 const tOv=document.getElementById('teamsOverlay');
 let tempTeams=[],structChanged=false,editingImgIdx=null;
 document.getElementById('btnTeams').onclick=()=>{
+  if(!adminOn){toast('Somente o administrador');return;}
   tempTeams=teams.map(t=>({n:t.n,img:t.img}));
   structChanged=false;
   renderTeamsList();
@@ -639,8 +894,7 @@ document.getElementById('tApply').onclick=()=>{
 };
 
 
-/* ---------- estatísticas, artilharia, ranking e hall ---------- */
-function allRealPhases(){return PH.filter(p=>!['ALL','STATS','SCORERS','RANK','HALL'].includes(p.id));}
+/* ---------- estatísticas, artilharia, ranking, hall e mural ---------- */
 function tournamentStats(){
   const ms=Object.values(M), played=ms.filter(decided), goals=played.reduce((n,m)=>n+(m.sa||0)+(m.sb||0),0);
   return {games:played.length,total:ms.length,goals,avg:played.length?(goals/played.length).toFixed(2):'0',wo:played.filter(m=>m.wo).length,pens:played.filter(m=>m.pa!=null).length,scheduled:ms.filter(m=>m.dt&&!decided(m)).length};
@@ -657,7 +911,7 @@ function currentRanking(){
   return Object.entries(pts).map(([i,p])=>[teams[+i].n,p]).sort((a,b)=>b[1]-a[1]);
 }
 function getHall(){try{return JSON.parse(localStorage.getItem('copa-grifo-hall')||'[]')}catch(e){return []}}
-function saveHall(v){localStorage.setItem('copa-grifo-hall',JSON.stringify(v));}
+function saveHall(v){try{localStorage.setItem('copa-grifo-hall',JSON.stringify(v));}catch(e){}}
 function syncHall(){
   const fid=finalId();if(!fid)return;const c=winner(M[fid]);if(c==null)return;
   const hall=getHall(), key='grifo-'+teams.map(t=>t.n).join('|').slice(0,150);
@@ -674,16 +928,23 @@ function renderDashboard(type){
     d.innerHTML='<div class="sectionTitle">⚽ Artilharia da Copa</div>'+rankHtml(scorerTable(),'gol'+(scorerTable()[0]?.[1]===1?'':'s'))+'<div class="lockedNote">Os nomes são contabilizados a partir do campo “Gols” em cada partida.</div>';
   }else if(type==='RANK'){
     d.innerHTML='<div class="sectionTitle">🌎 Ranking BDA</div>'+rankHtml(currentRanking(),'pts')+'<div class="lockedNote">Pontuação: participação 10, vitória 10, vice 25, campeão 50 e título histórico 100.</div>';
+  }else if(type==='MURAL'){
+    d.innerHTML='<div class="sectionTitle">💬 Mural da Copa</div><div id="muralList"></div><div id="muralForm"><input type="text" id="cName" maxlength="24" placeholder="Seu nome"><textarea id="cMsg" maxlength="280" rows="2" placeholder="Escreva um comentário..."></textarea><button id="cSend">Enviar 💬</button></div><div class="lockedNote">Os comentários ficam neste aparelho e vão junto no link 🔗 quando o admin compartilha.</div>';
   }else{
     const hall=getHall();d.innerHTML='<div class="sectionTitle">🏅 Hall da Fama</div>'+(hall.length?hall.map((h,i)=>'<div class="rankRow"><span class="pos">🏆</span><span><b>'+esc(h.champion)+'</b><br><small>'+esc(h.edition)+' • '+esc(h.date)+'</small></span><span class="pts">'+(i+1)+'ª</span></div>').join(''):'<div class="emptyBox">O campeão aparecerá aqui quando a final for concluída.</div>');
   }
   phasesEl.appendChild(d);
+  if(type==='MURAL'){
+    renderMural();
+    document.getElementById('cSend').onclick=sendComment;
+    try{const n=store&&store.getItem('cg-name');if(n)document.getElementById('cName').value=n;}catch(e){}
+  }
 }
 
 /* ---------- compartilhar texto ---------- */
 function buildText(){
   let out='🦅🏆 COPA GRIFO BDA — CHAVEAMENTO 🏆🦅\n';
-  PH.filter(p=>!['ALL','STATS','SCORERS','RANK','HALL'].includes(p.id)).forEach(p=>{
+  PH.filter(p=>!EXTRA_TABS.includes(p.id)).forEach(p=>{
     out+='\n'+p.emoji+' '+p.name.toUpperCase()+'\n';
     matchesOf(p.id).forEach(k=>{
       const m=M[k];
@@ -755,7 +1016,7 @@ function drawBadge(c,cx,cy,r,idx,imgs){
 document.getElementById('btnImg').onclick=()=>{
   loadImgs().then(imgs=>{
     const W=1080;
-    const phaseList=PH.filter(p=>!['ALL','STATS','SCORERS','RANK','HALL'].includes(p.id));
+    const phaseList=PH.filter(p=>!EXTRA_TABS.includes(p.id));
     let rows=0;phaseList.forEach(p=>{rows+=matchesOf(p.id).length;});
     const fid=finalId();
     const champ=fid?winner(M[fid]):null;
@@ -845,7 +1106,7 @@ function downloadBlob(blob){
 
 /* ---------- link compartilhável (estado na URL) ---------- */
 function stateToHash(){
-  const lite={t:teams.map(t=>t.n),o:order,m:{}};
+  const lite={t:teams.map(t=>t.n),o:order,m:{},c:comments.slice(-30)};
   for(const k in M){
     const m=M[k];
     if(m.sa!=null||m.wo||m.dt){lite.m[k]=[m.sa,m.sb,m.pa,m.pb,m.wo,m.dt,m.time,m.venue,m.goalsA,m.goalsB,m.mvp];}
@@ -871,18 +1132,20 @@ function loadFromHash(){
         M[k].wo=v[4]??null;M[k].dt=v[5]??null;M[k].time=v[6]??null;M[k].venue=v[7]??null;M[k].goalsA=v[8]??[];M[k].goalsB=v[9]??[];M[k].mvp=v[10]??null;
       }
     }
-    PH.filter(p=>!['ALL','STATS','SCORERS','RANK','HALL'].includes(p.id)).forEach(p=>matchesOf(p.id).forEach(k=>propagate(k)));
+    if(lite.c&&lite.c.length)comments=lite.c;
+    PH.filter(p=>!EXTRA_TABS.includes(p.id)).forEach(p=>matchesOf(p.id).forEach(k=>propagate(k)));
     return true;
   }catch(e){return false;}
 }
 document.getElementById('btnLink').onclick=()=>{
-  const url=location.origin+location.pathname+'#d='+stateToHash();
+  const url=CLOUD?location.origin+location.pathname:location.origin+location.pathname+'#d='+stateToHash();
   if(url.indexOf('http')!==0){toast('Publique o site primeiro para gerar o link');return;}
   copy(url);
 };
 
 /* ---------- reset ---------- */
 document.getElementById('btnReset').onclick=()=>{
+  if(!adminOn){toast('Somente o administrador');return;}
   if(confirm('Zerar todos os resultados da copa?')){
     buildBracket(order);
     activePhase=null;
@@ -893,6 +1156,7 @@ document.getElementById('btnReset').onclick=()=>{
 
 /* ---------- sorteio ---------- */
 document.getElementById('btnDraw').onclick=()=>{
+  if(!adminOn){toast('Somente o administrador');return;}
   if(!confirm('Fazer novo sorteio dos '+teams.length+' times? Isso apaga todos os resultados e monta um chaveamento novo.'))return;
   const o=teams.map((_,i)=>i);
   for(let i=o.length-1;i>0;i--){
@@ -967,13 +1231,19 @@ function toast(msg){
   clearTimeout(t._to);t._to=setTimeout(()=>t.classList.remove('show'),2200);
 }
 
-const SPECIAL_TABS=[{id:'STATS',name:'Estatísticas',emoji:'📊'},{id:'SCORERS',name:'Artilharia',emoji:'⚽'},{id:'RANK',name:'Ranking',emoji:'🌎'},{id:'HALL',name:'Hall',emoji:'🏅'}];
+const SPECIAL_TABS=[{id:'MURAL',name:'Mural',emoji:'💬'},{id:'STATS',name:'Estatísticas',emoji:'📊'},{id:'SCORERS',name:'Artilharia',emoji:'⚽'},{id:'RANK',name:'Ranking',emoji:'🌎'},{id:'HALL',name:'Hall',emoji:'🏅'}];
 SPECIAL_TABS.forEach(t=>{if(!PH.some(p=>p.id===t.id))PH.push(t);});
-if(loadFromHash()){history.replaceState(null,'',location.pathname+location.search);toast('Resultados carregados do link 🔗');}
+if(CLOUD){
+  cloudSubscribe();
+}else if(loadFromHash()){
+  history.replaceState(null,'',location.pathname+location.search);
+  toast('Resultados carregados do link 🔗');
+}
 let deferredInstall=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;document.getElementById('installBanner').style.display='flex';});
 document.getElementById('installBtn').onclick=async()=>{if(!deferredInstall)return;deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;document.getElementById('installBanner').style.display='none';};
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
 
+updateAdminUI();
 hadChampion=(function(){const f=finalId();return f?decided(M[f]):false;})();
 render();
 </script>
