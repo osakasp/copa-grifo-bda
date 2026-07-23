@@ -9,9 +9,6 @@
 <meta property="og:title" content="Copa Grifo BDA — Chaveamento">
 <meta property="og:description" content="🦅 Onde somente os mais fortes chegam ao topo! Acompanhe o mata-mata do Clã BDA.">
 <meta property="og:type" content="website">
-<link rel="manifest" href="manifest.webmanifest">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A6%85%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -55,9 +52,6 @@ h1{font-family:'Cinzel',serif;font-weight:800;font-size:27px;letter-spacing:.1em
   border-radius:12px;padding:9px 12px;font-size:12px;font-weight:700;cursor:pointer;backdrop-filter:blur(6px);letter-spacing:.02em}
 #btnLock.adm-on{border-color:var(--ouro);box-shadow:0 0 14px rgba(199,154,46,.35);background:linear-gradient(160deg,#241E0C,#1A1D2A)}
 
-.installBanner{display:none;margin:14px 14px 0;max-width:492px;padding:12px 14px;border:1px solid rgba(199,154,46,.5);border-radius:14px;
-  background:linear-gradient(160deg,#221C0C,#14161F);align-items:center;gap:10px;font-size:13px}
-.installBanner button{margin-left:auto;border:0;border-radius:10px;background:var(--metal);padding:10px 14px;font-weight:800;color:#14120A;font-size:12px}
 
 /* ===== faixa do campeão ===== */
 #championBanner{display:none;margin:18px auto 0;max-width:520px;padding:0 14px}
@@ -105,6 +99,7 @@ nav::-webkit-scrollbar{display:none}
   box-shadow:inset 0 2px 6px rgba(0,0,0,.6)}
 .score.pen{font-size:10px;color:var(--ouro);font-weight:600;margin-left:5px;background:none;border:none;box-shadow:none;padding:0;min-width:0}
 .wo-flag{font-size:10px;color:var(--lacre);font-weight:800;letter-spacing:.12em}
+.cardFoot{font-size:10.5px;color:var(--patina);padding:8px 13px 10px;border-top:1px dashed var(--linha);line-height:1.5}
 
 /* ===== sorteio pendente ===== */
 .preDraw{margin:30px 0 18px;background:linear-gradient(160deg,var(--painel2),var(--painel));border:1px solid var(--linha);
@@ -270,7 +265,6 @@ select.extraInput{min-height:auto;margin-top:0;margin-bottom:10px;appearance:non
   <div id="progress"><div id="progressFill"></div></div>
   <div id="progressLbl"></div>
 </header>
-<div class="installBanner" id="installBanner"><span>📱 Instale a Copa Grifo como aplicativo</span><button id="installBtn">Instalar</button></div>
 
 <div id="championBanner"><div class="inner">
   <div class="lbl">🏆 Campeão</div>
@@ -404,7 +398,7 @@ select.extraInput{min-height:auto;margin-top:0;margin-bottom:10px;appearance:non
 
 <script>
 const DEFAULT_TEAMS=['REDBULL BDA','São Paulo BDA','BDA GOLDEN FC','Cajueiro BDA','Vasco da gama bda','INDEPENDENTE FC BDA','JOGOBUGADO BDA','Zombie Fc BDA','FLAMESTRE FC BDA','HELLYEAH BDA','MACIEIRA BDA','Sport Recife BDA','IMORTAIS FC BDA','mozamigos bda','FLORENCE REAL FC BDA','BDA URDLS','CV CRUZ BDA','INTER BRASIL BDA','MILAN AC BDA'];
-const EXTRA_TABS=['ALL','TABLE','MURAL','STATS','SCORERS','RANK','HALL'];
+const EXTRA_TABS=['HOME','ALL','TABLE','MURAL','STATS','SCORERS','RANK','HALL'];
 
 /* ============================================================
    FIREBASE (login + sincronização em tempo real) — OPCIONAL
@@ -586,6 +580,7 @@ function buildBracket(o){
   PH.push({id:'SCORERS',name:'Artilharia',emoji:'⚽'});
   PH.push({id:'RANK',name:'Ranking',emoji:'🌎'});
   PH.push({id:'HALL',name:'Hall',emoji:'🏅'});
+  PH.unshift({id:'HOME',name:'Início',emoji:'🏠'});
 }
 
 /* classificação (liga e grupos) */
@@ -697,6 +692,7 @@ function applyFormatMeta(d){
   drawCompleted=typeof d.dr==='boolean'?d.dr:inferDrawCompleted();
   deletedMatchIds=Array.isArray(d.del)?d.del.slice():[];
   if(d.f===undefined){Object.keys(M).forEach(k=>{if(M[k].ko===undefined)M[k].ko=true;});}
+  if(!PH.some(p=>p.id==='HOME'))PH.unshift({id:'HOME',name:'Início',emoji:'🏠'});
 }
 function cloudSubscribe(){
   db.collection('copa').doc('current').onSnapshot(s=>{
@@ -981,8 +977,9 @@ function render(){
     b.onclick=()=>{activePhase=p.id;render();};
     tabsEl.appendChild(b);
   });
+  try{const act=tabsEl.querySelector('.tab.active');if(act)act.scrollIntoView({inline:'center',block:'nearest'});}catch(e){}
   const showTree=activePhase==='ALL';
-  const special=['TABLE','MURAL','STATS','SCORERS','RANK','HALL'].includes(activePhase);
+  const special=['HOME','TABLE','MURAL','STATS','SCORERS','RANK','HALL'].includes(activePhase);
   phasesEl.style.display=showTree?'none':'block';
   treeScroll.style.display=showTree?'block':'none';
   if(showTree){renderTree();}
@@ -1049,7 +1046,13 @@ function card(id){
     return '<div class="row">'+badgeHtml(idx,tbd)+'<span class="'+cls+'">'+(tbd?tbdLabel(id,side):esc(tn(idx)))+'</span><span>'+sc+pen+'</span></div>';
   }).join('');
   const dt=fmtDate(m.dt);
-  el.innerHTML='<div class="mid"><span>'+matchTitle(m)+'</span>'+(dt?'<span class="dt">📅 até '+dt+'</span>':'')+'</div>'+rows;
+  const when=dt?('📅 '+dt+(m.time?' '+m.time:'')):(m.time?('🕒 '+m.time):null);
+  const gl=(m.goalsA||[]).concat(m.goalsB||[]);
+  const foot=[];
+  if(m.venue)foot.push('🏟️ '+esc(m.venue));
+  if(decided(m)&&gl.length)foot.push('⚽ '+esc(gl.slice(0,4).join(', '))+(gl.length>4?'…':''));
+  if(m.mvp)foot.push('🏅 '+esc(m.mvp));
+  el.innerHTML='<div class="mid"><span>'+matchTitle(m)+'</span>'+(when?'<span class="dt">'+when+'</span>':'')+'</div>'+rows+(foot.length?'<div class="cardFoot">'+foot.join('  ·  ')+'</div>':'');
   el.onclick=()=>openModal(id);
   return el;
 }
@@ -1416,6 +1419,25 @@ function syncHall(){
 function rankHtml(rows,suffix){return rows.length?rows.map((r,i)=>'<div class="rankRow"><span class="pos">'+(i+1)+'º</span><span>'+esc(r[0])+'</span><span class="pts">'+r[1]+' '+suffix+'</span></div>').join(''):'<div class="emptyBox">Nenhum dado registrado.</div>';}
 function renderDashboard(type){
   phasesEl.innerHTML='';const d=document.createElement('section');d.className='dashboard';
+  if(type==='HOME'){
+    const upcoming=Object.keys(M).filter(k=>{const m=M[k];return !decided(m)&&m.a!=null&&m.b!=null&&(m.dt||m.time);})
+      .sort((a,b)=>(((M[a].dt||'9999')+(M[a].time||''))<((M[b].dt||'9999')+(M[b].time||''))?-1:1)).slice(0,5);
+    const played=Object.keys(M).filter(k=>decided(M[k]));
+    const recent=played.slice(-5).reverse();
+    d.insertAdjacentHTML('beforeend','<div class="sectionTitle">📅 Próximos jogos</div>');
+    if(upcoming.length)upcoming.forEach(k=>d.appendChild(card(k)));
+    else d.insertAdjacentHTML('beforeend','<div class="emptyBox">Nenhum jogo agendado. '+(adminOn?'Toque num confronto e defina o prazo 📅.':'Aguarde o administrador definir as datas.')+'</div>');
+    d.insertAdjacentHTML('beforeend','<div class="sectionTitle">✅ Últimos resultados</div>');
+    if(recent.length)recent.forEach(k=>d.appendChild(card(k)));
+    else d.insertAdjacentHTML('beforeend','<div class="emptyBox">Nenhum jogo realizado ainda.</div>');
+    const chips=[['Jogos',played.length+'/'+totalMatches()]];
+    const sc=scorerTable();
+    if(sc[0])chips.push(['Artilheiro',sc[0][0]+' ('+sc[0][1]+')']);
+    if(format==='LIGA'){const st=standingsFor(leagueMatchIds(),order);if(st[0]&&st[0].J)chips.push(['Líder',tn(st[0].i)]);}
+    d.insertAdjacentHTML('beforeend','<div class="sectionTitle">⭐ Resumo</div><div class="gridStats">'+chips.map(a=>'<div class="statCard"><div class="v" style="font-size:17px;line-height:1.3">'+esc(String(a[1]))+'</div><div class="k">'+a[0]+'</div></div>').join('')+'</div>');
+    phasesEl.appendChild(d);
+    return;
+  }
   if(type==='STATS'){
     const x=tournamentStats();d.innerHTML='<div class="gridStats">'+[['Jogos',x.games+'/'+x.total],['Gols',x.goals],['Média',x.avg],['Pênaltis',x.pens],['W.O.',x.wo],['Agendados',x.scheduled]].map(a=>'<div class="statCard"><div class="v">'+a[1]+'</div><div class="k">'+a[0]+'</div></div>').join('')+'</div><div class="sectionTitle">🏅 MVPs registrados</div>';
     const mvps=Object.values(M).filter(m=>m.mvp).map(m=>[m.mvp,matchTitle(m)]);d.innerHTML+=rankHtml(mvps,'');
@@ -1427,7 +1449,7 @@ function renderDashboard(type){
     const st=standingsFor(leagueMatchIds(),order);
     d.innerHTML='<div class="sectionTitle">📈 Classificação — Pontos Corridos</div>'+tableHtml(st,0)+'<div class="lockedNote">Vitória 3 pts, empate 1 pt. Desempate: saldo de gols e gols pró. W.O. conta como 3×0.</div>';
   }else if(type==='MURAL'){
-    d.innerHTML='<div class="sectionTitle">💬 Mural da Copa</div><div id="muralList"></div><div id="muralForm"><input type="text" id="cName" maxlength="24" placeholder="Seu nome"><textarea id="cMsg" maxlength="280" rows="2" placeholder="Escreva um comentário..."></textarea><button id="cSend">Enviar 💬</button></div><div class="lockedNote">Os comentários ficam neste aparelho e vão junto no link 🔗 quando o admin compartilha.</div>';
+    d.innerHTML='<div class="sectionTitle">💬 Mural da Copa</div><div id="muralList"></div><div id="muralForm"><input type="text" id="cName" maxlength="24" placeholder="Seu nome"><textarea id="cMsg" maxlength="280" rows="2" placeholder="Escreva um comentário..."></textarea><button id="cSend">Enviar 💬</button></div><div class="lockedNote">'+(CLOUD?'Comentários sincronizados em tempo real para todo o clã 🦅':'Os comentários ficam neste aparelho e vão junto no link 🔗 quando o admin compartilha.')+'</div>';
   }else{
     const hall=getHall();d.innerHTML='<div class="sectionTitle">🏅 Hall da Fama</div>'+(hall.length?hall.map((h,i)=>'<div class="rankRow"><span class="pos">🏆</span><span><b>'+esc(h.champion)+'</b><br><small>'+esc(h.edition)+' • '+esc(h.date)+'</small></span><span class="pts">'+(i+1)+'ª</span></div>').join(''):'<div class="emptyBox">O campeão aparecerá aqui quando a final for concluída.</div>');
   }
@@ -1669,6 +1691,7 @@ function loadFromHash(){
       const extras=PH.filter(p=>EXTRA_TABS.includes(p.id));
       const wanted=lite.p.map(v=>({id:v[0],name:v[1],emoji:v[2]})).filter(p=>p.id==='MANUAL'||matchesOf(p.id).length);
       PH=wanted.concat(extras.filter((p,i,a)=>a.findIndex(x=>x.id===p.id)===i));
+      PH=PH.filter(p=>p.id!=='HOME');PH.unshift({id:'HOME',name:'Início',emoji:'🏠'});
     }
     if(lite.c&&lite.c.length)comments=lite.c;
     PH.filter(p=>!EXTRA_TABS.includes(p.id)).forEach(p=>matchesOf(p.id).forEach(k=>propagate(k)));
@@ -1784,15 +1807,15 @@ function toast(msg){
 
 const SPECIAL_TABS=[{id:'MURAL',name:'Mural',emoji:'💬'},{id:'STATS',name:'Estatísticas',emoji:'📊'},{id:'SCORERS',name:'Artilharia',emoji:'⚽'},{id:'RANK',name:'Ranking',emoji:'🌎'},{id:'HALL',name:'Hall',emoji:'🏅'}];
 SPECIAL_TABS.forEach(t=>{if(!PH.some(p=>p.id===t.id))PH.push(t);});
+if(!PH.some(p=>p.id==='HOME'))PH.unshift({id:'HOME',name:'Início',emoji:'🏠'});
 if(CLOUD){
   cloudSubscribe();
 }else if(loadFromHash()){
   history.replaceState(null,'',location.pathname+location.search);
   toast('Resultados carregados do link 🔗');
 }
-let deferredInstall=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;document.getElementById('installBanner').style.display='flex';});
-document.getElementById('installBtn').onclick=async()=>{if(!deferredInstall)return;deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;document.getElementById('installBanner').style.display='none';};
-if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+/* instalação como app removida; desregistra service workers antigos */
+if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});}
 
 updateAdminUI();
 hadChampion=(champIdx()!=null);
