@@ -6,7 +6,10 @@ service cloud.firestore {
     function isArenaAdmin() {
       return request.auth != null
         && request.auth.token.email != null
-        && request.auth.token.email == 'miniamikaren@gmail.com';
+        && request.auth.token.email in [
+          'boleirosdeatitude@gmail.com',
+          'miniamikaren@gmail.com'
+        ];
     }
 
     function isRegistration(documentId) {
