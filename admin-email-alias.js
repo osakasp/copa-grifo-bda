@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const PRIMARY_ADMIN = 'boleirosdeatitude@gmail.com';
+  const PRIMARY_ADMIN = 'claboleirosdeatitude@gmail.com';
   const LEGACY_ADMIN = 'miniamikaren@gmail.com';
 
   if (!window.firebase || typeof firebase.auth !== 'function') return;
