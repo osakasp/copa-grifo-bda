@@ -60,16 +60,45 @@
     }
   }
 
+  function normalized(value) {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLowerCase();
+  }
+
+  function gameKey(game) {
+    return [game.phase, game.ta, game.tb].map(normalized).join('|');
+  }
+
+  function mergeMatches(existing) {
+    const result = Array.isArray(existing) ? [...existing] : [];
+    const knownIds = new Set(result.map(game => String(game?.id || '')));
+    const knownGames = new Set(result.map(gameKey));
+
+    INITIAL_MATCHES.forEach(game => {
+      if (!knownIds.has(game.id) && !knownGames.has(gameKey(game))) {
+        result.push(game);
+        knownIds.add(game.id);
+        knownGames.add(gameKey(game));
+      }
+    });
+
+    return result;
+  }
+
   const data = readStore();
   const current = Array.isArray(data[TOURNAMENT_ID]) ? data[TOURNAMENT_ID] : [];
-  const seededNow = current.length === 0;
+  const mergedLocal = mergeMatches(current);
+  const localChanged = JSON.stringify(current) !== JSON.stringify(mergedLocal);
 
-  if (seededNow) {
-    data[TOURNAMENT_ID] = INITIAL_MATCHES;
+  if (localChanged) {
+    data[TOURNAMENT_ID] = mergedLocal;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   }
 
-  if (!seededNow || !window.firebase || typeof firebase.auth !== 'function' || typeof firebase.firestore !== 'function') {
+  if (!window.firebase || typeof firebase.auth !== 'function' || typeof firebase.firestore !== 'function') {
     return;
   }
 
@@ -87,13 +116,14 @@
       const remoteGames = snapshot.exists && Array.isArray(snapshot.data()?.games)
         ? snapshot.data().games
         : [];
+      const mergedRemote = mergeMatches(remoteGames);
 
-      if (remoteGames.length > 0) return;
+      if (JSON.stringify(remoteGames) === JSON.stringify(mergedRemote)) return;
 
       await ref.set({
         dataset: 'confrontos',
         tournamentId: TOURNAMENT_ID,
-        games: INITIAL_MATCHES,
+        games: mergedRemote,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
         updatedBy: String(user.email || '').toLowerCase()
       });
