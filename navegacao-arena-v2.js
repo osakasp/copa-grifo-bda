@@ -1,9 +1,10 @@
 (() => {
   'use strict';
 
-  const ORDER = ['home', 'tournament', 'registrations', 'ranking', 'champions', 'teams', 'community'];
+  const ORDER = ['home', 'history', 'tournament', 'registrations', 'ranking', 'champions', 'teams', 'community'];
   const META = {
     home: ['⌂', 'Início', 'Visão geral da arena'],
+    history: ['📜', 'História', 'Memória oficial do clã'],
     tournament: ['🏆', 'Campeonatos', 'Copas, ligas e confrontos'],
     registrations: ['✍️', 'Inscrições', 'Vagas e aprovações'],
     ranking: ['📊', 'Ranking', 'Classificação geral BDA'],
@@ -31,6 +32,7 @@
   }
 
   function decorate(button) {
+    if (!button) return;
     const meta = META[button.dataset.go];
     if (!meta || button.dataset.arenaDecorated === 'true') return;
 
@@ -121,11 +123,12 @@
           <footer><img src="${iconUrl()}" alt="Grifo"><span><b>Clã BDA</b><small>Todos os campeonatos em uma só arena.</small></span></footer>
         </section>`;
 
-      ['champions', 'teams', 'community'].forEach(page => {
+      ['history', 'champions', 'teams', 'community'].forEach(page => {
         const [icon, label, description] = META[page];
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'arena-sheet-item';
+        button.dataset.sheetGo = page;
         button.innerHTML = `<i>${icon}</i><span><b>${label}</b><small>${description}</small></span><em>›</em>`;
         button.addEventListener('click', () => go(page));
         $('.arena-sheet-grid', sheet).append(button);
@@ -167,7 +170,7 @@
 
     const more = $('.arena-mobile-item[data-mobile-more]');
     if (more) {
-      const active = ['champions', 'teams', 'community'].includes(page);
+      const active = ['history', 'champions', 'teams', 'community'].includes(page);
       more.classList.toggle('active', active);
       active ? more.setAttribute('aria-current', 'page') : more.removeAttribute('aria-current');
     }
@@ -190,7 +193,8 @@
       body.arena-navigation-ready .app-shell{width:100%!important;max-width:1320px!important;margin:0 auto!important}
       body.arena-navigation-ready .topbar{top:12px;margin:12px 0 0;border:1px solid var(--line);border-radius:19px;background:rgba(5,10,8,.88);box-shadow:0 12px 34px rgba(0,0,0,.28)}
       body.arena-navigation-ready main{padding:20px 4px 36px}
-      .bottom-nav.arena-side-nav{position:fixed!important;left:14px!important;top:14px!important;bottom:14px!important;z-index:45!important;width:220px!important;height:auto!important;min-height:0!important;transform:none!important;display:flex!important;flex-direction:column!important;gap:6px!important;padding:13px!important;border:1px solid rgba(242,215,125,.25)!important;border-radius:25px!important;background:radial-gradient(circle at 50% 0,rgba(216,178,72,.19),transparent 27%),linear-gradient(180deg,rgba(12,27,19,.98),rgba(4,10,7,.98))!important;box-shadow:0 24px 60px rgba(0,0,0,.52)!important;backdrop-filter:blur(22px)!important;overflow:hidden!important}
+      .bottom-nav.arena-side-nav{position:fixed!important;left:14px!important;top:14px!important;bottom:14px!important;z-index:45!important;width:220px!important;height:auto!important;min-height:0!important;transform:none!important;display:flex!important;flex-direction:column!important;gap:6px!important;padding:13px!important;border:1px solid rgba(242,215,125,.25)!important;border-radius:25px!important;background:radial-gradient(circle at 50% 0,rgba(216,178,72,.19),transparent 27%),linear-gradient(180deg,rgba(12,27,19,.98),rgba(4,10,7,.98))!important;box-shadow:0 24px 60px rgba(0,0,0,.52)!important;backdrop-filter:blur(22px)!important;overflow-x:hidden!important;overflow-y:auto!important;scrollbar-width:thin;scrollbar-color:rgba(242,215,125,.28) transparent}
+      .bottom-nav.arena-side-nav::-webkit-scrollbar{width:5px}.bottom-nav.arena-side-nav::-webkit-scrollbar-thumb{border-radius:999px;background:rgba(242,215,125,.28)}
       .arena-side-brand{display:flex;align-items:center;gap:11px;padding:8px 7px 16px;margin-bottom:2px;border-bottom:1px solid var(--line)}
       .arena-side-logo{overflow:hidden;width:48px;height:48px;flex:0 0 auto;border:1px solid rgba(242,215,125,.55);border-radius:15px;background:#020503;box-shadow:0 9px 24px rgba(216,178,72,.17)}
       .arena-side-logo img{display:block;width:100%;height:100%;object-fit:cover}
@@ -202,6 +206,10 @@
       .arena-nav-copy{display:block!important;min-width:0!important}.arena-nav-copy b,.arena-nav-copy small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.arena-nav-copy b{font-size:10px}.arena-nav-copy small{margin-top:4px;color:var(--muted);font-size:7px;font-weight:500}
       .arena-side-nav .nav-btn.active{color:#171107!important;border-color:var(--gold)!important;background:linear-gradient(135deg,var(--gold-soft),var(--gold))!important;box-shadow:0 10px 24px rgba(216,178,72,.18)!important}.arena-side-nav .nav-btn.active i{border-color:rgba(23,17,7,.14)!important;background:rgba(255,255,255,.28)!important}.arena-side-nav .nav-btn.active .arena-nav-copy small{color:rgba(23,17,7,.68)!important}.arena-side-nav .nav-btn.active:after{content:"";position:absolute;right:8px;width:5px;height:5px;border-radius:50%;background:#171107;box-shadow:0 0 0 4px rgba(23,17,7,.11)}
       .arena-side-footer{display:flex;align-items:center;gap:9px;margin-top:auto;padding:11px 9px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.035)}.arena-side-footer>span{color:var(--green);font-size:10px;text-shadow:0 0 12px var(--green)}.arena-side-footer b,.arena-side-footer small{display:block}.arena-side-footer b{font-size:8px;text-transform:uppercase}.arena-side-footer small{margin-top:3px;color:var(--muted);font-size:7px}
+    }
+
+    @media(min-width:981px) and (max-height:740px){
+      .bottom-nav.arena-side-nav{gap:3px!important;padding-block:9px!important}.arena-side-brand{padding-bottom:10px}.arena-side-logo{width:42px;height:42px}.arena-side-nav .nav-btn{min-height:47px!important;padding-block:4px!important}.arena-side-nav .nav-btn i{width:35px!important;height:35px!important;font-size:17px!important}.arena-nav-copy small{display:none}.arena-side-footer{padding-block:8px}
     }
 
     @media(max-width:980px){
