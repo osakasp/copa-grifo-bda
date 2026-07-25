@@ -11,7 +11,10 @@
     measurementId: 'G-64HK5GVSQN'
   };
 
-  const ADMIN_EMAILS = new Set(['miniamikaren@gmail.com']);
+  const ADMIN_EMAILS = new Set([
+    'boleirosdeatitude@gmail.com',
+    'miniamikaren@gmail.com'
+  ]);
 
   function showToast(message) {
     if (typeof toast === 'function') {
@@ -63,7 +66,7 @@
         <p>Entre com a conta autorizada no Firebase. A senha não fica salva no código do site.</p>
         <div class="form-grid">
           <label>E-mail
-            <input id="adminEmail" type="email" value="miniamikaren@gmail.com" autocomplete="username" inputmode="email">
+            <input id="adminEmail" type="email" value="boleirosdeatitude@gmail.com" autocomplete="username" inputmode="email">
           </label>
           <label>Senha
             <input id="adminPassword" type="password" autocomplete="current-password" placeholder="Sua senha do Firebase">
