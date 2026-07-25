@@ -70,21 +70,6 @@
     });
   }
 
-  function configFromUI() {
-    const mode = $('#leagueMode')?.value || 'groups';
-    const count = participants().length;
-    const maxGroups = Math.max(2, Math.min(8, Math.floor(count / 2) || 2));
-    const groupCount = mode === 'league'
-      ? 1
-      : Math.max(2, Math.min(maxGroups, Number($('#leagueGroupCount')?.value || 4)));
-    const qualifiers = mode === 'league'
-      ? 0
-      : Math.max(1, Math.min(4, Number($('#leagueQualifiers')?.value || 2)));
-    const legs = Number($('#leagueLegs')?.value || 1) === 2 ? 2 : 1;
-    const distribution = $('#leagueDistribution')?.value || 'random';
-    return { mode, groupCount, qualifiers, legs, distribution };
-  }
-
   function storedConfig() {
     const old = tournament()?.groupGenerator || {};
     return {
@@ -94,6 +79,22 @@
       legs: Number(old.legs) === 2 ? 2 : 1,
       distribution: old.distribution === 'serpentine' ? 'serpentine' : 'random'
     };
+  }
+
+  function configFromUI() {
+    const fallback = storedConfig();
+    const mode = $('#leagueMode')?.value || fallback.mode;
+    const count = participants().length;
+    const maxGroups = Math.max(2, Math.min(8, Math.floor(count / 2) || 2));
+    const groupCount = mode === 'league'
+      ? 1
+      : Math.max(2, Math.min(maxGroups, Number($('#leagueGroupCount')?.value || fallback.groupCount)));
+    const qualifiers = mode === 'league'
+      ? 0
+      : Math.max(1, Math.min(4, Number($('#leagueQualifiers')?.value || fallback.qualifiers)));
+    const legs = Number($('#leagueLegs')?.value || fallback.legs) === 2 ? 2 : 1;
+    const distribution = $('#leagueDistribution')?.value || fallback.distribution;
+    return { mode, groupCount, qualifiers, legs, distribution };
   }
 
   function shuffled(list) {
@@ -211,7 +212,7 @@
         position += 1;
         const label = data.config.mode === 'league' ? 'Classificação geral' : groupLabel(groupIndex);
         const phase = data.config.mode === 'league'
-          ? `Rodada ${match.round}`
+          ? `Liga • Rodada ${match.round}`
           : `${label} • Rodada ${match.round}`;
         const turnLabel = match.turn === 2 ? 'Returno' : data.config.legs === 2 ? 'Turno' : 'Jogo único';
         const prefix = data.config.mode === 'league' ? 'liga' : 'grupo';
@@ -268,7 +269,7 @@
     list[index] = {
       ...list[index],
       format: data.config.mode === 'league'
-        ? (data.config.legs === 2 ? 'Turno e returno' : 'Pontos corridos')
+        ? (data.config.legs === 2 ? 'Pontos corridos • Turno e returno' : 'Pontos corridos')
         : 'Grupos + mata-mata',
       status: list[index].status === 'Finalizado' ? 'Em andamento' : list[index].status,
       phase: data.config.mode === 'league' ? 'Liga em andamento' : 'Fase de grupos',
@@ -340,15 +341,15 @@
     return Number(side === 'a' ? game.a : game.b);
   }
 
-  function parseGroup(phase) {
-    const match = String(phase || '').match(/Grupo\s+([A-Z0-9]+)/i);
+  function parseGroup(game) {
+    const match = `${game?.note || ''} ${game?.phase || ''}`.match(/Grupo\s+([A-Z0-9]+)/i);
     return match ? `Grupo ${match[1].toUpperCase()}` : '';
   }
 
   function standings() {
     const settings = tournament()?.groupGenerator;
     const configuredGroups = Array.isArray(settings?.groups) ? settings.groups : [];
-    const groupGames = (matchStore()[tournamentId] || []).filter(game => parseGroup(game.phase));
+    const groupGames = (matchStore()[tournamentId] || []).filter(game => parseGroup(game));
     const result = new Map();
 
     configuredGroups.forEach(group => {
@@ -360,7 +361,7 @@
     });
 
     groupGames.forEach(game => {
-      const groupName = parseGroup(game.phase);
+      const groupName = parseGroup(game);
       if (!result.has(groupName)) result.set(groupName, new Map());
       const table = result.get(groupName);
       [game.ta, game.tb].forEach(team => {
@@ -633,6 +634,23 @@
     $$('.league-group-field').forEach(field => field.hidden = !groupsMode);
   }
 
+  function protectCustomPhases() {
+    const games = matchStore()[tournamentId] || [];
+    $$('.gi-editor[data-editor]').forEach(editor => {
+      const game = games.find(item => item.id === editor.dataset.editor);
+      const select = $('select[data-f="phase"]', editor);
+      if (!game?.phase || !select) return;
+      const exists = [...select.options].some(option => option.value === game.phase || option.textContent === game.phase);
+      if (!exists) {
+        const option = document.createElement('option');
+        option.value = game.phase;
+        option.textContent = game.phase;
+        option.selected = true;
+        select.prepend(option);
+      }
+    });
+  }
+
   function activate() {
     const standingsPanel = $('#autoStandings');
     if (standingsPanel && !standingsPanel.hidden) {
@@ -687,6 +705,7 @@
       manager.append(panel);
     }
 
+    protectCustomPhases();
     manager.classList.toggle('league-generator-active', active);
     if (active) {
       const content = $('.gi-content', manager);
