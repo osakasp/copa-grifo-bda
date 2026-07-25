@@ -2,15 +2,63 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
     function isArenaAdmin() {
       return request.auth != null
         && request.auth.token.email != null
         && request.auth.token.email == 'miniamikaren@gmail.com';
     }
 
-    match /arenaData/{document=**} {
-      allow read: if true;
-      allow create, update, delete: if isArenaAdmin();
+    function isRegistration(documentId) {
+      return documentId.matches('registration-.*');
+    }
+
+    function validPublicRegistration() {
+      return request.resource.data.keys().hasOnly([
+          'dataset',
+          'tournamentId',
+          'tournamentName',
+          'team',
+          'owner',
+          'contact',
+          'game',
+          'note',
+          'accepted',
+          'status',
+          'createdAt',
+          'source'
+        ])
+        && request.resource.data.dataset == 'registration'
+        && request.resource.data.status == 'pendente'
+        && request.resource.data.accepted == true
+        && request.resource.data.source == 'arenabda.com.br'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.tournamentId is string
+        && request.resource.data.tournamentId.size() > 0
+        && request.resource.data.tournamentId.size() <= 80
+        && request.resource.data.tournamentName is string
+        && request.resource.data.tournamentName.size() > 0
+        && request.resource.data.tournamentName.size() <= 100
+        && request.resource.data.team is string
+        && request.resource.data.team.size() >= 2
+        && request.resource.data.team.size() <= 60
+        && request.resource.data.owner is string
+        && request.resource.data.owner.size() >= 2
+        && request.resource.data.owner.size() <= 60
+        && request.resource.data.contact is string
+        && request.resource.data.contact.size() >= 5
+        && request.resource.data.contact.size() <= 60
+        && request.resource.data.game is string
+        && request.resource.data.game.size() <= 60
+        && request.resource.data.note is string
+        && request.resource.data.note.size() <= 300;
+    }
+
+    match /arenaData/{documentId} {
+      allow read: if !isRegistration(documentId) || isArenaAdmin();
+      allow create: if isArenaAdmin()
+        || (isRegistration(documentId) && validPublicRegistration());
+      allow update, delete: if isArenaAdmin();
     }
 
     match /{document=**} {
