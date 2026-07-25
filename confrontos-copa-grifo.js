@@ -5,10 +5,12 @@
   const STORAGE_KEY = 'bda-v3-confrontos';
   const TOURNAMENT_ID = 'copa-grifo';
   const CLOUD_DOCUMENT = `confrontos-${TOURNAMENT_ID}`;
-  const SCHEDULE_VERSION = 2;
+  const SCHEDULE_VERSION = 3;
 
   const match = (id, phase, pos, ta, tb) => ({
     id,
+    tieId: id,
+    leg: 1,
     phase,
     status: 'Agendado',
     ta,
@@ -53,49 +55,6 @@
     match('f1', 'Final', 1, 'Vencedor S1', 'Vencedor S2')
   ];
 
-  const OFFICIAL_IDS = new Set(OFFICIAL_MATCHES.map(game => game.id));
-
-  function normalize(value) {
-    return String(value || '')
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .trim()
-      .toLowerCase();
-  }
-
-  function sameSchedule(existing, official) {
-    return normalize(existing?.phase) === normalize(official.phase)
-      && normalize(existing?.ta) === normalize(official.ta)
-      && normalize(existing?.tb) === normalize(official.tb);
-  }
-
-  function rebuild(existing) {
-    const current = Array.isArray(existing) ? existing : [];
-    const customMatches = current.filter(game => !OFFICIAL_IDS.has(String(game?.id || '')));
-
-    const officialMatches = OFFICIAL_MATCHES.map(official => {
-      const saved = current.find(game => String(game?.id || '') === official.id);
-
-      // Mantém placares já digitados somente quando o confronto continua sendo o mesmo.
-      if (saved && sameSchedule(saved, official)) {
-        return {
-          ...official,
-          ...saved,
-          phase: official.phase,
-          ta: official.ta,
-          tb: official.tb,
-          pos: official.pos,
-          scheduleVersion: SCHEDULE_VERSION
-        };
-      }
-
-      // Quando os times foram corrigidos, reinicia o resultado para não associar placares ao jogo errado.
-      return official;
-    });
-
-    return [...officialMatches, ...customMatches];
-  }
-
   function readStore() {
     try {
       const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
@@ -105,13 +64,14 @@
     }
   }
 
-  const data = readStore();
-  const currentLocal = Array.isArray(data[TOURNAMENT_ID]) ? data[TOURNAMENT_ID] : [];
-  const correctedLocal = rebuild(currentLocal);
+  const store = readStore();
+  const localMatches = Array.isArray(store[TOURNAMENT_ID]) ? store[TOURNAMENT_ID] : [];
 
-  if (JSON.stringify(currentLocal) !== JSON.stringify(correctedLocal)) {
-    data[TOURNAMENT_ID] = correctedLocal;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  // A tabela oficial é usada apenas na primeira criação.
+  // Depois disso, o administrador pode editar todos os jogos livremente.
+  if (localMatches.length === 0) {
+    store[TOURNAMENT_ID] = OFFICIAL_MATCHES;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
   }
 
   if (!window.firebase || typeof firebase.auth !== 'function' || typeof firebase.firestore !== 'function') {
@@ -129,23 +89,22 @@
     try {
       const ref = db.collection('arenaData').doc(CLOUD_DOCUMENT);
       const snapshot = await ref.get();
-      const currentRemote = snapshot.exists && Array.isArray(snapshot.data()?.games)
+      const remoteMatches = snapshot.exists && Array.isArray(snapshot.data()?.games)
         ? snapshot.data().games
         : [];
-      const correctedRemote = rebuild(currentRemote);
 
-      if (JSON.stringify(currentRemote) === JSON.stringify(correctedRemote)) return;
+      if (remoteMatches.length > 0) return;
 
       await ref.set({
         dataset: 'confrontos',
         tournamentId: TOURNAMENT_ID,
         scheduleVersion: SCHEDULE_VERSION,
-        games: correctedRemote,
+        games: OFFICIAL_MATCHES,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
         updatedBy: String(user.email || '').toLowerCase()
       });
     } catch (error) {
-      console.error('Falha ao corrigir os confrontos da Copa Grifo', error);
+      console.error('Falha ao publicar a tabela inicial da Copa Grifo', error);
     }
   });
 })();
