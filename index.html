@@ -6,19 +6,35 @@
   <meta name="theme-color" content="#07100c">
   <title>Copa Grifo BDA | Arena V2</title>
   <meta name="description" content="Arena oficial da Copa Grifo BDA.">
-  <meta http-equiv="refresh" content="0; url=./preview-v2.html">
-  <script>window.location.replace('./preview-v2.html');</script>
   <style>
     html,body{height:100%;margin:0;background:#07100c;color:#f4f7f2;font-family:system-ui,sans-serif}
     body{display:grid;place-items:center;text-align:center;padding:24px}
-    a{color:#f2d77d;font-weight:700}
+    .loader{width:min(320px,90vw)}
+    .griffin{font-size:54px;filter:drop-shadow(0 8px 24px rgba(216,178,72,.3))}
+    h1{margin:12px 0 8px;font-size:22px}p{margin:0;color:#9fb0a5;font-size:13px}
   </style>
 </head>
 <body>
-  <main>
-    <h1>Copa Grifo BDA</h1>
-    <p>Abrindo a nova Arena V2...</p>
-    <p><a href="./preview-v2.html">Entrar na arena</a></p>
-  </main>
+  <main class="loader"><div class="griffin">🦅</div><h1>Carregando a Arena BDA</h1><p>Preparando o acesso protegido...</p></main>
+  <script>
+    (async () => {
+      try {
+        const response = await fetch('./preview-v2.html', { cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        let html = await response.text();
+        html = html.replace('</head>', `
+          <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"><\/script>
+          <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"><\/script>
+        </head>`);
+        html = html.replace('</body>', '<script src="./firebase-auth.js"><\/script></body>');
+        document.open();
+        document.write(html);
+        document.close();
+      } catch (error) {
+        document.body.innerHTML = '<main><h1>Não foi possível abrir a Arena</h1><p>Atualize a página e tente novamente.</p></main>';
+        console.error(error);
+      }
+    })();
+  </script>
 </body>
 </html>
