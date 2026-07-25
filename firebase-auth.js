@@ -12,7 +12,7 @@
   };
 
   const ADMIN_EMAILS = new Set([
-    'boleirosdeatitude@gmail.com',
+    'claboleirosdeatitude@gmail.com',
     'miniamikaren@gmail.com'
   ]);
 
@@ -66,7 +66,7 @@
         <p>Entre com a conta autorizada no Firebase. A senha não fica salva no código do site.</p>
         <div class="form-grid">
           <label>E-mail
-            <input id="adminEmail" type="email" value="boleirosdeatitude@gmail.com" autocomplete="username" inputmode="email">
+            <input id="adminEmail" type="email" value="claboleirosdeatitude@gmail.com" autocomplete="username" inputmode="email">
           </label>
           <label>Senha
             <input id="adminPassword" type="password" autocomplete="current-password" placeholder="Sua senha do Firebase">
