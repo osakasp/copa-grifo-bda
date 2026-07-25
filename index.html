@@ -4,18 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#07100c">
+  <meta name="application-name" content="Arena BDA">
+  <meta name="apple-mobile-web-app-title" content="Arena BDA">
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="shortcut icon" href="./favicon.svg">
+  <link rel="apple-touch-icon" href="./favicon.svg">
+  <link rel="manifest" href="./site.webmanifest">
   <title>Arena BDA | Campeonatos do Clã</title>
   <meta name="description" content="Plataforma oficial para criação e acompanhamento dos campeonatos do Clã BDA.">
   <style>
     html,body{height:100%;margin:0;background:#07100c;color:#f4f7f2;font-family:system-ui,sans-serif}
     body{display:grid;place-items:center;text-align:center;padding:24px}
     .loader{width:min(320px,90vw)}
-    .griffin{font-size:54px;filter:drop-shadow(0 8px 24px rgba(216,178,72,.3))}
+    .griffin{width:72px;height:72px;margin:auto;overflow:hidden;border:1px solid rgba(242,215,125,.46);border-radius:20px;background:#020503;box-shadow:0 8px 28px rgba(216,178,72,.30)}
+    .griffin img{display:block;width:100%;height:100%;object-fit:cover}
     h1{margin:12px 0 8px;font-size:22px}p{margin:0;color:#9fb0a5;font-size:13px}
   </style>
 </head>
 <body>
-  <main class="loader"><div class="griffin">🦅</div><h1>Carregando a Arena BDA</h1><p>Conectando os campeonatos à nuvem...</p></main>
+  <main class="loader"><div class="griffin"><img src="./favicon.svg" alt="Escudo oficial Arena BDA"></div><h1>Carregando a Arena BDA</h1><p>Conectando os campeonatos à nuvem...</p></main>
   <script>
     (async () => {
       try {
@@ -23,6 +30,12 @@
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         let html = await response.text();
         html = html.replace('</head>', `
+          <meta name="application-name" content="Arena BDA">
+          <meta name="apple-mobile-web-app-title" content="Arena BDA">
+          <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+          <link rel="shortcut icon" href="./favicon.svg">
+          <link rel="apple-touch-icon" href="./favicon.svg">
+          <link rel="manifest" href="./site.webmanifest">
           <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"><\/script>
           <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"><\/script>
           <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"><\/script>
