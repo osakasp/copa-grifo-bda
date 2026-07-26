@@ -1,4 +1,4 @@
-const CACHE = 'arena-bda-shell-v8';
+const CACHE = 'arena-bda-shell-v9';
 const SHELL = [
   './',
   './index.html',
