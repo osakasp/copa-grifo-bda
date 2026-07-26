@@ -16,9 +16,16 @@
     else console.info(message);
   }
 
-  function isAdmin() {
+  function isAdminSession() {
     if (window.ArenaBDAAuth?.isAdmin) return window.ArenaBDAAuth.isAdmin();
-    return Boolean(typeof isAdmin !== 'undefined' && isAdmin);
+    try {
+      const user = window.firebase?.auth?.()?.currentUser;
+      const email = String(user?.email || '').toLowerCase();
+      const allowed = window.ARENA_ADMIN_EMAILS || [];
+      return Boolean(user && allowed.includes(email));
+    } catch {
+      return false;
+    }
   }
 
   function readTeams() {
@@ -104,7 +111,7 @@
   }
 
   async function runPreparation({ force = false } = {}) {
-    if (!isAdmin() && !force) return { changed: false, skipped: true };
+    if (!isAdminSession() && !force) return { changed: false, skipped: true };
 
     if (running) {
       queued = true;
