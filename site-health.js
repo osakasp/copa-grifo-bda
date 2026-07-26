@@ -1,11 +1,13 @@
 (() => {
   'use strict';
 
-  const VERSION = '2026.07.26.1';
-  const $ = selector => document.querySelector(selector);
+  const VERSION = '2026.07.27.2';
+  const q = selector => document.querySelector(selector);
   let reloading = false;
+  let updateRequested = false;
   let errorCount = 0;
   let errorWindow = 0;
+  const signatures = new Set();
 
   function notify(message) {
     if (typeof toast === 'function') toast(message);
@@ -13,66 +15,62 @@
   }
 
   function ensureStyles() {
-    if ($('#arenaHealthStyles')) return;
+    if (q('#arenaHealthStyles')) return;
     const style = document.createElement('style');
     style.id = 'arenaHealthStyles';
     style.textContent = `
       .arena-health-banner{position:fixed;left:50%;bottom:calc(var(--nav-h,78px) + 20px);z-index:90000;display:flex;align-items:center;gap:10px;width:min(520px,calc(100% - 24px));padding:11px 12px;border:1px solid rgba(245,220,134,.42);border-radius:16px;color:#edf5ef;background:linear-gradient(145deg,#173821,#06100a);box-shadow:0 18px 55px #000b;transform:translateX(-50%);text-align:left}
       .arena-health-banner>span{display:grid;place-items:center;width:35px;height:35px;flex:0 0 auto;border-radius:11px;background:rgba(245,220,134,.12);font-size:18px}.arena-health-banner>div{min-width:0;flex:1}.arena-health-banner b,.arena-health-banner small{display:block}.arena-health-banner b{font-size:10px}.arena-health-banner small{margin-top:3px;color:#aebdb3;font-size:8px}.arena-health-banner button{min-height:36px;padding:0 11px;border:0;border-radius:11px;color:#171107;background:#f2d77d;font-size:9px;font-weight:900;cursor:pointer}.arena-health-banner .arena-health-close{width:32px;padding:0;color:#dce7df;background:#ffffff0b}
       .arena-offline-indicator{position:fixed;right:10px;top:75px;z-index:89999;padding:7px 9px;border:1px solid rgba(255,180,80,.34);border-radius:999px;color:#ffd49a;background:#271805e8;font-size:8px;font-weight:900;text-transform:uppercase;box-shadow:0 8px 25px #0008}.arena-offline-indicator[hidden]{display:none!important}
-      @media(max-width:520px){.arena-health-banner{align-items:start;bottom:calc(var(--nav-h,78px) + 12px)}.arena-health-banner button:not(.arena-health-close){align-self:center}.arena-health-banner small{font-size:9px}}
+      @media(max-width:520px){.arena-health-banner{align-items:flex-start;bottom:calc(var(--nav-h,78px) + 12px)}.arena-health-banner button:not(.arena-health-close){align-self:center}.arena-health-banner small{font-size:9px}}
     `;
     document.head.append(style);
   }
 
   function showBanner({ icon = '⚡', title, description, action = '', onAction = null }) {
     ensureStyles();
-    $('#arenaHealthBanner')?.remove();
+    q('#arenaHealthBanner')?.remove();
     const banner = document.createElement('aside');
     banner.id = 'arenaHealthBanner';
     banner.className = 'arena-health-banner';
     banner.setAttribute('role', 'status');
     banner.innerHTML = `<span>${icon}</span><div><b>${title}</b><small>${description}</small></div>${action ? `<button type="button" data-arena-health-action>${action}</button>` : ''}<button type="button" class="arena-health-close" data-arena-health-close aria-label="Fechar">×</button>`;
     document.body.append(banner);
-    $('[data-arena-health-close]')?.addEventListener('click', () => banner.remove());
-    $('[data-arena-health-action]')?.addEventListener('click', () => onAction?.(banner));
+    banner.querySelector('[data-arena-health-close]')?.addEventListener('click', () => banner.remove());
+    banner.querySelector('[data-arena-health-action]')?.addEventListener('click', () => onAction?.(banner));
     return banner;
-  }
-
-  function neutralizeLegacyPin() {
-    const pin = $('#adminPin');
-    if (!pin) return;
-    const oldButton = $('#adminBtn');
-    if (oldButton) {
-      const safeButton = oldButton.cloneNode(true);
-      oldButton.replaceWith(safeButton);
-      safeButton.textContent = 'ENTRAR';
-      safeButton.addEventListener('click', () => {
-        const modal = $('#adminModal');
-        modal?.classList.add('show');
-      });
-    }
-    const modal = $('#adminModal');
-    if (modal) {
-      modal.innerHTML = '<div class="modal"><h2>Acesso seguro indisponível</h2><p>O Firebase não carregou. Atualize a página e verifique sua conexão. O PIN antigo foi desativado por segurança.</p><div class="form-actions"><button type="button" class="primary" data-safe-admin-reload>Atualizar página</button></div></div>';
-      $('[data-safe-admin-reload]')?.addEventListener('click', () => location.reload());
-    }
   }
 
   function updateMetadata() {
     document.title = 'Arena BDA | Campeonatos do Clã';
-    const description = $('meta[name="description"]');
-    if (description) description.content = 'Plataforma oficial dos campeonatos, clubes, resultados e comunidade do Clã BDA.';
-    const brand = $('.brand-copy strong');
-    const subtitle = $('.brand-copy span');
+    const description = q('meta[name="description"]');
+    if (description) description.content = 'Campeonatos, clubes, resultados, notícias e comunidade do Clã BDA.';
+    const brand = q('.brand-copy strong');
+    const subtitle = q('.brand-copy span');
     if (brand) brand.textContent = 'Arena BDA';
     if (subtitle && /protótipo|login protegido/i.test(subtitle.textContent)) subtitle.textContent = 'Campeonatos oficiais do Clã';
     document.documentElement.dataset.arenaVersion = VERSION;
   }
 
+  function secureLegacyFallback() {
+    if (window.firebase?.auth || !q('#adminPin')) return;
+    const oldButton = q('#adminBtn');
+    if (oldButton) {
+      const safeButton = oldButton.cloneNode(true);
+      oldButton.replaceWith(safeButton);
+      safeButton.textContent = 'ENTRAR';
+      safeButton.addEventListener('click', () => q('#adminModal')?.classList.add('show'));
+    }
+    const modal = q('#adminModal');
+    if (modal) {
+      modal.innerHTML = '<div class="modal"><h2>Acesso seguro indisponível</h2><p>O Firebase não carregou. Atualize a página e verifique sua conexão.</p><div class="form-actions"><button type="button" class="primary" data-safe-admin-reload>Atualizar página</button></div></div>';
+      q('[data-safe-admin-reload]')?.addEventListener('click', () => location.reload());
+    }
+  }
+
   function setupConnectivity() {
     ensureStyles();
-    let indicator = $('#arenaOfflineIndicator');
+    let indicator = q('#arenaOfflineIndicator');
     if (!indicator) {
       indicator = document.createElement('span');
       indicator.id = 'arenaOfflineIndicator';
@@ -81,9 +79,10 @@
       document.body.append(indicator);
     }
     const sync = () => {
+      const wasOffline = !indicator.hidden;
       indicator.hidden = navigator.onLine;
       document.documentElement.classList.toggle('arena-is-offline', !navigator.onLine);
-      if (navigator.onLine) notify('Conexão restabelecida');
+      if (navigator.onLine && wasOffline) notify('Conexão restabelecida');
     };
     indicator.hidden = navigator.onLine;
     window.addEventListener('online', sync);
@@ -101,10 +100,12 @@
         showBanner({
           icon: '✨',
           title: 'Nova versão da Arena disponível',
-          description: 'Atualize para receber correções sem perder os dados deste aparelho.',
+          description: 'Atualize quando estiver pronto. Seus campeonatos e clubes serão preservados.',
           action: 'Atualizar',
           onAction: banner => {
-            banner.querySelector('[data-arena-health-action]').disabled = true;
+            const button = banner.querySelector('[data-arena-health-action]');
+            if (button) { button.disabled = true; button.textContent = 'Atualizando...'; }
+            updateRequested = true;
             worker.postMessage({ type: 'SKIP_WAITING' });
           }
         });
@@ -119,7 +120,7 @@
       });
 
       navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (reloading) return;
+        if (!updateRequested || reloading) return;
         reloading = true;
         location.reload();
       });
@@ -130,18 +131,24 @@
 
   function setupErrorRecovery() {
     const record = error => {
+      const text = String(error?.message || error || 'erro desconhecido');
+      if (/ResizeObserver loop|AbortError|NetworkError|Load failed/i.test(text)) return;
       const now = Date.now();
       if (now - errorWindow > 10000) {
         errorWindow = now;
         errorCount = 0;
+        signatures.clear();
       }
+      const signature = text.slice(0, 180);
+      if (signatures.has(signature)) return;
+      signatures.add(signature);
       errorCount += 1;
       console.warn('Arena BDA capturou um erro de interface', error);
-      if (errorCount === 3) {
+      if (errorCount >= 3 && !q('#arenaHealthBanner')) {
         showBanner({
           icon: '🛠️',
-          title: 'A página encontrou alguns problemas',
-          description: 'Uma atualização limpa costuma restaurar os botões sem apagar campeonatos ou clubes.',
+          title: 'Alguma função não respondeu',
+          description: 'Você pode continuar usando a Arena. Recarregue apenas se algum botão permanecer sem resposta.',
           action: 'Recarregar',
           onAction: () => location.reload()
         });
@@ -152,17 +159,20 @@
   }
 
   updateMetadata();
-  neutralizeLegacyPin();
+  secureLegacyFallback();
   setupConnectivity();
   setupErrorRecovery();
   registerServiceWorker();
 
-  window.ArenaBDAHealth = {
+  window.ArenaBDAHealth = Object.freeze({
     version: VERSION,
     refresh: () => location.reload(),
     clearAppCache: async () => {
-      if ('caches' in window) await Promise.all((await caches.keys()).filter(key => /^arena-bda-|^copa-grifo-/.test(key)).map(key => caches.delete(key)));
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.filter(key => /^arena-bda-|^copa-grifo-/.test(key)).map(key => caches.delete(key)));
+      }
       location.reload();
     }
-  };
+  });
 })();
