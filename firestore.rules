@@ -57,11 +57,71 @@ service cloud.firestore {
         && request.resource.data.note.size() <= 300;
     }
 
+    function validTeamEditRequest() {
+      return request.resource.data.keys().hasOnly([
+          'schemaVersion',
+          'status',
+          'teamName',
+          'teamCode',
+          'original',
+          'changes',
+          'removeBadge',
+          'removeCover',
+          'requesterName',
+          'requesterContact',
+          'requesterEmail',
+          'createdAtClient',
+          'createdAt',
+          'updatedAt',
+          'source'
+        ])
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.status == 'pending'
+        && request.resource.data.source == 'arena-bda-public'
+        && request.resource.data.teamName is string
+        && request.resource.data.teamName.size() >= 2
+        && request.resource.data.teamName.size() <= 55
+        && request.resource.data.teamCode is string
+        && request.resource.data.teamCode.size() <= 4
+        && request.resource.data.requesterName is string
+        && request.resource.data.requesterName.size() >= 2
+        && request.resource.data.requesterName.size() <= 60
+        && request.resource.data.requesterContact is string
+        && request.resource.data.requesterContact.size() >= 4
+        && request.resource.data.requesterContact.size() <= 90
+        && request.resource.data.requesterEmail is string
+        && request.resource.data.requesterEmail.size() <= 160
+        && request.resource.data.createdAtClient is int
+        && request.resource.data.original is map
+        && request.resource.data.changes is map
+        && request.resource.data.removeBadge is bool
+        && request.resource.data.removeCover is bool
+        && request.resource.data.changes.keys().hasOnly([
+          'name',
+          'code',
+          'master',
+          'status',
+          'joinedAt',
+          'city',
+          'founded',
+          'favoritePlayer',
+          'phrase',
+          'description',
+          'badge',
+          'profileBanner'
+        ]);
+    }
+
     match /arenaData/{documentId} {
       allow read: if !isRegistration(documentId) || isArenaAdmin();
       allow create: if isArenaAdmin()
         || (isRegistration(documentId) && validPublicRegistration());
       allow update, delete: if isArenaAdmin();
+    }
+
+    match /teamEditRequests/{requestId} {
+      allow create: if validTeamEditRequest();
+      allow read, update, delete: if isArenaAdmin();
     }
 
     match /{document=**} {
