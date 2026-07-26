@@ -11,7 +11,9 @@
   if (!window.firebase || typeof firebase.auth !== 'function' || !PRIMARY_ADMIN || !LEGACY_ADMIN) return;
 
   const auth = firebase.auth();
-  const originalOnAuthStateChanged = auth.onAuthStateChanged.bind(auth);
+  const nativeOnAuthStateChanged = auth.onAuthStateChanged.bind(auth);
+  let active = false;
+  let registrations = 0;
 
   function legacyCompatibleUser(user) {
     const email = String(user?.email || '').toLowerCase();
@@ -25,9 +27,11 @@
     });
   }
 
-  auth.onAuthStateChanged = function onAuthStateChangedCompatibility(nextOrObserver, error, completed) {
+  function compatibleOnAuthStateChanged(nextOrObserver, error, completed) {
+    registrations += 1;
+
     if (typeof nextOrObserver === 'function') {
-      return originalOnAuthStateChanged(
+      return nativeOnAuthStateChanged(
         user => nextOrObserver(legacyCompatibleUser(user)),
         error,
         completed
@@ -35,17 +39,35 @@
     }
 
     const observer = nextOrObserver || {};
-    return originalOnAuthStateChanged({
+    return nativeOnAuthStateChanged({
       next: user => observer.next?.(legacyCompatibleUser(user)),
       error: observer.error?.bind(observer),
       complete: observer.complete?.bind(observer)
     });
-  };
+  }
+
+  function start() {
+    if (active) return;
+    auth.onAuthStateChanged = compatibleOnAuthStateChanged;
+    active = true;
+    document.documentElement.dataset.arenaLegacyAuth = 'scoped';
+  }
+
+  function stop() {
+    if (!active) return;
+    auth.onAuthStateChanged = nativeOnAuthStateChanged;
+    active = false;
+    delete document.documentElement.dataset.arenaLegacyAuth;
+  }
 
   window.ARENA_ADMIN_EMAILS = Object.freeze([...emails]);
   window.ArenaBDAAuthCompatibility = Object.freeze({
-    active: true,
-    reason: 'Compatibilidade temporária com módulos que ainda verificam um único e-mail',
+    start,
+    stop,
+    isActive: () => active,
+    registrations: () => registrations,
+    userForLegacy: legacyCompatibleUser,
+    reason: 'Compatibilidade restrita aos módulos que ainda verificam um único e-mail',
     primary: PRIMARY_ADMIN,
     legacy: LEGACY_ADMIN
   });
