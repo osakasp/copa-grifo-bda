@@ -1,10 +1,10 @@
 (() => {
   'use strict';
 
-  const ADMIN_EMAIL = 'miniamikaren@gmail.com';
   const COLLECTION = 'arenaData';
   const META_ID = 'meta';
   const MAX_ITEM_BYTES = 800 * 1024;
+  const WRITE_BATCH_SIZE = 350;
 
   const DEFAULT_TOURNAMENTS = [
     {id:'copa-grifo',name:'Copa Grifo BDA',edition:'8ª edição',format:'Mata-mata',status:'Finalizado',phase:'Campeão definido',maxTeams:19,badge:'🦅',participants:['Zombie FC BDA','JOGOBUGADO BDA','Inter Brasil BDA','Vasco da Gama BDA'],description:'Competição tradicional do Clã BDA em formato eliminatório e jogo único.',legacy:true,locked:true},
@@ -21,44 +21,37 @@
     tournaments: { key: 'bda-v3-tournaments', prefix: 'tournament' }
   };
 
+  const authCore = window.ArenaBDAAuth;
+
   function notify(message) {
     if (typeof toast === 'function') toast(message);
     else console.info(message);
   }
 
-  if (!window.firebase || typeof firebase.firestore !== 'function' || typeof firebase.auth !== 'function') {
+  if (!authCore?.subscribe || !window.firebase || typeof firebase.firestore !== 'function') {
     notify('A sincronização com a nuvem não carregou');
     return;
   }
 
   const db = firebase.firestore();
-  const auth = firebase.auth();
   const root = db.collection(COLLECTION);
   const metaRef = root.doc(META_ID);
   const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp;
-
   const nativeSetItem = Storage.prototype.setItem;
   const nativeRemoveItem = Storage.prototype.removeItem;
-  const timers = {};
+
+  const timers = new Map();
   const seenRevisions = {};
   const knownCounts = {};
-
   let applyingRemote = false;
   let cloudInitialized = false;
   let currentMeta = null;
-  let currentUser = null;
+  let syncBusy = false;
   let statusElement = null;
   let uploadButton = null;
   let downloadButton = null;
-  let syncBusy = false;
 
-  function clone(value) {
-    return JSON.parse(JSON.stringify(value));
-  }
-
-  function isAdminUser(user = currentUser) {
-    return Boolean(user && String(user.email || '').toLowerCase() === ADMIN_EMAIL);
-  }
+  const clone = value => JSON.parse(JSON.stringify(value));
 
   function stable(value) {
     if (Array.isArray(value)) return value.map(stable);
@@ -71,9 +64,8 @@
     return value;
   }
 
-  function stableStringify(value) {
-    return JSON.stringify(stable(value));
-  }
+  const stableStringify = value => JSON.stringify(stable(value));
+  const documentId = (prefix, index) => `${prefix}-${String(index).padStart(4, '0')}`;
 
   function itemBytes(value) {
     return new Blob([JSON.stringify(value)]).size;
@@ -83,58 +75,60 @@
     if (!Array.isArray(values)) throw new Error(`Dados inválidos em ${name}`);
     values.forEach((value, index) => {
       if (itemBytes(value) > MAX_ITEM_BYTES) {
-        throw new Error(`A imagem do item ${index + 1} está grande demais para o Firestore`);
+        throw new Error(`O item ${index + 1} de ${name} está grande demais para a nuvem`);
       }
     });
   }
 
-  function documentId(prefix, index) {
-    return `${prefix}-${String(index).padStart(4, '0')}`;
+  function readStored(key, fallback = []) {
+    try {
+      const value = JSON.parse(localStorage.getItem(key));
+      return Array.isArray(value) ? value : fallback;
+    } catch {
+      return fallback;
+    }
   }
 
   function readLocal(name) {
-    if (name === 'teams' && typeof teams !== 'undefined' && Array.isArray(teams)) return clone(teams);
-    if (name === 'champions' && typeof champions !== 'undefined' && Array.isArray(champions)) return clone(champions);
-
+    if (name === 'teams' && Array.isArray(window.teams)) return clone(window.teams);
+    if (name === 'champions' && Array.isArray(window.champions)) return clone(window.champions);
     const config = DATASETS[name];
-    try {
-      const stored = JSON.parse(localStorage.getItem(config.key));
-      if (Array.isArray(stored)) return stored;
-    } catch (error) {
-      console.warn('Falha ao ler dados locais', name, error);
-    }
-
-    if (name === 'tournaments') return clone(DEFAULT_TOURNAMENTS);
-    return [];
+    if (name === 'tournaments') return readStored(config.key, clone(DEFAULT_TOURNAMENTS));
+    return readStored(config.key, []);
   }
 
-  function setStatus(text, state = '') {
+  function setStatus(text, state = '', detail = '') {
     if (!statusElement) return;
     statusElement.textContent = text;
     statusElement.dataset.state = state;
+    statusElement.title = detail;
+    window.dispatchEvent(new CustomEvent('arena:cloud-status', { detail: { text, state, detail } }));
   }
 
   function updateControls() {
-    const admin = isAdminUser();
+    const admin = authCore.isAdmin();
     if (uploadButton) uploadButton.hidden = !admin;
     if (downloadButton) downloadButton.hidden = !admin || !cloudInitialized;
   }
 
   function buildInterface() {
-    const styles = document.createElement('style');
-    styles.textContent = `
-      .cloud-status{display:inline-flex;align-items:center;min-height:30px;padding:0 9px;border:1px solid var(--line);border-radius:999px;color:var(--muted);background:rgba(255,255,255,.035);font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
-      .cloud-status[data-state="ok"]{color:var(--green);border-color:rgba(79,223,143,.28);background:rgba(79,223,143,.08)}
-      .cloud-status[data-state="warn"]{color:var(--gold-soft);border-color:var(--line-strong);background:rgba(216,178,72,.08)}
-      .cloud-status[data-state="error"]{color:#ff9aa4;border-color:rgba(255,105,120,.34);background:rgba(255,105,120,.08)}
-      .cloud-tools{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-      .cloud-tools button{min-height:40px}
-      @media(max-width:430px){.cloud-status{max-width:92px;overflow:hidden;text-overflow:ellipsis}.top-actions{gap:6px}}
-    `;
-    document.head.appendChild(styles);
+    if (!document.getElementById('arenaCloudSyncStyles')) {
+      const styles = document.createElement('style');
+      styles.id = 'arenaCloudSyncStyles';
+      styles.textContent = `
+        .cloud-status{display:inline-flex;align-items:center;min-height:30px;padding:0 9px;border:1px solid var(--line);border-radius:999px;color:var(--muted);background:rgba(255,255,255,.035);font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+        .cloud-status[data-state="ok"]{color:var(--green);border-color:rgba(79,223,143,.28);background:rgba(79,223,143,.08)}
+        .cloud-status[data-state="warn"]{color:var(--gold-soft);border-color:var(--line-strong);background:rgba(216,178,72,.08)}
+        .cloud-status[data-state="error"]{color:#ff9aa4;border-color:rgba(255,105,120,.34);background:rgba(255,105,120,.08)}
+        .cloud-tools{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.cloud-tools button{min-height:40px}
+        @media(max-width:430px){.cloud-status{max-width:92px;overflow:hidden;text-overflow:ellipsis}.top-actions{gap:6px}}
+      `;
+      document.head.append(styles);
+    }
 
     const actions = document.querySelector('.top-actions');
-    if (actions) {
+    statusElement = document.querySelector('.cloud-status');
+    if (!statusElement && actions) {
       statusElement = document.createElement('span');
       statusElement.className = 'cloud-status';
       statusElement.textContent = 'Conectando';
@@ -142,49 +136,54 @@
     }
 
     const adminPanel = document.getElementById('adminPanel');
-    if (adminPanel) {
-      const paragraph = adminPanel.querySelector('p');
-      if (paragraph) paragraph.textContent = 'Campeonatos, clubes, escudos e campeões podem ser sincronizados entre celular e computador.';
-
+    if (adminPanel && !document.getElementById('cloudUploadBtn')) {
       const tools = document.createElement('div');
       tools.className = 'cloud-tools';
       tools.innerHTML = `
         <button class="primary" id="cloudUploadBtn" type="button">Enviar este aparelho para a nuvem</button>
         <button class="ghost" id="cloudDownloadBtn" type="button">Baixar dados da nuvem</button>
       `;
-      adminPanel.appendChild(tools);
-      uploadButton = document.getElementById('cloudUploadBtn');
-      downloadButton = document.getElementById('cloudDownloadBtn');
+      adminPanel.append(tools);
+    }
 
-      uploadButton.addEventListener('click', () => {
-        const message = cloudInitialized
-          ? 'Substituir os dados da nuvem pelos dados deste aparelho?'
-          : 'Usar os dados deste aparelho como primeira versão da nuvem?';
-        if (confirm(message)) uploadAll();
+    uploadButton = document.getElementById('cloudUploadBtn');
+    downloadButton = document.getElementById('cloudDownloadBtn');
+
+    uploadButton?.addEventListener('click', async () => {
+      const message = cloudInitialized
+        ? 'Substituir os dados da nuvem pelos dados deste aparelho?'
+        : 'Usar os dados deste aparelho como primeira versão da nuvem?';
+      if (confirm(message)) await uploadAll();
+    });
+    downloadButton?.addEventListener('click', () => downloadAll(true));
+    updateControls();
+  }
+
+  async function runBatches(operations) {
+    for (let start = 0; start < operations.length; start += WRITE_BATCH_SIZE) {
+      const batch = db.batch();
+      operations.slice(start, start + WRITE_BATCH_SIZE).forEach(operation => {
+        if (operation.type === 'delete') batch.delete(operation.ref);
+        else batch.set(operation.ref, operation.data);
       });
-      downloadButton.addEventListener('click', () => downloadAll(true));
+      await batch.commit();
     }
   }
 
-  async function runSequential(tasks) {
-    for (const task of tasks) await task();
-  }
-
-  async function writeRawDataset(name, values, previousCount, revision) {
+  async function writeDataset(name, values, previousCount, revision) {
     validateDataset(name, values);
     const config = DATASETS[name];
-    const tasks = values.map((value, index) => () => root.doc(documentId(config.prefix, index)).set({
-      dataset: name,
-      position: index,
-      revision,
-      value
+    const operations = values.map((value, index) => ({
+      type: 'set',
+      ref: root.doc(documentId(config.prefix, index)),
+      data: { dataset: name, position: index, revision, value }
     }));
 
     for (let index = values.length; index < previousCount; index += 1) {
-      tasks.push(() => root.doc(documentId(config.prefix, index)).delete());
+      operations.push({ type: 'delete', ref: root.doc(documentId(config.prefix, index)) });
     }
 
-    await runSequential(tasks);
+    await runBatches(operations);
     knownCounts[name] = values.length;
   }
 
@@ -218,19 +217,27 @@
     return changed;
   }
 
-  function cloudErrorMessage(error) {
+  function errorMessage(error) {
     const code = String(error?.code || '');
-    if (code.includes('permission-denied')) return 'Publique as regras do Firestore para liberar a sincronização';
+    if (code.includes('permission-denied')) return 'As regras do Firestore não liberaram esta conta';
     if (code.includes('unavailable')) return 'Sem conexão com a nuvem no momento';
-    if (code.includes('resource-exhausted') || code.includes('invalid-argument')) return 'Uma imagem está grande demais para a nuvem';
-    return 'Falha ao sincronizar com o Firestore';
+    if (code.includes('resource-exhausted')) return 'O limite temporário do Firestore foi atingido';
+    if (code.includes('invalid-argument')) return 'Uma imagem está grande demais para a nuvem';
+    return error?.message || 'Falha ao sincronizar com o Firestore';
+  }
+
+  async function prepareTeams() {
+    if (!window.ArenaBDACloudRecovery?.prepare) return;
+    const result = await window.ArenaBDACloudRecovery.prepare({ force: true });
+    if (result?.error) throw result.error;
   }
 
   async function uploadAll() {
-    if (syncBusy || !isAdminUser()) return;
+    if (syncBusy || !authCore.isAdmin()) return;
     syncBusy = true;
     setStatus('Enviando', 'warn');
     try {
+      await prepareTeams();
       const values = {};
       const counts = {};
       const revisions = {};
@@ -243,21 +250,21 @@
       });
 
       for (const name of Object.keys(DATASETS)) {
-        const oldCount = Number(knownCounts[name] ?? currentMeta?.counts?.[name] ?? 0);
-        await writeRawDataset(name, values[name], oldCount, revisions[name]);
+        const previousCount = Number(knownCounts[name] ?? currentMeta?.counts?.[name] ?? 0);
+        await writeDataset(name, values[name], previousCount, revisions[name]);
       }
 
       await metaRef.set({
         initialized: true,
-        schemaVersion: 1,
+        schemaVersion: 3,
         counts,
         revisions,
         updatedAt: serverTimestamp(),
-        updatedBy: String(currentUser.email || '').toLowerCase()
-      });
+        updatedBy: authCore.currentEmail()
+      }, { merge: true });
 
       cloudInitialized = true;
-      currentMeta = { initialized: true, counts, revisions };
+      currentMeta = { ...(currentMeta || {}), initialized: true, counts, revisions };
       Object.assign(seenRevisions, revisions);
       Object.assign(knownCounts, counts);
       setStatus('Sincronizado', 'ok');
@@ -265,35 +272,44 @@
       notify('Dados enviados para a nuvem');
     } catch (error) {
       console.error(error);
-      setStatus('Erro na nuvem', 'error');
-      notify(cloudErrorMessage(error));
+      setStatus('Erro na nuvem', 'error', errorMessage(error));
+      notify(errorMessage(error));
     } finally {
       syncBusy = false;
     }
   }
 
   async function uploadDataset(name) {
-    if (syncBusy || applyingRemote || !cloudInitialized || !isAdminUser()) return;
+    if (syncBusy || applyingRemote || !cloudInitialized || !authCore.isAdmin()) return;
     syncBusy = true;
     setStatus('Salvando', 'warn');
     try {
+      if (name === 'teams') await prepareTeams();
       const values = readLocal(name);
+      validateDataset(name, values);
       const revision = `${Date.now()}-${name}-${Math.random().toString(36).slice(2, 8)}`;
-      const oldCount = Number(knownCounts[name] ?? currentMeta?.counts?.[name] ?? 0);
-      await writeRawDataset(name, values, oldCount, revision);
-      await metaRef.update({
-        [`counts.${name}`]: values.length,
-        [`revisions.${name}`]: revision,
+      const previousCount = Number(knownCounts[name] ?? currentMeta?.counts?.[name] ?? 0);
+      await writeDataset(name, values, previousCount, revision);
+      await metaRef.set({
+        initialized: true,
+        schemaVersion: 3,
+        counts: { ...(currentMeta?.counts || {}), [name]: values.length },
+        revisions: { ...(currentMeta?.revisions || {}), [name]: revision },
         updatedAt: serverTimestamp(),
-        updatedBy: String(currentUser.email || '').toLowerCase()
-      });
+        updatedBy: authCore.currentEmail()
+      }, { merge: true });
       seenRevisions[name] = revision;
       knownCounts[name] = values.length;
+      currentMeta = {
+        ...(currentMeta || {}),
+        counts: { ...(currentMeta?.counts || {}), [name]: values.length },
+        revisions: { ...(currentMeta?.revisions || {}), [name]: revision }
+      };
       setStatus('Sincronizado', 'ok');
     } catch (error) {
       console.error(error);
-      setStatus('Erro na nuvem', 'error');
-      notify(cloudErrorMessage(error));
+      setStatus('Erro na nuvem', 'error', errorMessage(error));
+      notify(errorMessage(error));
     } finally {
       syncBusy = false;
     }
@@ -307,6 +323,7 @@
       const metaSnapshot = await metaRef.get();
       if (!metaSnapshot.exists || !metaSnapshot.data().initialized) {
         cloudInitialized = false;
+        currentMeta = null;
         setStatus('Nuvem vazia', 'warn');
         updateControls();
         if (forceNotice) notify('A nuvem ainda não possui dados');
@@ -335,36 +352,37 @@
       }
     } catch (error) {
       console.error(error);
-      setStatus('Sem acesso', 'error');
-      notify(cloudErrorMessage(error));
+      setStatus('Sem acesso', 'error', errorMessage(error));
+      notify(errorMessage(error));
     } finally {
       syncBusy = false;
     }
   }
 
-  function scheduleUploadByKey(key) {
+  function scheduleUploadByKey(key, delay = 700) {
     const name = Object.keys(DATASETS).find(dataset => DATASETS[dataset].key === key);
-    if (!name || applyingRemote || !cloudInitialized || !isAdminUser()) return;
-    clearTimeout(timers[name]);
-    timers[name] = setTimeout(() => uploadDataset(name), 650);
+    if (!name || applyingRemote || !cloudInitialized || !authCore.isAdmin()) return;
+    clearTimeout(timers.get(name));
+    timers.set(name, setTimeout(() => uploadDataset(name), delay));
   }
 
   function installStorageHooks() {
-    try {
-      Storage.prototype.setItem = function setItemWithCloud(key, value) {
-        nativeSetItem.call(this, key, value);
-        if (this === localStorage) scheduleUploadByKey(key);
-      };
+    if (Storage.prototype.setItem.__arenaCloudSyncV2) return;
 
-      Storage.prototype.removeItem = function removeItemWithCloud(key) {
-        nativeRemoveItem.call(this, key);
-        if (this === localStorage) {
-          setTimeout(() => scheduleUploadByKey(key), 50);
-        }
-      };
-    } catch (error) {
-      console.warn('Não foi possível instalar o sincronizador local', error);
+    function setItemWithCloud(key, value) {
+      nativeSetItem.call(this, key, value);
+      if (this === localStorage) scheduleUploadByKey(key, key === DATASETS.teams.key ? 1000 : 700);
     }
+    setItemWithCloud.__arenaCloudSyncV2 = true;
+
+    function removeItemWithCloud(key) {
+      nativeRemoveItem.call(this, key);
+      if (this === localStorage) scheduleUploadByKey(key, 750);
+    }
+    removeItemWithCloud.__arenaCloudSyncV2 = true;
+
+    Storage.prototype.setItem = setItemWithCloud;
+    Storage.prototype.removeItem = removeItemWithCloud;
   }
 
   buildInterface();
@@ -376,10 +394,12 @@
     setTimeout(() => notify(reloadMessage), 300);
   }
 
-  auth.onAuthStateChanged(user => {
-    currentUser = user;
+  authCore.subscribe(() => {
     updateControls();
+    if (!authCore.isAdmin()) setStatus(cloudInitialized ? 'Sincronizado' : 'Conectando', cloudInitialized ? 'ok' : '');
   });
+
+  window.addEventListener('arena:teams-prepared-for-cloud', () => scheduleUploadByKey(DATASETS.teams.key, 200));
 
   metaRef.onSnapshot(async snapshot => {
     if (!snapshot.exists || !snapshot.data().initialized) {
@@ -423,12 +443,21 @@
       }
     } catch (error) {
       console.error(error);
-      setStatus('Erro na nuvem', 'error');
-      notify(cloudErrorMessage(error));
+      setStatus('Erro na nuvem', 'error', errorMessage(error));
+      notify(errorMessage(error));
     }
   }, error => {
     console.error(error);
-    setStatus('Sem acesso', 'error');
-    notify(cloudErrorMessage(error));
+    setStatus('Sem acesso', 'error', errorMessage(error));
+    notify(errorMessage(error));
+  });
+
+  window.ArenaBDACloudSync = Object.freeze({
+    uploadAll,
+    downloadAll,
+    uploadDataset,
+    isReady: () => cloudInitialized,
+    isBusy: () => syncBusy,
+    meta: () => currentMeta ? clone(currentMeta) : null
   });
 })();
