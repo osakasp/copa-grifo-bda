@@ -1,12 +1,8 @@
 (() => {
   'use strict';
 
-  const ADMIN_EMAILS = new Set([
-    'claboleirosdeatitude@gmail.com',
-    'miniamikaren@gmail.com'
-  ]);
-
-  if (!window.firebase || typeof firebase.auth !== 'function') return;
+  const authCore = window.ArenaBDAAuth;
+  if (!authCore && (!window.firebase || typeof firebase.auth !== 'function')) return;
 
   const topActions = document.querySelector('.top-actions');
   if (!topActions || document.getElementById('cloudPanelBtn')) return;
@@ -117,6 +113,7 @@
   }
 
   function openPanel() {
+    if (authCore && !authCore.isAdmin()) return;
     syncPanelState();
     modal.classList.add('show');
     document.getElementById('cloudPanelClose')?.focus();
@@ -170,11 +167,20 @@
     });
   }
 
-  firebase.auth().onAuthStateChanged(user => {
-    const email = String(user?.email || '').toLowerCase();
-    const authorized = Boolean(user && ADMIN_EMAILS.has(email));
+  function applyAuthState(state) {
+    const authorized = Boolean(state?.isAdmin);
     panelButton.hidden = !authorized;
     if (!authorized) closePanel();
     window.setTimeout(syncPanelState, 0);
-  });
+  }
+
+  if (authCore?.subscribe) {
+    authCore.subscribe(applyAuthState);
+  } else {
+    firebase.auth().onAuthStateChanged(user => {
+      const email = String(user?.email || '').toLowerCase();
+      const allowed = window.ARENA_ADMIN_EMAILS || [];
+      applyAuthState({ isAdmin: Boolean(user && allowed.includes(email)) });
+    });
+  }
 })();
