@@ -1,7 +1,10 @@
 (() => {
   'use strict';
 
-  const ADMIN_EMAIL = 'miniamikaren@gmail.com';
+  const ADMIN_EMAILS = new Set([
+    'claboleirosdeatitude@gmail.com',
+    'miniamikaren@gmail.com'
+  ]);
 
   if (!window.firebase || typeof firebase.auth !== 'function') return;
 
@@ -168,9 +171,8 @@
   }
 
   firebase.auth().onAuthStateChanged(user => {
-    const authorized = Boolean(
-      user && String(user.email || '').toLowerCase() === ADMIN_EMAIL
-    );
+    const email = String(user?.email || '').toLowerCase();
+    const authorized = Boolean(user && ADMIN_EMAILS.has(email));
     panelButton.hidden = !authorized;
     if (!authorized) closePanel();
     window.setTimeout(syncPanelState, 0);
