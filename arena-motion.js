@@ -134,7 +134,7 @@
 
     document.addEventListener('click', event => {
       const trigger = event.target.closest(
-        '[data-nav],[data-page],[data-tab],[data-open-tournament],[data-home-tournament],.bottom-nav button,.top-nav button'
+        '[data-nav],[data-tab],[data-open-tournament],[data-home-tournament],[data-go],[data-route],[data-target-page],.bottom-nav button,.top-nav button'
       );
       if (trigger) pageTransition(trigger);
     }, true);
@@ -181,10 +181,10 @@
       :root{--arena-motion-ease:cubic-bezier(.22,1,.36,1)}
       .arena-motion-item{will-change:transform,opacity}
       html:not(.arena-reduce-motion) .arena-motion-item:not(.arena-motion-visible){opacity:0;transform:translate3d(0,18px,0) scale(.985)}
-      html:not(.arena-reduce-motion) .arena-motion-item.arena-motion-visible{opacity:1;transform:translate3d(0,0,0) scale(1);transition:opacity .52s var(--arena-motion-ease) var(--arena-motion-delay,0ms),transform .52s var(--arena-motion-ease) var(--arena-motion-delay,0ms)}
+      html:not(.arena-reduce-motion) .arena-motion-item.arena-motion-visible{opacity:1;transform:translate3d(0,0,0) scale(1);will-change:auto;transition:opacity .52s var(--arena-motion-ease) var(--arena-motion-delay,0ms),transform .52s var(--arena-motion-ease) var(--arena-motion-delay,0ms)}
 
       .arena-motion-clickable{position:relative;overflow:hidden;isolation:isolate;transform:translateZ(0)}
-      .arena-motion-ripple{position:absolute;z-index:-1;border-radius:50%;pointer-events:none;background:rgba(255,255,255,.22);transform:scale(0);animation:arenaRipple .58s ease-out forwards}
+      .arena-motion-ripple{position:absolute;z-index:0;border-radius:50%;pointer-events:none;background:rgba(255,255,255,.18);transform:scale(0);animation:arenaRipple .58s ease-out forwards}
       @keyframes arenaRipple{to{opacity:0;transform:scale(2.15)}}
 
       @media(hover:hover) and (pointer:fine){
