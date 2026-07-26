@@ -1,10 +1,6 @@
 (() => {
   'use strict';
 
-  const ADMIN_EMAILS = new Set([
-    'claboleirosdeatitude@gmail.com',
-    'miniamikaren@gmail.com'
-  ]);
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const norm = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
@@ -12,6 +8,7 @@
   let scheduled = false;
 
   function currentEmail() {
+    if (window.ArenaBDAAuth?.currentEmail) return window.ArenaBDAAuth.currentEmail();
     try {
       return String(window.firebase?.auth?.()?.currentUser?.email || '').toLowerCase();
     } catch {
@@ -20,7 +17,9 @@
   }
 
   function adminActive() {
-    return (typeof isAdmin !== 'undefined' && Boolean(isAdmin)) || ADMIN_EMAILS.has(currentEmail());
+    if (window.ArenaBDAAuth?.isAdmin) return window.ArenaBDAAuth.isAdmin();
+    const allowed = window.ARENA_ADMIN_EMAILS || [];
+    return (typeof isAdmin !== 'undefined' && Boolean(isAdmin)) || allowed.includes(currentEmail());
   }
 
   function teams() {
@@ -153,11 +152,19 @@
   $('#bdaStandaloneProfile')?.remove();
   document.body.classList.remove('bda-sp-open');
   window.addEventListener('arena:team-profile-updated', schedule);
-  window.addEventListener('storage', event => { if (event.key === 'bda-v2-teams') schedule(); });
-  window.firebase?.auth?.().onAuthStateChanged?.(() => {
+  window.addEventListener('arena:auth-changed', () => {
     schedule();
     requestAnimationFrame(() => decorateOpenModal());
   });
+  window.addEventListener('storage', event => {
+    if (event.key === 'bda-v2-teams') schedule();
+  });
+
+  window.ArenaBDAAuth?.subscribe?.(() => {
+    schedule();
+    requestAnimationFrame(() => decorateOpenModal());
+  }, false);
+
   schedule();
   setTimeout(schedule, 350);
   setTimeout(schedule, 1200);
