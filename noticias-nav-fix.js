@@ -40,16 +40,19 @@
       button.dataset.go = 'news';
     }
 
-    button.dataset.arenaDecorated = 'true';
-    button.classList.add('arena-nav-item', 'news-nav-item');
-    button.title = 'Notícias • Comunicados, resultados e novidades';
-    button.setAttribute('aria-label', 'Notícias');
-    button.innerHTML = '<i>📰</i><span class="arena-nav-copy"><b>Notícias</b><small>Comunicados e novidades</small></span>';
+    if (button.dataset.newsNavFixed !== 'true') {
+      button.dataset.newsNavFixed = 'true';
+      button.dataset.arenaDecorated = 'true';
+      button.classList.add('arena-nav-item', 'news-nav-item');
+      button.title = 'Notícias • Comunicados, resultados e novidades';
+      button.setAttribute('aria-label', 'Notícias');
+      button.innerHTML = '<i>📰</i><span class="arena-nav-copy"><b>Notícias</b><small>Comunicados e novidades</small></span>';
+    }
 
     const tournament = nav.querySelector('.nav-btn[data-go="tournament"]');
     const footer = nav.querySelector('.arena-side-footer');
-    if (tournament?.nextSibling !== button) tournament.after(button);
-    else if (!button.isConnected) (footer || nav).before?.(button);
+    if (tournament && tournament.nextElementSibling !== button) tournament.after(button);
+    else if (!button.isConnected) footer ? nav.insertBefore(button, footer) : nav.append(button);
   }
 
   function makeMobileNewsButton() {
