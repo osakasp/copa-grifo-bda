@@ -46,9 +46,15 @@
     const button = $('#arenaThemeToggle');
     if (!button) return;
     const light = currentTheme() === 'light';
-    button.innerHTML = light
-      ? '<span aria-hidden="true">🌙</span><b>Escuro</b>'
-      : '<span aria-hidden="true">☀️</span><b>Claro</b>';
+    const state = light ? 'light' : 'dark';
+
+    if (button.dataset.themeState !== state) {
+      button.dataset.themeState = state;
+      button.innerHTML = light
+        ? '<span aria-hidden="true">🌙</span><b>Escuro</b>'
+        : '<span aria-hidden="true">☀️</span><b>Claro</b>';
+    }
+
     button.setAttribute('aria-label', light ? 'Ativar tema escuro' : 'Ativar tema claro');
     button.title = light ? 'Ativar tema escuro' : 'Ativar tema claro';
     button.setAttribute('aria-pressed', String(light));
