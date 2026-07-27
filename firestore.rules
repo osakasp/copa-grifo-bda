@@ -112,6 +112,39 @@ service cloud.firestore {
         ]);
     }
 
+    function validLiveChatMessage() {
+      return request.resource.data.keys().hasOnly([
+          'matchKey',
+          'tournamentId',
+          'gameId',
+          'author',
+          'text',
+          'createdAtClient',
+          'createdAt',
+          'source',
+          'status'
+        ])
+        && request.resource.data.matchKey is string
+        && request.resource.data.matchKey.size() >= 3
+        && request.resource.data.matchKey.size() <= 170
+        && request.resource.data.tournamentId is string
+        && request.resource.data.tournamentId.size() >= 1
+        && request.resource.data.tournamentId.size() <= 80
+        && request.resource.data.gameId is string
+        && request.resource.data.gameId.size() >= 1
+        && request.resource.data.gameId.size() <= 100
+        && request.resource.data.author is string
+        && request.resource.data.author.size() >= 2
+        && request.resource.data.author.size() <= 30
+        && request.resource.data.text is string
+        && request.resource.data.text.size() >= 1
+        && request.resource.data.text.size() <= 180
+        && request.resource.data.createdAtClient is int
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.source == 'arena-bda-live'
+        && request.resource.data.status == 'visible';
+    }
+
     match /arenaData/{documentId} {
       allow read: if !isRegistration(documentId) || isArenaAdmin();
       allow create: if isArenaAdmin()
@@ -122,6 +155,12 @@ service cloud.firestore {
     match /teamEditRequests/{requestId} {
       allow create: if validTeamEditRequest();
       allow read, update, delete: if isArenaAdmin();
+    }
+
+    match /liveChat/{messageId} {
+      allow read: if true;
+      allow create: if validLiveChatMessage();
+      allow update, delete: if isArenaAdmin();
     }
 
     match /{document=**} {
