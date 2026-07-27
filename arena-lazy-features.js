@@ -2,38 +2,184 @@
   'use strict';
 
   const TABLE_EXPORT_SRC = './exportar-tabela-copa-facil.js?v=20260726-2';
-  const scripts = new Map();
+  const BUNDLES = Object.freeze({
+    history: [
+      './historia-cla.js?v=20260727-2',
+      './galeria-historica-v2.js?v=20260727-2'
+    ],
+    teams: [
+      './profile-observer-scope.js?v=20260726-1',
+      './perfis-clubes.js?v=20260726-2',
+      './editor-perfis-times.js?v=20260726-2',
+      './club-profile-router.js?v=20260726-2',
+      './solicitacoes-edicao-times.js?v=20260726-1',
+      './profile-observer-scope-end.js?v=20260726-1'
+    ],
+    news: [
+      './noticias-bootstrap.js?v=20260727-1',
+      './noticias-bda.js?v=20260727-2'
+    ],
+    tournament: [
+      './match-center-bda.js?v=20260727-1',
+      './regulamento-interativo.js?v=20260727-1'
+    ]
+  });
+  const PAGE_BUNDLE = Object.freeze({ history: 'history', teams: 'teams', news: 'news' });
+  const scriptPromises = new Map();
+  const bundlePromises = new Map();
+  const loadedBundles = new Set();
+  const prefetched = new Set();
   const notify = message => typeof toast === 'function' ? toast(message) : console.info(message);
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
 
-  function loadScript(key, source, ready) {
-    if (ready()) return Promise.resolve();
-    if (scripts.has(key)) return scripts.get(key);
+  function absolute(source) {
+    try { return new URL(source, document.baseURI).href; }
+    catch { return source; }
+  }
+
+  function existingScript(source) {
+    const expected = absolute(source).split('?')[0];
+    return [...document.scripts].find(script => String(script.src || '').split('?')[0] === expected);
+  }
+
+  function loadScript(source, key = source) {
+    const url = absolute(source);
+    if (scriptPromises.has(url)) return scriptPromises.get(url);
 
     const promise = new Promise((resolve, reject) => {
-      const existing = [...document.scripts].find(script => script.src.includes(source.split('?')[0].replace('./', '')));
-      const finish = () => ready() ? resolve() : reject(new Error(`O recurso ${key} não iniciou`));
-
-      if (existing) {
-        existing.addEventListener('load', finish, { once: true });
-        existing.addEventListener('error', reject, { once: true });
-        setTimeout(() => ready() && resolve(), 0);
+      const existing = existingScript(source);
+      if (existing?.dataset.arenaLoaded === 'true' || existing?.readyState === 'complete') {
+        resolve(existing);
         return;
       }
 
-      const script = document.createElement('script');
-      script.src = source;
-      script.async = true;
-      script.dataset.arenaLazyFeature = key;
-      script.addEventListener('load', finish, { once: true });
-      script.addEventListener('error', () => reject(new Error(`Falha ao carregar ${key}`)), { once: true });
-      document.head.append(script);
+      const script = existing || document.createElement('script');
+      const done = () => {
+        script.dataset.arenaLoaded = 'true';
+        resolve(script);
+      };
+      const fail = () => reject(new Error(`Falha ao carregar ${key}`));
+
+      script.addEventListener('load', done, { once: true });
+      script.addEventListener('error', fail, { once: true });
+
+      if (!existing) {
+        script.src = source;
+        script.async = true;
+        script.dataset.arenaLazyFeature = key;
+        document.head.append(script);
+      } else {
+        window.setTimeout(() => {
+          if (script.dataset.arenaLoaded === 'true') resolve(script);
+        }, 0);
+      }
     }).catch(error => {
-      scripts.delete(key);
+      scriptPromises.delete(url);
       throw error;
     });
 
-    scripts.set(key, promise);
+    scriptPromises.set(url, promise);
     return promise;
+  }
+
+  async function loadBundle(name) {
+    if (loadedBundles.has(name)) return;
+    if (bundlePromises.has(name)) return bundlePromises.get(name);
+    const sources = BUNDLES[name];
+    if (!sources) return;
+
+    const promise = (async () => {
+      document.documentElement.dataset.loadingBundle = name;
+      for (const source of sources) await loadScript(source, `${name}:${source}`);
+      loadedBundles.add(name);
+      window.dispatchEvent(new CustomEvent('arena:bundle-loaded', { detail: { name, sources: [...sources] } }));
+    })().finally(() => {
+      if (document.documentElement.dataset.loadingBundle === name) delete document.documentElement.dataset.loadingBundle;
+    }).catch(error => {
+      bundlePromises.delete(name);
+      console.error(error);
+      throw error;
+    });
+
+    bundlePromises.set(name, promise);
+    return promise;
+  }
+
+  function prefetchScript(source) {
+    const url = absolute(source);
+    if (prefetched.has(url) || existingScript(source)) return;
+    prefetched.add(url);
+    const link = document.createElement('link');
+    link.rel = 'prefetch';
+    link.as = 'script';
+    link.href = source;
+    link.dataset.arenaPrefetch = 'true';
+    document.head.append(link);
+  }
+
+  function prefetchBundle(name) {
+    (BUNDLES[name] || []).forEach(prefetchScript);
+  }
+
+  function triggerPage(trigger) {
+    if (!trigger) return '';
+    if (trigger.id === 'newsTopShortcut') return 'news';
+    return trigger.dataset.go || trigger.dataset.mobileGo || trigger.dataset.sheetGo || '';
+  }
+
+  function routeTrigger(event) {
+    if (!(event.target instanceof Element)) return null;
+    return event.target.closest('[data-go],[data-mobile-go],[data-sheet-go],#newsTopShortcut');
+  }
+
+  function setRouteLoading(trigger, loading) {
+    if (!trigger) return;
+    if (loading) {
+      if (!trigger.dataset.arenaOriginalHtml) trigger.dataset.arenaOriginalHtml = trigger.innerHTML;
+      trigger.classList.add('arena-route-loading');
+      trigger.setAttribute('aria-busy', 'true');
+      trigger.disabled = true;
+    } else {
+      trigger.classList.remove('arena-route-loading');
+      trigger.removeAttribute('aria-busy');
+      trigger.disabled = false;
+      if (trigger.dataset.arenaOriginalHtml) {
+        trigger.innerHTML = trigger.dataset.arenaOriginalHtml;
+        delete trigger.dataset.arenaOriginalHtml;
+      }
+    }
+  }
+
+  function navigateTo(page) {
+    document.body.classList.remove('arena-sheet-open');
+    document.querySelector('.arena-nav-sheet-backdrop')?.classList.remove('show');
+    if (typeof navigate === 'function') navigate(page);
+    else {
+      document.querySelectorAll('.page').forEach(item => item.classList.toggle('active', item.dataset.page === page));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    window.ArenaBDAMotion?.refresh?.();
+  }
+
+  async function loadPage(page, trigger = null) {
+    const bundle = PAGE_BUNDLE[page];
+    if (!bundle) {
+      navigateTo(page);
+      return;
+    }
+    setRouteLoading(trigger, true);
+    try {
+      await loadBundle(bundle);
+      navigateTo(page);
+    } catch (error) {
+      notify(`Não foi possível carregar ${page === 'news' ? 'as Notícias' : page === 'teams' ? 'os perfis dos clubes' : 'a História'}`);
+    } finally {
+      setRouteLoading(trigger, false);
+    }
+  }
+
+  function scheduleTournamentExtras() {
+    window.setTimeout(() => loadBundle('tournament').catch(() => {}), 0);
   }
 
   function setButtonLoading(button, loading) {
@@ -55,7 +201,8 @@
     setButtonLoading(button, true);
 
     try {
-      await loadScript('table-export', TABLE_EXPORT_SRC, () => Boolean(window.ArenaBDATableExporter?.open));
+      await loadScript(TABLE_EXPORT_SRC, 'table-export');
+      if (!window.ArenaBDATableExporter?.open) throw new Error('O editor da tabela não iniciou');
       window.ArenaBDATableExporter.open();
     } catch (error) {
       console.error(error);
@@ -72,30 +219,93 @@
   }
 
   document.addEventListener('click', event => {
-    const button = event.target.closest('#standPhoto');
-    if (!button) return;
-    event.preventDefault();
-    event.stopPropagation();
-    event.stopImmediatePropagation();
-    openTableExporter(button);
+    const tableButton = event.target instanceof Element ? event.target.closest('#standPhoto') : null;
+    if (tableButton) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      openTableExporter(tableButton);
+      return;
+    }
+
+    const trigger = routeTrigger(event);
+    const page = triggerPage(trigger);
+    if (PAGE_BUNDLE[page] && !loadedBundles.has(PAGE_BUNDLE[page])) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      loadPage(page, trigger);
+      return;
+    }
+
+    if (page === 'tournament' || (event.target instanceof Element && event.target.closest('[data-open-tournament],[data-home-tournament]'))) {
+      scheduleTournamentExtras();
+    }
   }, true);
 
   document.addEventListener('pointerover', event => {
-    if (event.target.closest('#standPhoto')) {
-      loadScript('table-export', TABLE_EXPORT_SRC, () => Boolean(window.ArenaBDATableExporter?.open)).catch(() => {});
-    }
-    if (event.target.closest('[data-old-match-photo]')) {
-      window.ArenaBDAOldMatchPhoto?.preload?.().catch?.(() => {});
-    }
-  }, { passive: true });
+    if (!(event.target instanceof Element)) return;
+    if (event.target.closest('#standPhoto')) prefetchScript(TABLE_EXPORT_SRC);
+    if (event.target.closest('[data-old-match-photo]')) window.ArenaBDAOldMatchPhoto?.preload?.().catch?.(() => {});
+    const page = triggerPage(routeTrigger(event));
+    const bundle = PAGE_BUNDLE[page];
+    if (bundle) prefetchBundle(bundle);
+    if (page === 'tournament' || event.target.closest('[data-open-tournament],[data-home-tournament]')) prefetchBundle('tournament');
+  }, { passive: true, capture: true });
 
   document.addEventListener('focusin', event => {
-    if (event.target.closest('#standPhoto')) {
-      loadScript('table-export', TABLE_EXPORT_SRC, () => Boolean(window.ArenaBDATableExporter?.open)).catch(() => {});
-    }
+    if (!(event.target instanceof Element)) return;
+    if (event.target.closest('#standPhoto')) prefetchScript(TABLE_EXPORT_SRC);
+    const page = triggerPage(routeTrigger(event));
+    const bundle = PAGE_BUNDLE[page];
+    if (bundle) prefetchBundle(bundle);
   });
 
-  window.ArenaBDALazyFeatures = {
-    preloadTable: () => loadScript('table-export', TABLE_EXPORT_SRC, () => Boolean(window.ArenaBDATableExporter?.open))
-  };
+  function idle(callback, timeout = 2500) {
+    if ('requestIdleCallback' in window) requestIdleCallback(callback, { timeout });
+    else window.setTimeout(callback, timeout);
+  }
+
+  function initialRoute() {
+    const params = new URLSearchParams(location.search);
+    if (params.has('news')) {
+      loadBundle('news').then(() => navigateTo('news')).catch(() => {});
+      return;
+    }
+    const active = document.querySelector('.page.active')?.dataset.page;
+    if (active && PAGE_BUNDLE[active]) loadBundle(PAGE_BUNDLE[active]).catch(() => {});
+    if (active === 'tournament') scheduleTournamentExtras();
+  }
+
+  function backgroundWarmup() {
+    idle(() => {
+      ['news', 'history', 'teams', 'tournament'].forEach(prefetchBundle);
+      const constrained = connection?.saveData || /(^|-)2g$/.test(connection?.effectiveType || '');
+      if (!constrained && document.querySelector('.page.active')?.dataset.page === 'home') {
+        window.setTimeout(() => loadBundle('news').catch(() => {}), 1800);
+      }
+    }, 1800);
+  }
+
+  const style = document.createElement('style');
+  style.id = 'arenaLazyFeatureStyles';
+  style.textContent = `
+    .arena-route-loading{position:relative;opacity:.68!important;cursor:wait!important}
+    .arena-route-loading:after{content:"";position:absolute;right:9px;top:9px;width:10px;height:10px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:arenaLazySpin .7s linear infinite}
+    @keyframes arenaLazySpin{to{transform:rotate(360deg)}}
+    @media(prefers-reduced-motion:reduce){.arena-route-loading:after{animation:none}}
+  `;
+  document.head.append(style);
+
+  window.ArenaBDALazyFeatures = Object.freeze({
+    loadBundle,
+    loadPage,
+    preloadBundle: prefetchBundle,
+    preloadTable: () => loadScript(TABLE_EXPORT_SRC, 'table-export'),
+    loaded: name => loadedBundles.has(name),
+    state: () => ({ loaded: [...loadedBundles], loading: [...bundlePromises.keys()], prefetched: prefetched.size })
+  });
+
+  initialRoute();
+  backgroundWarmup();
 })();
