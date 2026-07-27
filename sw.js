@@ -1,4 +1,4 @@
-const CACHE = 'arena-bda-shell-v23-recovery';
+const CACHE = 'arena-bda-shell-v24-notifications';
 const SHELL = [
   './',
   './index.html',
