@@ -3,8 +3,15 @@
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+  const PHOTO_FORMATS = Object.freeze({
+    square: { width: 1080, height: 1080 },
+    portrait: { width: 1080, height: 1350 },
+    story: { width: 1080, height: 1920 }
+  });
+
   let refreshTimer = 0;
   let applying = false;
+  let lastExportFormat = '';
 
   function isAdminActive() {
     try {
@@ -97,6 +104,85 @@
     syncPhotoScore(target?.closest?.('.gi-game'));
   }
 
+  function selectedPhotoFormat() {
+    const previewFormat = $('#cfpPreviewViewport .cfp-card')?.dataset?.format;
+    if (PHOTO_FORMATS[previewFormat]) return previewFormat;
+    const selectFormat = $('#cfpFormat')?.value;
+    if (PHOTO_FORMATS[selectFormat]) return selectFormat;
+    return PHOTO_FORMATS[lastExportFormat] ? lastExportFormat : 'portrait';
+  }
+
+  function copyPreviewIntoExport(stage, requestedFormat = '') {
+    if (!stage?.classList?.contains('cfp-export-stage')) return PHOTO_FORMATS.portrait;
+
+    const preview = $('#cfpPreviewViewport .cfp-card');
+    const previewFormat = preview?.dataset?.format;
+    const formatKey = PHOTO_FORMATS[previewFormat]
+      ? previewFormat
+      : PHOTO_FORMATS[requestedFormat]
+        ? requestedFormat
+        : selectedPhotoFormat();
+    const format = PHOTO_FORMATS[formatKey] || PHOTO_FORMATS.portrait;
+
+    if (preview) {
+      stage.className = `${preview.className} cfp-export-stage`;
+      stage.innerHTML = preview.innerHTML;
+      ['--cfp-a', '--cfp-b', '--cfp-accent', '--cfp-glow', '--cfp-background-image'].forEach(property => {
+        const value = preview.style.getPropertyValue(property);
+        if (value) stage.style.setProperty(property, value);
+      });
+    }
+
+    stage.dataset.format = formatKey;
+    stage.style.setProperty('width', `${format.width}px`, 'important');
+    stage.style.setProperty('height', `${format.height}px`, 'important');
+    stage.style.setProperty('transform', 'none', 'important');
+    stage.style.setProperty('transform-origin', 'top left', 'important');
+    lastExportFormat = formatKey;
+    return format;
+  }
+
+  function installHtml2CanvasBridge() {
+    const original = window.html2canvas;
+    if (typeof original !== 'function' || original.__arenaPreviewBridge) return;
+
+    const wrapped = function arenaPreviewHtml2Canvas(element, options = {}) {
+      if (!element?.classList?.contains('cfp-export-stage')) {
+        return original.call(this, element, options);
+      }
+
+      const format = copyPreviewIntoExport(element, selectedPhotoFormat());
+      return original.call(this, element, {
+        ...options,
+        width: format.width,
+        height: format.height,
+        windowWidth: format.width,
+        windowHeight: format.height,
+        scrollX: 0,
+        scrollY: 0
+      });
+    };
+
+    wrapped.__arenaPreviewBridge = true;
+    wrapped.__arenaOriginal = original;
+    window.html2canvas = wrapped;
+  }
+
+  function watchHtml2CanvasScripts(root = document) {
+    installHtml2CanvasBridge();
+    $$('script[src*="html2canvas"]', root).forEach(script => {
+      if (script.dataset.arenaPreviewBridgeBound === 'true') return;
+      script.dataset.arenaPreviewBridgeBound = 'true';
+      script.addEventListener('load', installHtml2CanvasBridge, { once: true });
+    });
+  }
+
+  function rememberExportFormat(target) {
+    if (!target?.closest?.('[data-cfp-download-action],[data-cfp-share-action]')) return;
+    lastExportFormat = selectedPhotoFormat();
+    watchHtml2CanvasScripts();
+  }
+
   function refresh() {
     clearTimeout(refreshTimer);
     refreshTimer = window.setTimeout(() => {
@@ -111,6 +197,7 @@
           addShareToMore();
         }
         syncAllPhotoScores();
+        watchHtml2CanvasScripts();
       } finally {
         applying = false;
       }
@@ -156,25 +243,50 @@
   document.head.append(style);
 
   document.addEventListener('pointerdown', event => {
-    const button = event.target instanceof Element ? event.target.closest('[data-old-match-photo],.pro-game-photo') : null;
-    if (button) syncFromTarget(button);
+    const target = event.target instanceof Element ? event.target : null;
+    const photoButton = target?.closest('[data-old-match-photo],.pro-game-photo');
+    if (photoButton) syncFromTarget(photoButton);
+    rememberExportFormat(target);
   }, true);
 
   document.addEventListener('click', event => {
-    const button = event.target instanceof Element ? event.target.closest('[data-old-match-photo],.pro-game-photo') : null;
-    if (button) syncFromTarget(button);
+    const target = event.target instanceof Element ? event.target : null;
+    const photoButton = target?.closest('[data-old-match-photo],.pro-game-photo');
+    if (photoButton) syncFromTarget(photoButton);
+    rememberExportFormat(target);
   }, true);
 
   document.addEventListener('input', event => {
-    if (event.target instanceof Element && event.target.closest('.gip-scoreboard')) syncFromTarget(event.target);
+    if (!(event.target instanceof Element)) return;
+    if (event.target.closest('.gip-scoreboard')) syncFromTarget(event.target);
+    if (event.target.matches('#cfpFormat')) lastExportFormat = selectedPhotoFormat();
   }, true);
 
-  const observer = new MutationObserver(refresh);
+  document.addEventListener('change', event => {
+    if (event.target instanceof Element && event.target.matches('#cfpFormat')) {
+      lastExportFormat = event.target.value;
+    }
+  }, true);
+
+  const observer = new MutationObserver(mutations => {
+    mutations.forEach(mutation => mutation.addedNodes.forEach(node => {
+      if (!(node instanceof Element)) return;
+      if (node.matches('script[src*="html2canvas"]') || node.querySelector('script[src*="html2canvas"]')) {
+        watchHtml2CanvasScripts(node.matches('script') ? node.parentElement || document : node);
+      }
+    }));
+    refresh();
+  });
   observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+  observer.observe(document.head, { childList: true, subtree: true });
   window.ArenaBDAAuth?.subscribe?.(() => window.setTimeout(refresh, 0));
   window.addEventListener('arena:permissions-updated', refresh);
   window.addEventListener('arena:quick-score-saved', refresh);
 
-  window.ArenaBDATopbar = Object.freeze({ refresh, syncPhotoScore });
+  window.ArenaBDATopbar = Object.freeze({
+    refresh,
+    syncPhotoScore,
+    syncPhotoExport: () => installHtml2CanvasBridge()
+  });
   refresh();
 })();
