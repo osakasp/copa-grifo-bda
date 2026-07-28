@@ -47,7 +47,7 @@ async function networkFirst(request) {
 async function staleWhileRevalidate(request) {
   const cache = await caches.open(CACHE);
   const cached = await cache.match(request);
-  const network = fetch(request)
+  const network = fetch(request, { cache: 'no-store' })
     .then(response => {
       if (response?.ok) cache.put(request, response.clone()).catch(() => {});
       return response;
