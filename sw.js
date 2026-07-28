@@ -1,4 +1,4 @@
-const CACHE = 'arena-bda-shell-v31-simple-capture';
+const CACHE = 'arena-bda-shell-v32-capture-toolbar';
 const SHELL = [
   './',
   './index.html',
