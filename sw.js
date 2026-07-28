@@ -1,4 +1,4 @@
-const CACHE = 'arena-bda-shell-v28-score-art';
+const CACHE = 'arena-bda-shell-v29-photo-wysiwyg';
 const SHELL = [
   './',
   './index.html',
