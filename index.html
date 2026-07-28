@@ -1,41 +1,25 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#07100c">
-  <meta name="color-scheme" content="light dark">
+  <meta name="color-scheme" content="dark">
   <meta name="application-name" content="Arena BDA">
   <meta name="apple-mobile-web-app-title" content="Arena BDA">
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
   <link rel="dns-prefetch" href="//www.gstatic.com">
   <link rel="preload" href="./firebase-auth.js?v=20260726-2" as="script" fetchpriority="high">
   <link rel="preload" href="./arena-bda.js" as="script" fetchpriority="high">
-  <link rel="preload" href="./gestor-inteligente.js?v=20260726-3" as="script">
   <link rel="preload" href="./navegacao-arena-v2.js" as="script">
-  <link rel="preload" href="./arena-theme.js?v=20260727-2" as="script">
   <link rel="icon" type="image/svg+xml" href="./favicon.svg">
   <link rel="shortcut icon" href="./favicon.svg">
   <link rel="apple-touch-icon" href="./favicon.svg">
   <link rel="manifest" href="./site.webmanifest">
   <title>Arena BDA | Campeonatos do Clã</title>
   <meta name="description" content="Plataforma oficial para criação e acompanhamento dos campeonatos do Clã BDA.">
-  <script>
-    (() => {
-      try {
-        const saved = localStorage.getItem('arena-bda-theme');
-        const theme = saved === 'light' || saved === 'dark'
-          ? saved
-          : (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-        document.documentElement.dataset.theme = theme;
-        document.documentElement.style.colorScheme = theme;
-        document.querySelector('meta[name="theme-color"]').content = theme === 'light' ? '#eef4ee' : '#07100c';
-      } catch {}
-    })();
-  </script>
   <style>
-    :root{--loader-bg:#07100c;--loader-text:#f4f7f2;--loader-muted:#9fb0a5;--loader-mark:#020503}
-    html[data-theme="light"]{--loader-bg:#eef4ee;--loader-text:#16231a;--loader-muted:#5d7063;--loader-mark:#ffffff}
+    :root{--loader-bg:#07100c;--loader-text:#f4f7f2;--loader-muted:#9fb0a5;--loader-mark:#020503;color-scheme:dark}
     html,body{height:100%;margin:0;background:var(--loader-bg);color:var(--loader-text);font-family:system-ui,sans-serif}
     body{display:grid;place-items:center;text-align:center;padding:24px}
     .loader{width:min(320px,90vw)}
@@ -52,10 +36,11 @@
         const response = await fetch('./preview-v2.html', { cache: 'no-store' });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         let html = await response.text();
+        html = html.replace('<html lang="pt-BR">', '<html lang="pt-BR" data-theme="dark">');
         html = html.replace('</head>', `
           <meta name="application-name" content="Arena BDA">
           <meta name="apple-mobile-web-app-title" content="Arena BDA">
-          <meta name="color-scheme" content="light dark">
+          <meta name="color-scheme" content="dark">
           <meta property="og:title" content="Arena BDA | Campeonatos do Clã">
           <meta property="og:description" content="Campeonatos, clubes, resultados, notícias e comunidade do Clã BDA.">
           <meta property="og:type" content="website">
@@ -66,24 +51,15 @@
           <link rel="apple-touch-icon" href="./favicon.svg">
           <link rel="manifest" href="./site.webmanifest">
           <script>
-            (() => {
-              try {
-                const saved = localStorage.getItem('arena-bda-theme');
-                const theme = saved === 'light' || saved === 'dark'
-                  ? saved
-                  : (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-                document.documentElement.dataset.theme = theme;
-                document.documentElement.style.colorScheme = theme;
-                const meta = document.querySelector('meta[name="theme-color"]');
-                if (meta) meta.content = theme === 'light' ? '#eef4ee' : '#07100c';
-              } catch {}
-            })();
+            document.documentElement.dataset.theme = 'dark';
+            document.documentElement.style.colorScheme = 'dark';
+            try { localStorage.removeItem('arena-bda-theme'); } catch {}
           <\/script>
           <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"><\/script>
           <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"><\/script>
           <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"><\/script>
         </head>`);
-        html = html.replace('</body>', '<script src="./arena-theme.js?v=20260727-2"><\/script><script src="./firebase-auth.js?v=20260726-2"><\/script><script src="./notificacoes-bda.js?v=20260727-1"><\/script><script src="./team-badges.js"><\/script><script src="./champion-banners.js"><\/script><script src="./bda-logo.js"><\/script><script src="./arena-bda.js"><\/script><script src="./firestore-sync.js?v=20260726-3"><\/script><script src="./cloud-recovery.js?v=20260727-3"><\/script><script src="./admin-panel.js?v=20260726-3"><\/script><script src="./confrontos-copa-grifo.js"><\/script><script src="./gestor-inteligente.js?v=20260726-3"><\/script><script src="./home-campeonato-atual-v2.js"><\/script><script src="./sorteio-campeonatos.js"><\/script><script src="./arena-editor-pro.js"><\/script><script src="./ranking-bda.js"><\/script><script src="./central-inscricoes.js"><\/script><script src="./classificacao-automatica.js"><\/script><script src="./arena-lazy-features.js?v=20260727-2"><\/script><script src="./gerador-grupos-ligas.js"><\/script><script src="./navegacao-arena-v2.js"><\/script><script src="./design-arena-pro.js"><\/script><script src="./painel-visual-fix.js"><\/script><script src="./logo-liga.js"><\/script><script src="./captura-jogos-hd.js"><\/script><script src="./captura-jogos-hd-patch.js?v=20260726-1"><\/script><script src="./captura-jogos-pacote-fases.js?v=20260726-2"><\/script><script src="./cores-automaticas-campeonatos.js?v=20260726-1"><\/script><script src="./estudio-imagens-pro.js?v=20260726-1"><\/script><script src="./midia-campeonato-refresh.js?v=20260726-1"><\/script><script src="./arena-auth-consumers.js?v=20260726-1"><\/script><script src="./copa-francos-design-lite.js?v=20260726-2"><\/script><script src="./foto-confronto-antiga.js?v=20260726-4"><\/script><script src="./confronto-editor-v2.js?v=20260726-1"><\/script><script src="./resultados-cards-pro.js?v=20260726-1"><\/script><script src="./placar-mobile-stability.js?v=20260727-1"><\/script><script src="./arena-design-v3.js?v=20260726-1"><\/script><script src="./noticias-nav-fix.js?v=20260727-1"><\/script><script src="./arena-motion-safe.js?v=20260727-1"><\/script><script src="./topbar-mobile-clean.js?v=20260727-1"><\/script><script src="./site-health.js?v=20260727-3"><\/script></body>');
+        html = html.replace('</body>', '<script src="./firebase-auth.js?v=20260726-2"><\/script><script src="./notificacoes-bda.js?v=20260727-1"><\/script><script src="./team-badges.js"><\/script><script src="./champion-banners.js"><\/script><script src="./bda-logo.js"><\/script><script src="./arena-bda.js"><\/script><script src="./firestore-sync.js?v=20260726-3"><\/script><script src="./cloud-recovery.js?v=20260727-3"><\/script><script src="./admin-panel.js?v=20260726-3"><\/script><script src="./confrontos-copa-grifo.js"><\/script><script src="./gestor-inteligente.js?v=20260726-3"><\/script><script src="./home-campeonato-atual-v2.js"><\/script><script src="./sorteio-campeonatos.js"><\/script><script src="./arena-editor-pro.js"><\/script><script src="./ranking-bda.js"><\/script><script src="./central-inscricoes.js"><\/script><script src="./classificacao-automatica.js"><\/script><script src="./arena-lazy-features.js?v=20260727-2"><\/script><script src="./gerador-grupos-ligas.js"><\/script><script src="./navegacao-arena-v2.js"><\/script><script src="./design-arena-pro.js"><\/script><script src="./painel-visual-fix.js"><\/script><script src="./logo-liga.js"><\/script><script src="./captura-jogos-hd.js?v=20260727-2"><\/script><script src="./estudio-imagens-lite.js?v=20260727-1"><\/script><script src="./cores-automaticas-campeonatos.js?v=20260726-1"><\/script><script src="./midia-campeonato-refresh.js?v=20260726-1"><\/script><script src="./arena-auth-consumers.js?v=20260726-1"><\/script><script src="./copa-francos-design-lite.js?v=20260726-2"><\/script><script src="./foto-confronto-antiga.js?v=20260726-4"><\/script><script src="./confronto-editor-v2.js?v=20260726-1"><\/script><script src="./resultados-cards-pro.js?v=20260726-1"><\/script><script src="./placar-mobile-stability.js?v=20260727-1"><\/script><script src="./arena-design-v3.js?v=20260726-1"><\/script><script src="./noticias-nav-fix.js?v=20260727-1"><\/script><script src="./topbar-mobile-clean.js?v=20260727-2"><\/script><script src="./site-health.js?v=20260727-3"><\/script></body>');
         document.open();
         document.write(html);
         document.close();
