@@ -1,17 +1,24 @@
 (() => {
   'use strict';
 
-  const $ = (selector, root = document) => root.querySelector(selector);
-  const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const PHOTO_FORMATS = Object.freeze({
     square: { width: 1080, height: 1080 },
     portrait: { width: 1080, height: 1350 },
     story: { width: 1080, height: 1920 }
   });
 
-  let refreshTimer = 0;
-  let applying = false;
+  const $ = (selector, root = document) => root.querySelector(selector);
+  const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   let lastExportFormat = '';
+
+  function forceDarkTheme() {
+    document.documentElement.dataset.theme = 'dark';
+    document.documentElement.style.colorScheme = 'dark';
+    $('#arenaThemeToggle')?.remove();
+    try { localStorage.removeItem('arena-bda-theme'); } catch {}
+    const meta = $('meta[name="theme-color"]');
+    if (meta) meta.content = '#07100c';
+  }
 
   function isAdminActive() {
     try {
@@ -25,55 +32,54 @@
     );
   }
 
-  function decoratePanel() {
-    const button = $('#cloudPanelBtn');
-    if (!button) return;
-    button.classList.add('arena-clean-panel');
-    if (!button.querySelector('.arena-clean-panel-icon')) {
-      button.innerHTML = '<span class="arena-clean-panel-icon" aria-hidden="true">⚙</span><b>Painel</b>';
+  function decorateTopbar() {
+    forceDarkTheme();
+    const topbar = $('.topbar');
+    if (!topbar) return;
+    topbar.classList.add('arena-topbar-clean');
+
+    const panel = $('#cloudPanelBtn');
+    if (panel && !panel.querySelector('.arena-clean-panel-icon')) {
+      panel.classList.add('arena-clean-panel');
+      panel.innerHTML = '<span class="arena-clean-panel-icon" aria-hidden="true">⚙</span><b>Painel</b>';
     }
-  }
 
-  function decorateAdmin() {
-    const button = $('#adminBtn');
-    if (!button) return;
-    const active = isAdminActive();
-    const state = active ? 'active' : 'guest';
-    if (button.dataset.cleanAdminState === state && button.querySelector('.arena-clean-admin-icon')) return;
+    const admin = $('#adminBtn');
+    if (admin) {
+      const active = isAdminActive();
+      const state = active ? 'active' : 'guest';
+      if (admin.dataset.cleanAdminState !== state || !admin.querySelector('.arena-clean-admin-icon')) {
+        admin.dataset.cleanAdminState = state;
+        admin.classList.add('arena-clean-admin');
+        admin.classList.toggle('active', active);
+        admin.innerHTML = active
+          ? '<i class="arena-clean-admin-dot" aria-hidden="true"></i><span class="arena-clean-admin-icon" aria-hidden="true">👤</span><b>Admin</b>'
+          : '<span class="arena-clean-admin-icon" aria-hidden="true">🔐</span><b>Entrar</b>';
+        admin.setAttribute('aria-label', active ? 'Administrador ativo. Toque para sair' : 'Entrar como administrador');
+      }
+    }
 
-    button.dataset.cleanAdminState = state;
-    button.classList.add('arena-clean-admin');
-    button.classList.toggle('active', active);
-    button.innerHTML = active
-      ? '<i class="arena-clean-admin-dot" aria-hidden="true"></i><span class="arena-clean-admin-icon" aria-hidden="true">👤</span><b>Admin</b>'
-      : '<span class="arena-clean-admin-icon" aria-hidden="true">🔐</span><b>Entrar</b>';
-    button.setAttribute('aria-label', active ? 'Administrador ativo. Toque para sair' : 'Entrar como administrador');
-    button.title = active ? 'Administrador ativo • tocar para sair' : 'Entrar como administrador';
-  }
-
-  function addShareToMore() {
     const grid = $('.arena-nav-sheet-grid');
     const share = $('#shareBtn');
-    if (!grid || !share || $('#arenaShareMore')) return;
-
-    const button = document.createElement('button');
-    button.id = 'arenaShareMore';
-    button.type = 'button';
-    button.className = 'arena-sheet-item arena-share-more';
-    button.innerHTML = '<i aria-hidden="true">↗</i><span><b>Compartilhar Arena</b><small>Enviar o link para outro membro</small></span><em>›</em>';
-    button.addEventListener('click', () => {
-      $('.arena-nav-sheet-backdrop')?.classList.remove('show');
-      document.body.classList.remove('arena-sheet-open');
-      share.click();
-    });
-    grid.append(button);
+    if (grid && share && !$('#arenaShareMore')) {
+      const button = document.createElement('button');
+      button.id = 'arenaShareMore';
+      button.type = 'button';
+      button.className = 'arena-sheet-item arena-share-more';
+      button.innerHTML = '<i aria-hidden="true">↗</i><span><b>Compartilhar Arena</b><small>Enviar o link para outro membro</small></span><em>›</em>';
+      button.addEventListener('click', () => {
+        $('.arena-nav-sheet-backdrop')?.classList.remove('show');
+        document.body.classList.remove('arena-sheet-open');
+        share.click();
+      });
+      grid.append(button);
+    }
   }
 
   function scoreValue(element) {
     if (!element) return '–';
     const raw = 'value' in element ? element.value : element.textContent;
-    const value = String(raw ?? '').trim();
-    return value === '' ? '–' : value;
+    return String(raw ?? '').trim() || '–';
   }
 
   function syncPhotoScore(game) {
@@ -100,29 +106,19 @@
     $$('#giManager .gi-game').forEach(syncPhotoScore);
   }
 
-  function syncFromTarget(target) {
-    syncPhotoScore(target?.closest?.('.gi-game'));
-  }
-
   function selectedPhotoFormat() {
     const previewFormat = $('#cfpPreviewViewport .cfp-card')?.dataset?.format;
     if (PHOTO_FORMATS[previewFormat]) return previewFormat;
-    const selectFormat = $('#cfpFormat')?.value;
-    if (PHOTO_FORMATS[selectFormat]) return selectFormat;
+    const selected = $('#cfpFormat')?.value;
+    if (PHOTO_FORMATS[selected]) return selected;
     return PHOTO_FORMATS[lastExportFormat] ? lastExportFormat : 'portrait';
   }
 
-  function copyPreviewIntoExport(stage, requestedFormat = '') {
+  function copyPreviewIntoExport(stage) {
     if (!stage?.classList?.contains('cfp-export-stage')) return PHOTO_FORMATS.portrait;
-
     const preview = $('#cfpPreviewViewport .cfp-card');
-    const previewFormat = preview?.dataset?.format;
-    const formatKey = PHOTO_FORMATS[previewFormat]
-      ? previewFormat
-      : PHOTO_FORMATS[requestedFormat]
-        ? requestedFormat
-        : selectedPhotoFormat();
-    const format = PHOTO_FORMATS[formatKey] || PHOTO_FORMATS.portrait;
+    const key = PHOTO_FORMATS[preview?.dataset?.format] ? preview.dataset.format : selectedPhotoFormat();
+    const format = PHOTO_FORMATS[key] || PHOTO_FORMATS.portrait;
 
     if (preview) {
       stage.className = `${preview.className} cfp-export-stage`;
@@ -133,25 +129,21 @@
       });
     }
 
-    stage.dataset.format = formatKey;
+    stage.dataset.format = key;
     stage.style.setProperty('width', `${format.width}px`, 'important');
     stage.style.setProperty('height', `${format.height}px`, 'important');
     stage.style.setProperty('transform', 'none', 'important');
-    stage.style.setProperty('transform-origin', 'top left', 'important');
-    lastExportFormat = formatKey;
+    lastExportFormat = key;
     return format;
   }
 
-  function installHtml2CanvasBridge() {
+  function installCaptureBridge() {
     const original = window.html2canvas;
     if (typeof original !== 'function' || original.__arenaPreviewBridge) return;
 
     const wrapped = function arenaPreviewHtml2Canvas(element, options = {}) {
-      if (!element?.classList?.contains('cfp-export-stage')) {
-        return original.call(this, element, options);
-      }
-
-      const format = copyPreviewIntoExport(element, selectedPhotoFormat());
+      if (!element?.classList?.contains('cfp-export-stage')) return original.call(this, element, options);
+      const format = copyPreviewIntoExport(element);
       return original.call(this, element, {
         ...options,
         width: format.width,
@@ -168,40 +160,19 @@
     window.html2canvas = wrapped;
   }
 
-  function watchHtml2CanvasScripts(root = document) {
-    installHtml2CanvasBridge();
-    $$('script[src*="html2canvas"]', root).forEach(script => {
+  function watchCaptureLoader() {
+    installCaptureBridge();
+    $$('script[src*="html2canvas"]').forEach(script => {
       if (script.dataset.arenaPreviewBridgeBound === 'true') return;
       script.dataset.arenaPreviewBridgeBound = 'true';
-      script.addEventListener('load', installHtml2CanvasBridge, { once: true });
+      script.addEventListener('load', installCaptureBridge, { once: true });
     });
   }
 
-  function rememberExportFormat(target) {
-    if (!target?.closest?.('[data-cfp-download-action],[data-cfp-share-action]')) return;
-    lastExportFormat = selectedPhotoFormat();
-    watchHtml2CanvasScripts();
-  }
-
   function refresh() {
-    clearTimeout(refreshTimer);
-    refreshTimer = window.setTimeout(() => {
-      if (applying) return;
-      applying = true;
-      try {
-        const topbar = $('.topbar');
-        if (topbar) {
-          topbar.classList.add('arena-topbar-clean');
-          decoratePanel();
-          decorateAdmin();
-          addShareToMore();
-        }
-        syncAllPhotoScores();
-        watchHtml2CanvasScripts();
-      } finally {
-        applying = false;
-      }
-    }, 0);
+    decorateTopbar();
+    syncAllPhotoScores();
+    watchCaptureLoader();
   }
 
   const style = document.createElement('style');
@@ -209,35 +180,30 @@
   style.textContent = `
     .arena-photo-score-bridge{display:none!important}
     .arena-topbar-clean .top-actions{min-width:0}
-    .arena-clean-panel,.arena-clean-admin{display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap}
+    .arena-clean-panel,.arena-clean-admin{display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
     .arena-clean-panel-icon,.arena-clean-admin-icon{font-size:15px;line-height:1}
-    .arena-clean-panel b,.arena-clean-admin b{font-size:10px;line-height:1;text-transform:uppercase}
-    .arena-clean-admin{position:relative}.arena-clean-admin-dot{position:absolute;right:5px;top:5px;width:7px;height:7px;border:2px solid #102018;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(79,223,143,.12)}
+    .arena-clean-panel b,.arena-clean-admin b{font-size:9px;line-height:1;text-transform:uppercase}
+    .arena-clean-admin{position:relative}
+    .arena-clean-admin-dot{position:absolute;right:5px;top:5px;width:7px;height:7px;border:2px solid #102018;border-radius:50%;background:var(--green)}
     #cloudPanelBtn[hidden]{display:none!important}
     @media(max-width:720px){
-      .topbar.arena-topbar-clean{position:sticky!important;top:6px!important;z-index:48!important;width:auto!important;min-height:62px!important;margin:6px 8px 12px!important;padding:7px 8px!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:7px!important;border:1px solid rgba(242,215,125,.20)!important;border-radius:20px!important;background:linear-gradient(180deg,rgba(13,28,20,.96),rgba(5,13,9,.97))!important;box-shadow:0 13px 34px rgba(0,0,0,.34)!important;backdrop-filter:blur(20px)!important}
-      .topbar.arena-topbar-clean .brand{width:46px!important;min-width:46px!important;flex:0 0 46px!important;margin:0!important;padding:0!important;display:block!important;border:0!important}
-      .topbar.arena-topbar-clean .brand:before,.topbar.arena-topbar-clean .brand:after,.topbar.arena-topbar-clean .brand-copy{display:none!important}
-      .topbar.arena-topbar-clean .brand-mark{width:46px!important;height:46px!important;margin:0!important;border-radius:14px!important;transform:none!important;box-shadow:0 8px 20px rgba(0,0,0,.24)!important}
-      .topbar.arena-topbar-clean .top-actions{flex:1 1 auto!important;display:grid!important;grid-template-columns:40px 40px minmax(72px,92px) 42px!important;justify-content:end!important;align-items:center!important;gap:5px!important}
+      .topbar.arena-topbar-clean{position:sticky!important;top:6px!important;z-index:48!important;min-height:58px!important;margin:6px 8px 12px!important;padding:6px 8px!important;gap:7px!important;border:1px solid rgba(242,215,125,.18)!important;border-radius:18px!important;background:rgba(6,16,11,.96)!important;box-shadow:0 10px 26px rgba(0,0,0,.28)!important;backdrop-filter:blur(14px)!important}
+      .topbar.arena-topbar-clean .brand{width:44px!important;min-width:44px!important;flex:0 0 44px!important;margin:0!important;padding:0!important}
+      .topbar.arena-topbar-clean .brand-copy,.topbar.arena-topbar-clean .brand:before,.topbar.arena-topbar-clean .brand:after{display:none!important}
+      .topbar.arena-topbar-clean .brand-mark{width:44px!important;height:44px!important;margin:0!important;border-radius:13px!important;transform:none!important}
+      .topbar.arena-topbar-clean .top-actions{flex:1 1 auto!important;display:flex!important;justify-content:flex-end!important;align-items:center!important;gap:5px!important}
       .topbar.arena-topbar-clean #shareBtn{display:none!important}
-      .topbar.arena-topbar-clean #arenaThemeToggle,.topbar.arena-topbar-clean #arenaNotificationsBtn{width:40px!important;min-width:40px!important;height:40px!important;min-height:40px!important;padding:0!important;border-radius:12px!important}
-      .topbar.arena-topbar-clean #arenaThemeToggle b{display:none!important}
-      .topbar.arena-topbar-clean #cloudPanelBtn{width:100%!important;min-width:0!important;height:40px!important;min-height:40px!important;padding:0 9px!important;border-radius:12px!important;gap:5px!important}
-      .topbar.arena-topbar-clean #cloudPanelBtn b{font-size:9px!important}
+      .topbar.arena-topbar-clean #arenaNotificationsBtn{width:40px!important;min-width:40px!important;height:40px!important;min-height:40px!important;padding:0!important;border-radius:12px!important}
+      .topbar.arena-topbar-clean #cloudPanelBtn{min-width:72px!important;height:40px!important;min-height:40px!important;padding:0 9px!important;border-radius:12px!important}
       .topbar.arena-topbar-clean #adminBtn{width:42px!important;min-width:42px!important;height:40px!important;min-height:40px!important;padding:0!important;border-radius:12px!important;font-size:0!important}
       .topbar.arena-topbar-clean #adminBtn b{display:none!important}
       .topbar.arena-topbar-clean #adminBtn:not(.active){color:var(--gold-soft)!important;background:rgba(255,255,255,.04)!important;border-color:var(--line)!important}
-      html[data-theme="light"] .topbar.arena-topbar-clean{background:linear-gradient(180deg,rgba(250,252,250,.97),rgba(235,243,236,.97))!important;border-color:rgba(166,126,20,.24)!important;box-shadow:0 13px 32px rgba(39,72,49,.14)!important}
-      html[data-theme="light"] .arena-clean-admin-dot{border-color:#f3f8f4}
     }
     @media(max-width:370px){
-      .topbar.arena-topbar-clean{margin-inline:5px!important;padding-inline:6px!important;gap:5px!important}
-      .topbar.arena-topbar-clean .brand{width:42px!important;min-width:42px!important;flex-basis:42px!important}.topbar.arena-topbar-clean .brand-mark{width:42px!important;height:42px!important}
-      .topbar.arena-topbar-clean .top-actions{grid-template-columns:38px 38px minmax(60px,78px) 38px!important;gap:4px!important}
-      .topbar.arena-topbar-clean #arenaThemeToggle,.topbar.arena-topbar-clean #arenaNotificationsBtn,.topbar.arena-topbar-clean #cloudPanelBtn,.topbar.arena-topbar-clean #adminBtn{height:38px!important;min-height:38px!important}
-      .topbar.arena-topbar-clean #arenaThemeToggle,.topbar.arena-topbar-clean #arenaNotificationsBtn,.topbar.arena-topbar-clean #adminBtn{width:38px!important;min-width:38px!important}
-      .topbar.arena-topbar-clean #cloudPanelBtn{padding-inline:6px!important}.topbar.arena-topbar-clean #cloudPanelBtn b{font-size:8px!important}
+      .topbar.arena-topbar-clean{margin-inline:5px!important;padding-inline:6px!important}
+      .topbar.arena-topbar-clean .brand,.topbar.arena-topbar-clean .brand-mark{width:40px!important;min-width:40px!important;height:40px!important}
+      .topbar.arena-topbar-clean #arenaNotificationsBtn,.topbar.arena-topbar-clean #adminBtn{width:38px!important;min-width:38px!important;height:38px!important;min-height:38px!important}
+      .topbar.arena-topbar-clean #cloudPanelBtn{min-width:64px!important;height:38px!important;min-height:38px!important;padding-inline:6px!important}
     }
   `;
   document.head.append(style);
@@ -245,48 +211,36 @@
   document.addEventListener('pointerdown', event => {
     const target = event.target instanceof Element ? event.target : null;
     const photoButton = target?.closest('[data-old-match-photo],.pro-game-photo');
-    if (photoButton) syncFromTarget(photoButton);
-    rememberExportFormat(target);
-  }, true);
-
-  document.addEventListener('click', event => {
-    const target = event.target instanceof Element ? event.target : null;
-    const photoButton = target?.closest('[data-old-match-photo],.pro-game-photo');
-    if (photoButton) syncFromTarget(photoButton);
-    rememberExportFormat(target);
-  }, true);
-
-  document.addEventListener('input', event => {
-    if (!(event.target instanceof Element)) return;
-    if (event.target.closest('.gip-scoreboard')) syncFromTarget(event.target);
-    if (event.target.matches('#cfpFormat')) lastExportFormat = selectedPhotoFormat();
-  }, true);
-
-  document.addEventListener('change', event => {
-    if (event.target instanceof Element && event.target.matches('#cfpFormat')) {
-      lastExportFormat = event.target.value;
+    if (photoButton) syncPhotoScore(photoButton.closest('.gi-game'));
+    if (target?.closest('[data-cfp-download-action],[data-cfp-share-action]')) {
+      lastExportFormat = selectedPhotoFormat();
+      watchCaptureLoader();
     }
   }, true);
 
-  const observer = new MutationObserver(mutations => {
-    mutations.forEach(mutation => mutation.addedNodes.forEach(node => {
-      if (!(node instanceof Element)) return;
-      if (node.matches('script[src*="html2canvas"]') || node.querySelector('script[src*="html2canvas"]')) {
-        watchHtml2CanvasScripts(node.matches('script') ? node.parentElement || document : node);
-      }
-    }));
-    refresh();
-  });
-  observer.observe(document.body, { childList: true, subtree: true, characterData: true });
-  observer.observe(document.head, { childList: true, subtree: true });
-  window.ArenaBDAAuth?.subscribe?.(() => window.setTimeout(refresh, 0));
-  window.addEventListener('arena:permissions-updated', refresh);
-  window.addEventListener('arena:quick-score-saved', refresh);
+  document.addEventListener('input', event => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest('.gip-scoreboard')) syncPhotoScore(target.closest('.gi-game'));
+  }, true);
+
+  document.addEventListener('change', event => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.matches('#cfpFormat')) lastExportFormat = target.value;
+  }, true);
+
+  const headObserver = new MutationObserver(watchCaptureLoader);
+  headObserver.observe(document.head, { childList: true });
+
+  window.ArenaBDAAuth?.subscribe?.(() => setTimeout(decorateTopbar, 0));
+  window.addEventListener('arena:permissions-updated', decorateTopbar);
+  window.addEventListener('arena:quick-score-saved', syncAllPhotoScores);
+  window.addEventListener('arena:matches-updated', syncAllPhotoScores);
 
   window.ArenaBDATopbar = Object.freeze({
     refresh,
     syncPhotoScore,
-    syncPhotoExport: () => installHtml2CanvasBridge()
+    syncPhotoExport: installCaptureBridge
   });
+
   refresh();
 })();
