@@ -1,15 +1,7 @@
 (() => {
   'use strict';
 
-  const PHOTO_FORMATS = Object.freeze({
-    square: { width: 1080, height: 1080 },
-    portrait: { width: 1080, height: 1350 },
-    story: { width: 1080, height: 1920 }
-  });
-
   const $ = (selector, root = document) => root.querySelector(selector);
-  const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
-  let lastExportFormat = '';
 
   function forceDarkTheme() {
     document.documentElement.dataset.theme = 'dark';
@@ -76,109 +68,9 @@
     }
   }
 
-  function scoreValue(element) {
-    if (!element) return '–';
-    const raw = 'value' in element ? element.value : element.textContent;
-    return String(raw ?? '').trim() || '–';
-  }
-
-  function syncPhotoScore(game) {
-    if (!game) return;
-    const scores = $$('.gip-scoreboard > .gi-score-input, .gip-scoreboard > .gi-score', game)
-      .slice(0, 2)
-      .map(scoreValue);
-    const teams = $$('.gi-team', game).slice(0, 2);
-    if (scores.length !== 2 || teams.length !== 2) return;
-
-    teams.forEach((team, index) => {
-      let bridge = $('.arena-photo-score-bridge', team);
-      if (!bridge) {
-        bridge = document.createElement('span');
-        bridge.className = 'gi-score arena-photo-score-bridge';
-        bridge.setAttribute('aria-hidden', 'true');
-        team.append(bridge);
-      }
-      bridge.textContent = scores[index];
-    });
-  }
-
-  function syncAllPhotoScores() {
-    $$('#giManager .gi-game').forEach(syncPhotoScore);
-  }
-
-  function selectedPhotoFormat() {
-    const previewFormat = $('#cfpPreviewViewport .cfp-card')?.dataset?.format;
-    if (PHOTO_FORMATS[previewFormat]) return previewFormat;
-    const selected = $('#cfpFormat')?.value;
-    if (PHOTO_FORMATS[selected]) return selected;
-    return PHOTO_FORMATS[lastExportFormat] ? lastExportFormat : 'portrait';
-  }
-
-  function copyPreviewIntoExport(stage) {
-    if (!stage?.classList?.contains('cfp-export-stage')) return PHOTO_FORMATS.portrait;
-    const preview = $('#cfpPreviewViewport .cfp-card');
-    const key = PHOTO_FORMATS[preview?.dataset?.format] ? preview.dataset.format : selectedPhotoFormat();
-    const format = PHOTO_FORMATS[key] || PHOTO_FORMATS.portrait;
-
-    if (preview) {
-      stage.className = `${preview.className} cfp-export-stage`;
-      stage.innerHTML = preview.innerHTML;
-      ['--cfp-a', '--cfp-b', '--cfp-accent', '--cfp-glow', '--cfp-background-image'].forEach(property => {
-        const value = preview.style.getPropertyValue(property);
-        if (value) stage.style.setProperty(property, value);
-      });
-    }
-
-    stage.dataset.format = key;
-    stage.style.setProperty('width', `${format.width}px`, 'important');
-    stage.style.setProperty('height', `${format.height}px`, 'important');
-    stage.style.setProperty('transform', 'none', 'important');
-    lastExportFormat = key;
-    return format;
-  }
-
-  function installCaptureBridge() {
-    const original = window.html2canvas;
-    if (typeof original !== 'function' || original.__arenaPreviewBridge) return;
-
-    const wrapped = function arenaPreviewHtml2Canvas(element, options = {}) {
-      if (!element?.classList?.contains('cfp-export-stage')) return original.call(this, element, options);
-      const format = copyPreviewIntoExport(element);
-      return original.call(this, element, {
-        ...options,
-        width: format.width,
-        height: format.height,
-        windowWidth: format.width,
-        windowHeight: format.height,
-        scrollX: 0,
-        scrollY: 0
-      });
-    };
-
-    wrapped.__arenaPreviewBridge = true;
-    wrapped.__arenaOriginal = original;
-    window.html2canvas = wrapped;
-  }
-
-  function watchCaptureLoader() {
-    installCaptureBridge();
-    $$('script[src*="html2canvas"]').forEach(script => {
-      if (script.dataset.arenaPreviewBridgeBound === 'true') return;
-      script.dataset.arenaPreviewBridgeBound = 'true';
-      script.addEventListener('load', installCaptureBridge, { once: true });
-    });
-  }
-
-  function refresh() {
-    decorateTopbar();
-    syncAllPhotoScores();
-    watchCaptureLoader();
-  }
-
   const style = document.createElement('style');
   style.id = 'arenaTopbarCleanStyles';
   style.textContent = `
-    .arena-photo-score-bridge{display:none!important}
     .arena-topbar-clean .top-actions{min-width:0}
     .arena-clean-panel,.arena-clean-admin{display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
     .arena-clean-panel-icon,.arena-clean-admin-icon{font-size:15px;line-height:1}
@@ -208,39 +100,9 @@
   `;
   document.head.append(style);
 
-  document.addEventListener('pointerdown', event => {
-    const target = event.target instanceof Element ? event.target : null;
-    const photoButton = target?.closest('[data-old-match-photo],.pro-game-photo');
-    if (photoButton) syncPhotoScore(photoButton.closest('.gi-game'));
-    if (target?.closest('[data-cfp-download-action],[data-cfp-share-action]')) {
-      lastExportFormat = selectedPhotoFormat();
-      watchCaptureLoader();
-    }
-  }, true);
-
-  document.addEventListener('input', event => {
-    const target = event.target instanceof Element ? event.target : null;
-    if (target?.closest('.gip-scoreboard')) syncPhotoScore(target.closest('.gi-game'));
-  }, true);
-
-  document.addEventListener('change', event => {
-    const target = event.target instanceof Element ? event.target : null;
-    if (target?.matches('#cfpFormat')) lastExportFormat = target.value;
-  }, true);
-
-  const headObserver = new MutationObserver(watchCaptureLoader);
-  headObserver.observe(document.head, { childList: true });
-
   window.ArenaBDAAuth?.subscribe?.(() => setTimeout(decorateTopbar, 0));
   window.addEventListener('arena:permissions-updated', decorateTopbar);
-  window.addEventListener('arena:quick-score-saved', syncAllPhotoScores);
-  window.addEventListener('arena:matches-updated', syncAllPhotoScores);
+  window.ArenaBDATopbar = Object.freeze({ refresh: decorateTopbar });
 
-  window.ArenaBDATopbar = Object.freeze({
-    refresh,
-    syncPhotoScore,
-    syncPhotoExport: installCaptureBridge
-  });
-
-  refresh();
+  [0, 180, 600, 1400].forEach(delay => setTimeout(decorateTopbar, delay));
 })();
