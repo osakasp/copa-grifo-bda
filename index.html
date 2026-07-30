@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-theme="dark">
+<html lang="pt-BR" data-theme="dark" data-arena-boot="critical">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -7,67 +7,172 @@
   <meta name="color-scheme" content="dark">
   <meta name="application-name" content="Arena BDA">
   <meta name="apple-mobile-web-app-title" content="Arena BDA">
+  <meta name="description" content="Campeonatos, clubes, resultados, notícias e comunidade do Clã BDA.">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta property="og:title" content="Arena BDA | Campeonatos do Clã">
+  <meta property="og:description" content="Campeonatos, clubes, resultados, notícias e comunidade do Clã BDA.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://arenabda.com.br/">
+  <meta property="og:image" content="https://arenabda.com.br/favicon.svg">
+  <meta property="og:locale" content="pt_BR">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Arena BDA | Campeonatos do Clã">
+  <meta name="twitter:description" content="A arena oficial dos campeonatos do Clã BDA.">
+  <link rel="canonical" href="https://arenabda.com.br/">
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
-  <link rel="dns-prefetch" href="//www.gstatic.com">
-  <link rel="preload" href="./firebase-auth.js?v=20260726-2" as="script" fetchpriority="high">
-  <link rel="preload" href="./arena-bda.js" as="script" fetchpriority="high">
-  <link rel="preload" href="./navegacao-arena-v2.js" as="script">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="dns-prefetch" href="//firestore.googleapis.com">
+  <link rel="dns-prefetch" href="//identitytoolkit.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./arena-shell.css?v=20260729-1">
+  <link rel="preload" href="./arena-bootstrap.js?v=20260729-1" as="script" fetchpriority="high">
   <link rel="icon" type="image/svg+xml" href="./favicon.svg">
   <link rel="shortcut icon" href="./favicon.svg">
   <link rel="apple-touch-icon" href="./favicon.svg">
   <link rel="manifest" href="./site.webmanifest">
   <title>Arena BDA | Campeonatos do Clã</title>
-  <meta name="description" content="Plataforma oficial para criação e acompanhamento dos campeonatos do Clã BDA.">
-  <style>
-    :root{--loader-bg:#07100c;--loader-text:#f4f7f2;--loader-muted:#9fb0a5;--loader-mark:#020503;color-scheme:dark}
-    html,body{height:100%;margin:0;background:var(--loader-bg);color:var(--loader-text);font-family:system-ui,sans-serif}
-    body{display:grid;place-items:center;text-align:center;padding:24px}
-    .loader{width:min(320px,90vw)}
-    .griffin{width:72px;height:72px;margin:auto;overflow:hidden;border:1px solid rgba(216,178,72,.46);border-radius:20px;background:var(--loader-mark);box-shadow:0 8px 28px rgba(216,178,72,.24)}
-    .griffin img{display:block;width:100%;height:100%;object-fit:cover}
-    h1{margin:12px 0 8px;font-size:22px}p{margin:0;color:var(--loader-muted);font-size:13px}
-  </style>
 </head>
 <body>
-  <main class="loader"><div class="griffin"><img src="./favicon.svg" alt="Escudo oficial Arena BDA"></div><h1>Carregando a Arena BDA</h1><p>Conectando os campeonatos à nuvem...</p></main>
-  <script>
-    (async () => {
-      try {
-        const response = await fetch('./preview-v2.html', { cache: 'no-store' });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        let html = await response.text();
-        html = html.replace('<html lang="pt-BR">', '<html lang="pt-BR" data-theme="dark">');
-        html = html.replace('</head>', `
-          <meta name="application-name" content="Arena BDA">
-          <meta name="apple-mobile-web-app-title" content="Arena BDA">
-          <meta name="color-scheme" content="dark">
-          <meta property="og:title" content="Arena BDA | Campeonatos do Clã">
-          <meta property="og:description" content="Campeonatos, clubes, resultados, notícias e comunidade do Clã BDA.">
-          <meta property="og:type" content="website">
-          <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
-          <link rel="dns-prefetch" href="//www.gstatic.com">
-          <link rel="icon" type="image/svg+xml" href="./favicon.svg">
-          <link rel="shortcut icon" href="./favicon.svg">
-          <link rel="apple-touch-icon" href="./favicon.svg">
-          <link rel="manifest" href="./site.webmanifest">
-          <script>
-            document.documentElement.dataset.theme = 'dark';
-            document.documentElement.style.colorScheme = 'dark';
-            try { localStorage.removeItem('arena-bda-theme'); } catch {}
-          <\/script>
-          <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"><\/script>
-          <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"><\/script>
-          <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"><\/script>
-        </head>`);
-        html = html.replace('</body>', '<script src="./firebase-auth.js?v=20260726-2"><\/script><script src="./notificacoes-bda.js?v=20260727-1"><\/script><script src="./team-badges.js"><\/script><script src="./champion-banners.js"><\/script><script src="./bda-logo.js"><\/script><script src="./arena-bda.js"><\/script><script src="./firestore-sync.js?v=20260726-3"><\/script><script src="./cloud-recovery.js?v=20260727-3"><\/script><script src="./admin-panel.js?v=20260726-3"><\/script><script src="./confrontos-copa-grifo.js"><\/script><script src="./gestor-inteligente.js?v=20260726-3"><\/script><script src="./home-campeonato-atual-v2.js"><\/script><script src="./sorteio-campeonatos.js"><\/script><script src="./arena-editor-pro.js"><\/script><script src="./ranking-bda.js"><\/script><script src="./central-inscricoes.js"><\/script><script src="./classificacao-automatica.js"><\/script><script src="./arena-lazy-features.js?v=20260727-2"><\/script><script src="./gerador-grupos-ligas.js"><\/script><script src="./navegacao-arena-v2.js"><\/script><script src="./design-arena-pro.js"><\/script><script src="./painel-visual-fix.js"><\/script><script src="./logo-liga.js"><\/script><script src="./cores-automaticas-campeonatos.js?v=20260726-1"><\/script><script src="./midia-campeonato-refresh.js?v=20260726-1"><\/script><script src="./arena-auth-consumers.js?v=20260726-1"><\/script><script src="./copa-francos-design-lite.js?v=20260726-2"><\/script><script src="./confronto-editor-v2.js?v=20260726-1"><\/script><script src="./resultados-cards-pro.js?v=20260726-1"><\/script><script src="./placar-mobile-stability.js?v=20260727-1"><\/script><script src="./captura-confrontos-simples.js?v=20260728-2"><\/script><script src="./arena-design-v3.js?v=20260726-1"><\/script><script src="./noticias-nav-fix.js?v=20260727-1"><\/script><script src="./topbar-mobile-clean.js?v=20260728-1"><\/script><script src="./site-health.js?v=20260727-3"><\/script></body>');
-        document.open();
-        document.write(html);
-        document.close();
-      } catch (error) {
-        document.body.innerHTML = '<main><h1>Não foi possível abrir a Arena</h1><p>Atualize a página e tente novamente.</p></main>';
-        console.error(error);
-      }
-    })();
-  </script>
+<div class="app-shell">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">🦅</div>
+      <div class="brand-copy"><strong>Arena BDA</strong><span>Campeonatos oficiais do Clã</span></div>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" id="shareBtn" aria-label="Compartilhar Arena BDA">↗</button>
+      <button class="admin-btn" id="adminBtn" type="button">ENTRAR</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="page active" data-page="home">
+      <div class="hero">
+        <div class="hero-content">
+          <span class="eyebrow">Portal oficial • Clã BDA</span>
+          <h1>Todos os campeonatos. Uma só arena.</h1>
+          <p>Crie copas e ligas, registre clubes, acompanhe chaveamentos e preserve a história dos campeões do Clã BDA.</p>
+          <div class="hero-actions">
+            <button class="primary" data-go="tournament" type="button">Explorar campeonatos</button>
+            <button class="secondary" data-go="teams" type="button">Ver clubes</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="quick-stats" id="arenaStats">
+        <div class="stat"><b>6</b><span>Campeonatos</span></div>
+        <div class="stat"><b>1</b><span>Em andamento</span></div>
+        <div class="stat"><b>0</b><span>Inscrições</span></div>
+        <div class="stat"><b>6</b><span>Clubes</span></div>
+        <div class="stat"><b>4</b><span>Campeões</span></div>
+        <div class="stat"><b>BDA</b><span>Uma só arena</span></div>
+      </div>
+
+      <div class="admin-panel" id="adminPanel">
+        <h3>Central administrativa Arena BDA</h3>
+        <p>Gerencie campeonatos, clubes e a Sala de Troféus com sincronização em nuvem.</p>
+        <div class="admin-tools">
+          <button class="ghost" data-go="teams" type="button">Gerenciar times</button>
+          <button class="ghost" data-go="champions" type="button">Adicionar campeão</button>
+          <button class="danger" id="resetDemoBtn" type="button">Restaurar dados locais</button>
+        </div>
+      </div>
+
+      <div class="home-grid">
+        <div>
+          <div class="section-head"><div><h2>Partida em destaque</h2><p>Último confronto registrado</p></div></div>
+          <article class="card live-card">
+            <div class="live-top"><span class="live-pill"><i class="live-dot"></i> Finalizada</span><time>Final • 8ª edição</time></div>
+            <div class="versus">
+              <div class="club"><div class="club-badge gold">ZFC</div><strong>Zombie FC BDA</strong></div>
+              <div class="scorebox"><b>CAMPEÃO</b><span>Resultado oficial</span></div>
+              <div class="club"><div class="club-badge">BDA</div><strong>Finalista BDA</strong></div>
+            </div>
+          </article>
+        </div>
+        <div>
+          <div class="section-head"><div><h2>Últimos jogos</h2><p>Resultados do mata-mata</p></div><button data-go="tournament" type="button">Ver todos</button></div>
+          <div class="card match-list">
+            <div class="match-row"><span class="match-stage">Oitavas</span><div class="match-teams"><div><span>Zombie FC BDA</span><b>6</b></div><div><span>Flamestre FC BDA</span><b>1</b></div></div><span class="match-status">Encerrado</span></div>
+            <div class="match-row"><span class="match-stage">Oitavas</span><div class="match-teams"><div><span>Imortais FC BDA</span><b>4</b></div><div><span>Florence Real FC</span><b>1</b></div></div><span class="match-status">Encerrado</span></div>
+            <div class="match-row"><span class="match-stage">Oitavas</span><div class="match-teams"><div><span>Inter Brasil BDA</span><b>3</b></div><div><span>Milan AC BDA</span><b>2</b></div></div><span class="match-status">Encerrado</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" data-page="tournament">
+      <div class="section-head"><div><span class="eyebrow">Copa atual</span><h2>Chaveamento oficial</h2><p>Deslize horizontalmente para acompanhar todas as fases.</p></div></div>
+      <div class="bracket">
+        <div class="round"><div class="round-title">Oitavas</div><div class="fixture"><div><span class="winner">Zombie FC</span><b>6</b></div><div><span>Flamestre</span><b>1</b></div></div><div class="fixture"><div><span class="winner">Imortais FC</span><b>4</b></div><div><span>Florence Real</span><b>1</b></div></div><div class="fixture"><div><span class="winner">Inter Brasil</span><b>3</b></div><div><span>Milan AC</span><b>2</b></div></div><div class="fixture"><div><span class="winner">Mozamigos</span><b>4</b></div><div><span>BDA URDLS</span><b>3</b></div></div></div>
+        <div class="round"><div class="round-title">Quartas</div><div class="fixture"><div><span class="winner">Zombie FC</span><b>✓</b></div><div><span>Adversário</span><b>−</b></div></div><div class="fixture"><div><span class="winner">Imortais FC</span><b>✓</b></div><div><span>Adversário</span><b>−</b></div></div></div>
+        <div class="round"><div class="round-title">Semifinais</div><div class="fixture"><div><span class="winner">Zombie FC</span><b>✓</b></div><div><span>Semifinalista</span><b>−</b></div></div><div class="fixture"><div><span class="pending">A definir</span><b>−</b></div><div><span class="pending">A definir</span><b>−</b></div></div></div>
+        <div class="round"><div class="round-title">Grande final</div><div class="fixture"><div><span class="winner">Zombie FC BDA</span><b>🏆</b></div><div><span>Finalista BDA</span><b>🥈</b></div></div></div>
+      </div>
+      <div class="section-head"><div><h2>Regulamento rápido</h2><p>Informações operacionais da competição</p></div></div>
+      <div class="card match-list">
+        <div class="match-row"><span class="match-stage">Formato</span><div class="match-teams"><div><span>Eliminação direta</span><b>Jogo único</b></div></div><span class="match-status">Ativo</span></div>
+        <div class="match-row"><span class="match-stage">Prazo</span><div class="match-teams"><div><span>Cada fase</span><b>24 horas</b></div></div><span class="match-status">Oficial</span></div>
+        <div class="match-row"><span class="match-stage">Tolerância</span><div class="match-teams"><div><span>Atraso máximo</span><b>30 min</b></div></div><span class="match-status">Regra</span></div>
+      </div>
+    </section>
+
+    <section class="page" data-page="champions"><div class="section-head"><div><span class="eyebrow">Memória BDA</span><h2>Sala de Troféus BDA</h2><p>Os donos do trono em cada edição.</p></div><button id="addChampionBtn" type="button" hidden>Adicionar</button></div><div class="champion-grid" id="championGrid"></div></section>
+
+    <section class="page" data-page="teams">
+      <div class="section-head"><div><span class="eyebrow">Clubes</span><h2>Clubes BDA</h2><p>Equipes registradas na Arena.</p></div></div>
+      <div class="card form-card"><form id="teamForm"><div class="form-grid two"><label>Nome do time<input id="teamName" required maxlength="40" placeholder="Ex.: JOGOBUGADO BDA"></label><label>Nome do mestre<input id="teamMaster" required maxlength="40" placeholder="Ex.: Alef"></label><label>Sigla do escudo<input id="teamCode" required maxlength="4" placeholder="JGB"></label><label>Status<select id="teamStatus"><option>Inscrito</option><option>Confirmado</option><option>Lista de espera</option></select></label></div><div class="form-actions"><button type="reset" class="secondary">Limpar</button><button type="submit" class="primary">Registrar time</button></div></form></div>
+      <div class="section-head"><div><h2>Participantes</h2><p id="teamCount"></p></div></div><div class="team-grid" id="teamGrid"></div>
+    </section>
+
+    <section class="page" data-page="community"><div class="section-head"><div><span class="eyebrow">Arquibancada</span><h2>Comunidade BDA</h2><p>Converse com os membros da Arena.</p></div></div><div class="chat-list" id="chatList"></div><form class="card chat-compose" id="chatForm"><input id="chatInput" maxlength="180" placeholder="Escreva uma mensagem..." required><button class="primary" aria-label="Enviar" type="submit">➤</button></form></section>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Navegação principal">
+    <button class="nav-btn active" data-go="home" type="button"><i>⌂</i><span>Início</span></button>
+    <button class="nav-btn" data-go="tournament" type="button"><i>🏆</i><span>Campeonatos</span></button>
+    <button class="nav-btn" data-go="champions" type="button"><i>★</i><span>Campeões</span></button>
+    <button class="nav-btn" data-go="teams" type="button"><i>🛡</i><span>Times</span></button>
+    <button class="nav-btn" data-go="community" type="button"><i>💬</i><span>Comunidade</span></button>
+  </nav>
+</div>
+
+<div class="modal-backdrop" id="adminModal" role="dialog" aria-modal="true" aria-labelledby="adminModalTitle"><div class="modal"><h2 id="adminModalTitle">Acesso administrativo</h2><p>O login seguro está sendo preparado. Verifique sua conexão se esta mensagem permanecer.</p><div class="form-actions"><button class="secondary" data-close="adminModal" type="button">Cancelar</button><button class="primary" id="adminLoginBtn" type="button" disabled>Carregando...</button></div></div></div>
+<div class="modal-backdrop" id="championModal" role="dialog" aria-modal="true"><div class="modal"><h2>Adicionar campeão</h2><form id="championForm"><div class="form-grid"><label>Edição<input id="championEdition" required placeholder="9ª edição"></label><label>Time campeão<input id="championName" required placeholder="Nome do time"></label><label>Mestre<input id="championMaster" required placeholder="Nome do mestre"></label><label>Jogador favorito<input id="championPlayer" placeholder="Jogador favorito"></label><label>Frase<input id="championQuote" maxlength="100" placeholder="Frase do campeão"></label></div><div class="form-actions"><button type="button" class="secondary" data-close="championModal">Cancelar</button><button class="primary" type="submit">Salvar</button></div></form></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const STORAGE={teams:'bda-v2-teams',champions:'bda-v2-champions',chat:'bda-v2-chat'};
+const seedTeams=[{name:'Zombie FC BDA',master:'Michael',code:'ZFC',status:'Confirmado'},{name:'JOGOBUGADO BDA',master:'Alef',code:'JGB',status:'Confirmado'},{name:'Inter Brasil BDA',master:'William Mendes',code:'INT',status:'Confirmado'},{name:'Vasco da Gama BDA',master:'Alan Machado',code:'VAS',status:'Confirmado'},{name:'São Paulo BDA',master:'Gabriel',code:'SP',status:'Inscrito'},{name:'Mozamigos BDA',master:'Desconhecido',code:'MOZ',status:'Inscrito'}];
+const seedChampions=[{edition:'8ª edição',name:'Zombie FC BDA',master:'Michael',player:'Batistuta',quote:'Uma grande honra sagrar-me campeão.'},{edition:'Liga A',name:'Inter Brasil BDA',master:'William Mendes',player:'Elenco campeão',quote:'Faz teu nome!'},{edition:'Liga B',name:'Vasco da Gama BDA',master:'Alan Machado',player:'Trezeguet',quote:'Alcançamos o objetivo. Que venha a Liga A.'},{edition:'Copa histórica',name:'Flamestre DF BDA',master:'Clã BDA',player:'Equipe campeã',quote:'Tradição construída dentro da arena.'}];
+const seedChat=[{author:'Admin BDA',text:'Bem-vindos à Arena BDA!',time:'Agora',mine:false},{author:'Torcida BDA',text:'Acompanhe campeonatos, clubes e resultados em um só lugar.',time:'Agora',mine:false}];
+let isAdmin=false;let teams=load(STORAGE.teams,seedTeams);let champions=load(STORAGE.champions,seedChampions);let chat=load(STORAGE.chat,seedChat);
+function clone(value){return JSON.parse(JSON.stringify(value))}
+function load(key,fallback){try{const value=JSON.parse(localStorage.getItem(key));return Array.isArray(value)?value:clone(fallback)}catch{return clone(fallback)}}
+function save(key,value){localStorage.setItem(key,JSON.stringify(value))}
+function escapeHtml(value=''){return String(value).replace(/[&<>'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]))}
+function toast(message){const element=document.getElementById('toast');element.textContent=message;element.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>element.classList.remove('show'),2200)}
+function navigate(page){document.querySelectorAll('.page').forEach(element=>element.classList.toggle('active',element.dataset.page===page));document.querySelectorAll('.nav-btn').forEach(element=>element.classList.toggle('active',element.dataset.go===page));window.scrollTo({top:0,behavior:'smooth'})}
+function openModal(id){document.getElementById(id)?.classList.add('show')}
+function closeModal(id){document.getElementById(id)?.classList.remove('show')}
+function renderTeams(){const grid=document.getElementById('teamGrid');if(!grid)return;document.getElementById('teamCount').textContent=`${teams.length} equipes cadastradas`;grid.innerHTML=teams.length?teams.map((team,index)=>`<article class="card team-card"><div class="team-card-head"><div class="team-mini-badge">${escapeHtml(String(team.code||'BDA').toUpperCase())}</div><div><h3>${escapeHtml(team.name)}</h3><small>Mestre ${escapeHtml(team.master)}</small></div></div><div class="team-meta"><span>${escapeHtml(team.status)}</span>${isAdmin?`<button class="danger" data-remove-team="${index}" type="button">Excluir</button>`:'<span>Clã BDA</span>'}</div></article>`).join(''):'<div class="empty">Nenhum time cadastrado.</div>'}
+function renderChampions(){const grid=document.getElementById('championGrid');if(!grid)return;grid.innerHTML=champions.length?champions.map((champion,index)=>`<article class="card champion-card"><span class="edition">${escapeHtml(champion.edition)}</span><h3>${escapeHtml(champion.name)}</h3><p>Mestre: <strong>${escapeHtml(champion.master)}</strong></p><p>Referência: ${escapeHtml(champion.player||'Elenco campeão')}</p><p class="quote">“${escapeHtml(champion.quote||'Campeão da Arena BDA.')}”</p>${isAdmin?`<button class="danger" data-remove-champion="${index}" type="button">Excluir</button>`:''}</article>`).join(''):'<div class="empty">A galeria ainda não possui campeões.</div>'}
+function renderChat(){const root=document.getElementById('chatList');if(!root)return;root.innerHTML=chat.map(message=>`<article class="message ${message.mine?'mine':''}"><div class="message-head"><b>${escapeHtml(message.author)}</b><time>${escapeHtml(message.time)}</time></div><p>${escapeHtml(message.text)}</p></article>`).join('')}
+function updateAdminUI(){document.getElementById('adminBtn').classList.toggle('active',isAdmin);document.getElementById('adminPanel').classList.toggle('show',isAdmin);document.getElementById('addChampionBtn').hidden=!isAdmin;renderTeams();renderChampions()}
+document.addEventListener('click',event=>{const go=event.target.closest('[data-go]');if(go)navigate(go.dataset.go);const close=event.target.closest('[data-close]');if(close)closeModal(close.dataset.close);const removeTeam=event.target.closest('[data-remove-team]');if(removeTeam&&isAdmin){teams.splice(Number(removeTeam.dataset.removeTeam),1);save(STORAGE.teams,teams);renderTeams();toast('Time removido')}const removeChampion=event.target.closest('[data-remove-champion]');if(removeChampion&&isAdmin){champions.splice(Number(removeChampion.dataset.removeChampion),1);save(STORAGE.champions,champions);renderChampions();toast('Campeão removido')}});
+document.getElementById('adminBtn').addEventListener('click',()=>openModal('adminModal'));
+document.getElementById('addChampionBtn').addEventListener('click',()=>openModal('championModal'));
+document.getElementById('teamForm').addEventListener('submit',event=>{event.preventDefault();const team={name:document.getElementById('teamName').value.trim(),master:document.getElementById('teamMaster').value.trim(),code:document.getElementById('teamCode').value.trim().slice(0,4),status:document.getElementById('teamStatus').value};if(!team.name||!team.master||!team.code)return;teams.unshift(team);save(STORAGE.teams,teams);event.target.reset();renderTeams();toast('Time registrado')});
+document.getElementById('championForm').addEventListener('submit',event=>{event.preventDefault();if(!isAdmin)return;champions.unshift({edition:document.getElementById('championEdition').value.trim(),name:document.getElementById('championName').value.trim(),master:document.getElementById('championMaster').value.trim(),player:document.getElementById('championPlayer').value.trim(),quote:document.getElementById('championQuote').value.trim()});save(STORAGE.champions,champions);event.target.reset();closeModal('championModal');renderChampions();toast('Campeão adicionado')});
+document.getElementById('chatForm').addEventListener('submit',event=>{event.preventDefault();const input=document.getElementById('chatInput');const text=input.value.trim();if(!text)return;chat.push({author:isAdmin?'Admin BDA':'Membro BDA',text,time:'Agora',mine:true});chat=chat.slice(-40);save(STORAGE.chat,chat);input.value='';renderChat();window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})});
+document.getElementById('resetDemoBtn').addEventListener('click',()=>{if(!isAdmin)return;teams=clone(seedTeams);champions=clone(seedChampions);chat=clone(seedChat);Object.values(STORAGE).forEach(key=>localStorage.removeItem(key));renderTeams();renderChampions();renderChat();toast('Dados locais restaurados')});
+document.getElementById('shareBtn').addEventListener('click',async()=>{const data={title:document.title,text:'Conheça a Arena BDA, portal oficial dos campeonatos do Clã BDA.',url:location.href};try{if(navigator.share)await navigator.share(data);else{await navigator.clipboard.writeText(location.href);toast('Link copiado')}}catch(error){if(error.name!=='AbortError')toast('Não foi possível compartilhar')}});
+document.querySelectorAll('.modal-backdrop').forEach(backdrop=>backdrop.addEventListener('click',event=>{if(event.target===backdrop)backdrop.classList.remove('show')}));
+renderTeams();renderChampions();renderChat();
+window.ArenaBDACore=Object.freeze({version:'2026.07.29.1',renderTeams:()=>renderTeams(),renderChampions:()=>renderChampions(),renderChat:()=>renderChat()});
+</script>
+<script src="./arena-bootstrap.js?v=20260729-1"></script>
 </body>
 </html>
