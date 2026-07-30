@@ -7,66 +7,185 @@
   <meta name="color-scheme" content="dark">
   <meta name="application-name" content="Arena BDA">
   <meta name="apple-mobile-web-app-title" content="Arena BDA">
+  <meta name="description" content="Plataforma oficial para criação e acompanhamento dos campeonatos do Clã BDA.">
+  <meta property="og:title" content="Arena BDA | Campeonatos do Clã">
+  <meta property="og:description" content="Campeonatos, clubes, resultados, notícias e comunidade do Clã BDA.">
+  <meta property="og:type" content="website">
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
   <link rel="dns-prefetch" href="//www.gstatic.com">
-  <link rel="preload" href="./firebase-auth.js?v=20260726-2" as="script" fetchpriority="high">
-  <link rel="preload" href="./arena-bda.js" as="script" fetchpriority="high">
-  <link rel="preload" href="./navegacao-arena-v2.js" as="script">
   <link rel="icon" type="image/svg+xml" href="./favicon.svg">
   <link rel="shortcut icon" href="./favicon.svg">
   <link rel="apple-touch-icon" href="./favicon.svg">
   <link rel="manifest" href="./site.webmanifest">
   <title>Arena BDA | Campeonatos do Clã</title>
-  <meta name="description" content="Plataforma oficial para criação e acompanhamento dos campeonatos do Clã BDA.">
   <style>
-    :root{--loader-bg:#07100c;--loader-text:#f4f7f2;--loader-muted:#9fb0a5;--loader-mark:#020503;color-scheme:dark}
-    html,body{height:100%;margin:0;background:var(--loader-bg);color:var(--loader-text);font-family:system-ui,sans-serif}
-    body{display:grid;place-items:center;text-align:center;padding:24px}
-    .loader{width:min(320px,90vw)}
-    .griffin{width:72px;height:72px;margin:auto;overflow:hidden;border:1px solid rgba(216,178,72,.46);border-radius:20px;background:var(--loader-mark);box-shadow:0 8px 28px rgba(216,178,72,.24)}
+    :root{--bg:#07100c;--surface:#101d16;--text:#f4f7f2;--muted:#9fb0a5;--gold:#d8b248;--gold-soft:#f2d77d;color-scheme:dark}
+    *{box-sizing:border-box}
+    html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    .stage{position:fixed;inset:0;background:var(--bg)}
+    #arenaFrame{position:absolute;inset:0;width:100%;height:100%;border:0;background:var(--bg);opacity:0;transition:opacity .22s ease}
+    #arenaFrame.ready{opacity:1}
+    .loading{position:absolute;inset:0;z-index:2;display:grid;place-items:center;padding:24px;text-align:center;background:radial-gradient(circle at 50% 20%,rgba(216,178,72,.15),transparent 30%),var(--bg);transition:opacity .2s ease,visibility .2s ease}
+    .loading.hidden{opacity:0;visibility:hidden;pointer-events:none}
+    .loader-card{width:min(360px,92vw);padding:26px 22px;border:1px solid rgba(216,178,72,.3);border-radius:24px;background:rgba(16,29,22,.9);box-shadow:0 20px 60px rgba(0,0,0,.38)}
+    .griffin{width:76px;height:76px;margin:0 auto 14px;overflow:hidden;border:1px solid rgba(216,178,72,.46);border-radius:21px;background:#020503;box-shadow:0 8px 28px rgba(216,178,72,.24)}
     .griffin img{display:block;width:100%;height:100%;object-fit:cover}
-    h1{margin:12px 0 8px;font-size:22px}p{margin:0;color:var(--loader-muted);font-size:13px}
+    h1{margin:0 0 8px;font-size:22px;line-height:1.15}
+    p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+    .spinner{width:34px;height:34px;margin:18px auto 0;border:3px solid rgba(242,215,125,.2);border-top-color:var(--gold-soft);border-radius:50%;animation:spin .8s linear infinite}
+    .retry{display:none;width:100%;min-height:46px;margin-top:18px;border:0;border-radius:14px;color:#171107;background:linear-gradient(135deg,var(--gold-soft),var(--gold));font-weight:800;cursor:pointer}
+    .retry.show{display:block}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @media(prefers-reduced-motion:reduce){#arenaFrame,.loading{transition:none}.spinner{animation-duration:1.6s}}
   </style>
 </head>
 <body>
-  <main class="loader"><div class="griffin"><img src="./favicon.svg" alt="Escudo oficial Arena BDA"></div><h1>Carregando a Arena BDA</h1><p>Conectando os campeonatos à nuvem...</p></main>
+  <main class="stage">
+    <section class="loading" id="loadingPanel" aria-live="polite">
+      <div class="loader-card">
+        <div class="griffin"><img src="./favicon.svg" alt="Escudo oficial Arena BDA"></div>
+        <h1 id="loadingTitle">Carregando a Arena BDA</h1>
+        <p id="loadingMessage">Preparando campeonatos, clubes e resultados...</p>
+        <div class="spinner" id="spinner" aria-hidden="true"></div>
+        <button class="retry" id="retryButton" type="button">Tentar novamente</button>
+      </div>
+    </section>
+    <iframe id="arenaFrame" title="Arena BDA" src="./preview-v2.html" allow="clipboard-write; fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+  </main>
   <script>
-    (async () => {
-      try {
-        const response = await fetch('./preview-v2.html', { cache: 'no-store' });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        let html = await response.text();
-        html = html.replace('<html lang="pt-BR">', '<html lang="pt-BR" data-theme="dark">');
-        html = html.replace('</head>', `
-          <meta name="application-name" content="Arena BDA">
-          <meta name="apple-mobile-web-app-title" content="Arena BDA">
-          <meta name="color-scheme" content="dark">
-          <meta property="og:title" content="Arena BDA | Campeonatos do Clã">
-          <meta property="og:description" content="Campeonatos, clubes, resultados, notícias e comunidade do Clã BDA.">
-          <meta property="og:type" content="website">
-          <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
-          <link rel="dns-prefetch" href="//www.gstatic.com">
-          <link rel="icon" type="image/svg+xml" href="./favicon.svg">
-          <link rel="shortcut icon" href="./favicon.svg">
-          <link rel="apple-touch-icon" href="./favicon.svg">
-          <link rel="manifest" href="./site.webmanifest">
-          <script>
-            document.documentElement.dataset.theme = 'dark';
-            document.documentElement.style.colorScheme = 'dark';
-            try { localStorage.removeItem('arena-bda-theme'); } catch {}
-          <\/script>
-          <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"><\/script>
-          <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"><\/script>
-          <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"><\/script>
-        </head>`);
-        html = html.replace('</body>', '<script src="./firebase-auth.js?v=20260726-2"><\/script><script src="./notificacoes-bda.js?v=20260727-1"><\/script><script src="./team-badges.js"><\/script><script src="./champion-banners.js"><\/script><script src="./bda-logo.js"><\/script><script src="./arena-bda.js"><\/script><script src="./firestore-sync.js?v=20260726-3"><\/script><script src="./cloud-recovery.js?v=20260727-3"><\/script><script src="./admin-panel.js?v=20260726-3"><\/script><script src="./confrontos-copa-grifo.js"><\/script><script src="./gestor-inteligente.js?v=20260726-3"><\/script><script src="./home-campeonato-atual-v2.js"><\/script><script src="./sorteio-campeonatos.js"><\/script><script src="./arena-editor-pro.js"><\/script><script src="./ranking-bda.js"><\/script><script src="./central-inscricoes.js"><\/script><script src="./classificacao-automatica.js"><\/script><script src="./arena-lazy-features.js?v=20260727-2"><\/script><script src="./gerador-grupos-ligas.js"><\/script><script src="./navegacao-arena-v2.js"><\/script><script src="./design-arena-pro.js"><\/script><script src="./painel-visual-fix.js"><\/script><script src="./logo-liga.js"><\/script><script src="./cores-automaticas-campeonatos.js?v=20260726-1"><\/script><script src="./midia-campeonato-refresh.js?v=20260726-1"><\/script><script src="./arena-auth-consumers.js?v=20260726-1"><\/script><script src="./copa-francos-design-lite.js?v=20260726-2"><\/script><script src="./confronto-editor-v2.js?v=20260726-1"><\/script><script src="./resultados-cards-pro.js?v=20260726-1"><\/script><script src="./placar-mobile-stability.js?v=20260727-1"><\/script><script src="./captura-confrontos-simples.js?v=20260728-2"><\/script><script src="./arena-design-v3.js?v=20260726-1"><\/script><script src="./noticias-nav-fix.js?v=20260727-1"><\/script><script src="./topbar-mobile-clean.js?v=20260728-1"><\/script><script src="./site-health.js?v=20260727-3"><\/script></body>');
-        document.open();
-        document.write(html);
-        document.close();
-      } catch (error) {
-        document.body.innerHTML = '<main><h1>Não foi possível abrir a Arena</h1><p>Atualize a página e tente novamente.</p></main>';
-        console.error(error);
+    (() => {
+      const frame = document.getElementById('arenaFrame');
+      const panel = document.getElementById('loadingPanel');
+      const title = document.getElementById('loadingTitle');
+      const message = document.getElementById('loadingMessage');
+      const spinner = document.getElementById('spinner');
+      const retryButton = document.getElementById('retryButton');
+
+      const firebaseScripts = [
+        'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js',
+        'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js',
+        'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js'
+      ];
+
+      const arenaScripts = [
+        './firebase-auth.js?v=20260726-2',
+        './notificacoes-bda.js?v=20260727-1',
+        './team-badges.js',
+        './champion-banners.js',
+        './bda-logo.js',
+        './arena-bda.js',
+        './firestore-sync.js?v=20260726-3',
+        './cloud-recovery.js?v=20260727-3',
+        './admin-panel.js?v=20260726-3',
+        './confrontos-copa-grifo.js',
+        './gestor-inteligente.js?v=20260726-3',
+        './home-campeonato-atual-v2.js',
+        './sorteio-campeonatos.js',
+        './arena-editor-pro.js',
+        './ranking-bda.js',
+        './central-inscricoes.js',
+        './classificacao-automatica.js',
+        './arena-lazy-features.js?v=20260727-2',
+        './gerador-grupos-ligas.js',
+        './navegacao-arena-v2.js',
+        './design-arena-pro.js',
+        './painel-visual-fix.js',
+        './logo-liga.js',
+        './cores-automaticas-campeonatos.js?v=20260726-1',
+        './midia-campeonato-refresh.js?v=20260726-1',
+        './arena-auth-consumers.js?v=20260726-1',
+        './copa-francos-design-lite.js?v=20260726-2',
+        './confronto-editor-v2.js?v=20260726-1',
+        './resultados-cards-pro.js?v=20260726-1',
+        './placar-mobile-stability.js?v=20260727-1',
+        './captura-confrontos-simples.js?v=20260728-2',
+        './arena-design-v3.js?v=20260726-1',
+        './noticias-nav-fix.js?v=20260727-1',
+        './topbar-mobile-clean.js?v=20260728-1',
+        './site-health.js?v=20260727-3'
+      ];
+
+      let timeoutId;
+      let loadGeneration = 0;
+
+      function setLoadingState() {
+        panel.classList.remove('hidden');
+        frame.classList.remove('ready');
+        retryButton.classList.remove('show');
+        spinner.hidden = false;
+        title.textContent = 'Carregando a Arena BDA';
+        message.textContent = 'Preparando campeonatos, clubes e resultados...';
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          title.textContent = 'A Arena está demorando para abrir';
+          message.textContent = 'A conexão pode estar instável. Você pode tentar novamente sem fechar a página.';
+          spinner.hidden = true;
+          retryButton.classList.add('show');
+        }, 12000);
       }
+
+      function loadScript(doc, src) {
+        return new Promise((resolve, reject) => {
+          if (Array.from(doc.scripts).some(existing => existing.dataset.arenaSrc === src)) {
+            resolve();
+            return;
+          }
+          const script = doc.createElement('script');
+          script.src = src;
+          script.async = false;
+          script.dataset.arenaSrc = src;
+          script.addEventListener('load', resolve, { once: true });
+          script.addEventListener('error', () => reject(new Error(`Falha ao carregar ${src}`)), { once: true });
+          (doc.body || doc.head || doc.documentElement).appendChild(script);
+        });
+      }
+
+      async function enhanceArena(generation) {
+        const win = frame.contentWindow;
+        const doc = frame.contentDocument;
+        if (!win || !doc || generation !== loadGeneration) return;
+
+        doc.documentElement.dataset.theme = 'dark';
+        doc.documentElement.style.colorScheme = 'dark';
+        try { win.localStorage.removeItem('arena-bda-theme'); } catch {}
+
+        try {
+          for (const src of firebaseScripts) await loadScript(doc, src);
+          for (const src of arenaScripts) await loadScript(doc, src);
+
+          if (generation !== loadGeneration) return;
+          doc.dispatchEvent(new win.Event('DOMContentLoaded', { bubbles: true }));
+          win.dispatchEvent(new win.Event('load'));
+          doc.documentElement.dataset.arenaEnhanced = 'true';
+        } catch (error) {
+          console.error('[Arena BDA] Recurso complementar não carregado:', error);
+          doc.documentElement.dataset.arenaEnhanced = 'partial';
+        }
+      }
+
+      frame.addEventListener('load', () => {
+        const generation = ++loadGeneration;
+        clearTimeout(timeoutId);
+        frame.classList.add('ready');
+        panel.classList.add('hidden');
+        enhanceArena(generation);
+      });
+
+      frame.addEventListener('error', () => {
+        clearTimeout(timeoutId);
+        title.textContent = 'Não foi possível abrir a Arena';
+        message.textContent = 'Verifique sua conexão e tente novamente.';
+        spinner.hidden = true;
+        retryButton.classList.add('show');
+      });
+
+      retryButton.addEventListener('click', () => {
+        loadGeneration += 1;
+        setLoadingState();
+        frame.src = `./preview-v2.html?reload=${Date.now()}`;
+      });
+
+      setLoadingState();
     })();
   </script>
 </body>
