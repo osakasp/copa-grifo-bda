@@ -1,11 +1,7 @@
 (() => {
   'use strict';
 
-  const LIMITS = Object.freeze({
-    chat: 5_000,
-    registration: 90_000,
-    teamEdit: 60_000
-  });
+  const LIMITS = Object.freeze({ chat: 5_000, teamEdit: 60_000 });
   const LAST_PREFIX = 'arena-security-last:';
   const notify = message => typeof toast === 'function' ? toast(message) : console.warn(message);
 
@@ -19,9 +15,8 @@
     notify(message || `Aguarde ${Math.ceil(wait / 1000)} segundos antes de tentar novamente`);
     return true;
   }
-  function normalize(value) {
-    return String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
-  }
+  function normalize(value) { return String(value || '').replace(/\s+/g, ' ').trim().toLowerCase(); }
+
   function installChatGuard() {
     const form = document.getElementById('chatForm');
     const input = document.getElementById('chatInput');
@@ -60,22 +55,20 @@
       localStorage.setItem('arena-security-last-chat-text-at', String(now()));
     }, true);
   }
+
   function installGenericFormGuards() {
     document.addEventListener('submit', event => {
       const form = event.target;
       if (!(form instanceof HTMLFormElement)) return;
-      if (form.id === 'publicRegistrationForm' && throttle('registration', LIMITS.registration, 'Aguarde antes de enviar outra inscrição')) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-      }
       if (/team.*edit|edit.*team/i.test(form.id || '') && throttle('teamEdit', LIMITS.teamEdit, 'Aguarde antes de enviar outra solicitação')) {
         event.preventDefault();
         event.stopImmediatePropagation();
+        return;
       }
-      if (form.id === 'publicRegistrationForm') mark('registration');
       if (/team.*edit|edit.*team/i.test(form.id || '')) mark('teamEdit');
     }, true);
   }
+
   function loadScript(source) {
     return new Promise((resolve, reject) => {
       const script = document.createElement('script');
@@ -86,6 +79,7 @@
       document.head.append(script);
     });
   }
+
   async function initializeAppCheck() {
     const key = document.querySelector('meta[name="firebase-app-check-site-key"]')?.content?.trim();
     if (!key) {
