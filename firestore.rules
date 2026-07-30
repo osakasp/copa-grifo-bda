@@ -6,7 +6,6 @@ service cloud.firestore {
     function isArenaAdmin() {
       return request.auth != null
         && request.auth.token.email != null
-        && request.auth.token.email_verified == true
         && request.auth.token.email in [
           'claboleirosdeatitude@gmail.com',
           'miniamikaren@gmail.com'
