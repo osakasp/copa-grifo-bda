@@ -50,16 +50,19 @@
         <button class="retry" id="retryButton" type="button">Tentar novamente</button>
       </div>
     </section>
-    <iframe id="arenaFrame" title="Arena BDA" src="./preview-v2.html" allow="clipboard-write; fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+    <iframe id="arenaFrame" title="Arena BDA" src="about:blank" data-src="./preview-v2.html" allow="clipboard-write; fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe>
   </main>
   <script>
     (() => {
+      'use strict';
+
       const frame = document.getElementById('arenaFrame');
       const panel = document.getElementById('loadingPanel');
       const title = document.getElementById('loadingTitle');
       const message = document.getElementById('loadingMessage');
       const spinner = document.getElementById('spinner');
       const retryButton = document.getElementById('retryButton');
+      const frameSource = frame.dataset.src || './preview-v2.html';
 
       const firebaseScripts = [
         'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js',
@@ -105,8 +108,9 @@
         './site-health.js?v=20260727-3'
       ];
 
-      let timeoutId;
+      let loadingTimeoutId = 0;
       let loadGeneration = 0;
+      let expectedToken = '';
 
       function setLoadingState() {
         panel.classList.remove('hidden');
@@ -115,8 +119,8 @@
         spinner.hidden = false;
         title.textContent = 'Carregando a Arena BDA';
         message.textContent = 'Preparando campeonatos, clubes e resultados...';
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => {
+        clearTimeout(loadingTimeoutId);
+        loadingTimeoutId = window.setTimeout(() => {
           title.textContent = 'A Arena está demorando para abrir';
           message.textContent = 'A conexão pode estar instável. Você pode tentar novamente sem fechar a página.';
           spinner.hidden = true;
@@ -124,20 +128,64 @@
         }, 12000);
       }
 
-      function loadScript(doc, src) {
+      function showLoadError(detail = 'Verifique sua conexão e tente novamente.') {
+        clearTimeout(loadingTimeoutId);
+        panel.classList.remove('hidden');
+        frame.classList.remove('ready');
+        title.textContent = 'Não foi possível abrir a Arena';
+        message.textContent = detail;
+        spinner.hidden = true;
+        retryButton.classList.add('show');
+      }
+
+      function loadScript(doc, src, timeoutMs = 15000) {
         return new Promise((resolve, reject) => {
-          if (Array.from(doc.scripts).some(existing => existing.dataset.arenaSrc === src)) {
-            resolve();
+          const absoluteSrc = new URL(src, doc.baseURI).href;
+          const existing = Array.from(doc.scripts).find(script => script.dataset.arenaSrc === absoluteSrc);
+          if (existing) {
+            resolve({ src, reused: true });
             return;
           }
+
           const script = doc.createElement('script');
-          script.src = src;
+          let settled = false;
+          const timeoutId = window.setTimeout(() => finish(new Error(`Tempo esgotado ao carregar ${src}`)), timeoutMs);
+
+          function finish(error = null) {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timeoutId);
+            script.removeEventListener('load', onLoad);
+            script.removeEventListener('error', onError);
+            if (error) {
+              script.remove();
+              reject(error);
+            } else {
+              resolve({ src, reused: false });
+            }
+          }
+
+          function onLoad() { finish(); }
+          function onError() { finish(new Error(`Falha ao carregar ${src}`)); }
+
+          script.src = absoluteSrc;
           script.async = false;
-          script.dataset.arenaSrc = src;
-          script.addEventListener('load', resolve, { once: true });
-          script.addEventListener('error', () => reject(new Error(`Falha ao carregar ${src}`)), { once: true });
+          script.dataset.arenaSrc = absoluteSrc;
+          script.addEventListener('load', onLoad, { once: true });
+          script.addEventListener('error', onError, { once: true });
           (doc.body || doc.head || doc.documentElement).appendChild(script);
         });
+      }
+
+      async function loadSequence(doc, scripts, failures, timeoutMs) {
+        for (const src of scripts) {
+          try {
+            await loadScript(doc, src, timeoutMs);
+          } catch (error) {
+            failures.push({ src, error });
+            console.error(`[Arena BDA] Falha no módulo ${src}`, error);
+          }
+        }
       }
 
       async function enhanceArena(generation) {
@@ -149,43 +197,67 @@
         doc.documentElement.style.colorScheme = 'dark';
         try { win.localStorage.removeItem('arena-bda-theme'); } catch {}
 
-        try {
-          for (const src of firebaseScripts) await loadScript(doc, src);
-          for (const src of arenaScripts) await loadScript(doc, src);
+        const failures = [];
+        await loadSequence(doc, firebaseScripts, failures, 8000);
+        await loadSequence(doc, arenaScripts, failures, 10000);
 
-          if (generation !== loadGeneration) return;
+        if (generation !== loadGeneration) return;
+
+        if (!doc.documentElement.dataset.arenaLifecycleDispatched) {
+          doc.documentElement.dataset.arenaLifecycleDispatched = 'true';
           doc.dispatchEvent(new win.Event('DOMContentLoaded', { bubbles: true }));
           win.dispatchEvent(new win.Event('load'));
-          doc.documentElement.dataset.arenaEnhanced = 'true';
-        } catch (error) {
-          console.error('[Arena BDA] Recurso complementar não carregado:', error);
-          doc.documentElement.dataset.arenaEnhanced = 'partial';
+        }
+
+        doc.documentElement.dataset.arenaEnhanced = failures.length ? 'partial' : 'true';
+        if (failures.length && typeof win.toast === 'function') {
+          win.toast('A Arena abriu, mas alguns recursos não carregaram');
         }
       }
 
+      function validArenaDocument() {
+        try {
+          const win = frame.contentWindow;
+          const doc = frame.contentDocument;
+          if (!win || !doc || win.location.href === 'about:blank') return false;
+          const token = new URL(win.location.href).searchParams.get('arenaLoad');
+          return token === expectedToken && Boolean(doc.querySelector('.app-shell'));
+        } catch (error) {
+          console.error('[Arena BDA] Não foi possível validar o conteúdo carregado', error);
+          return false;
+        }
+      }
+
+      function startLoad() {
+        loadGeneration += 1;
+        expectedToken = `${Date.now()}-${loadGeneration}`;
+        setLoadingState();
+        const url = new URL(frameSource, window.location.href);
+        url.searchParams.set('arenaLoad', expectedToken);
+        frame.src = url.href;
+      }
+
       frame.addEventListener('load', () => {
-        const generation = ++loadGeneration;
-        clearTimeout(timeoutId);
+        if (!validArenaDocument()) {
+          let isBlank = false;
+          try { isBlank = frame.contentWindow?.location?.href === 'about:blank'; } catch {}
+          if (!isBlank) showLoadError('A página principal não respondeu corretamente. Tente carregar outra vez.');
+          return;
+        }
+
+        const generation = loadGeneration;
+        clearTimeout(loadingTimeoutId);
         frame.classList.add('ready');
         panel.classList.add('hidden');
         enhanceArena(generation);
       });
 
       frame.addEventListener('error', () => {
-        clearTimeout(timeoutId);
-        title.textContent = 'Não foi possível abrir a Arena';
-        message.textContent = 'Verifique sua conexão e tente novamente.';
-        spinner.hidden = true;
-        retryButton.classList.add('show');
+        showLoadError();
       });
 
-      retryButton.addEventListener('click', () => {
-        loadGeneration += 1;
-        setLoadingState();
-        frame.src = `./preview-v2.html?reload=${Date.now()}`;
-      });
-
-      setLoadingState();
+      retryButton.addEventListener('click', startLoad);
+      startLoad();
     })();
   </script>
 </body>
