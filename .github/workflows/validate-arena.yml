@@ -48,11 +48,13 @@ jobs:
       - name: Validate manifest JSON
         run: python -m json.tool site.webmanifest > /dev/null
 
-      - name: Parse HTML
+      - name: Parse HTML and IDs
         shell: python
         run: |
+          from collections import Counter
           from html.parser import HTMLParser
           from pathlib import Path
+          import re
 
           class StrictEnoughParser(HTMLParser):
               pass
@@ -61,6 +63,7 @@ jobs:
           parser = StrictEnoughParser()
           parser.feed(content)
           parser.close()
+
           required = [
               'id="adminBtn"',
               'id="adminModal"',
@@ -72,6 +75,37 @@ jobs:
           missing = [item for item in required if item not in content]
           if missing:
               raise SystemExit(f"Missing required Arena elements: {missing}")
+
+          identifiers = re.findall(r'\bid="([^"]+)"', content)
+          duplicates = sorted(name for name, count in Counter(identifiers).items() if count > 1)
+          if duplicates:
+              raise SystemExit(f"Duplicate HTML ids: {duplicates}")
+
+      - name: Validate referenced local assets
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          sources = [
+              "index.html",
+              "arena-bootstrap.js",
+              "arena-lazy-features-v2.js",
+              "sw.js",
+          ]
+          extensions = (".js", ".css", ".html", ".svg", ".webmanifest")
+          missing = []
+
+          for owner in sources:
+              content = Path(owner).read_text(encoding="utf-8")
+              references = re.findall(r"['\"](\./[^'\"?#]+)", content)
+              for reference in references:
+                  path = Path(reference[2:])
+                  if str(path).endswith(extensions) and not path.exists():
+                      missing.append(f"{owner} -> {reference}")
+
+          if missing:
+              raise SystemExit("Missing local assets:\n" + "\n".join(sorted(set(missing))))
 
       - name: Guard against blocking reloads
         shell: bash
