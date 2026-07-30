@@ -1,0 +1,48 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isArenaAdmin() {
+      return request.auth != null
+        && request.auth.token.email != null
+        && request.auth.token.email in [
+          'claboleirosdeatitude@gmail.com',
+          'miniamikaren@gmail.com'
+        ];
+    }
+
+    function validImageUpload() {
+      return request.resource != null
+        && request.resource.size < 8 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp|gif)');
+    }
+
+    match /tournaments/{tournamentId}/{fileName} {
+      allow read: if true;
+      allow create, update: if isArenaAdmin() && validImageUpload();
+      allow delete: if isArenaAdmin();
+    }
+
+    match /teams/{teamId}/{fileName} {
+      allow read: if true;
+      allow create, update: if isArenaAdmin() && validImageUpload();
+      allow delete: if isArenaAdmin();
+    }
+
+    match /champions/{championId}/{fileName} {
+      allow read: if true;
+      allow create, update: if isArenaAdmin() && validImageUpload();
+      allow delete: if isArenaAdmin();
+    }
+
+    match /news/{newsId}/{fileName} {
+      allow read: if true;
+      allow create, update: if isArenaAdmin() && validImageUpload();
+      allow delete: if isArenaAdmin();
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

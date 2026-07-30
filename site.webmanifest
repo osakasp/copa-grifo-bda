@@ -2,10 +2,11 @@
   "name": "Arena BDA",
   "short_name": "Arena BDA",
   "description": "Campeonatos oficiais, clubes, resultados e comunidade do Clã BDA",
-  "id": "./",
-  "start_url": "./",
-  "scope": "./",
+  "id": "/",
+  "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "orientation": "any",
   "background_color": "#07100c",
   "theme_color": "#07100c",
@@ -16,7 +17,36 @@
       "src": "./favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Campeonatos",
+      "short_name": "Campeonatos",
+      "description": "Abrir os campeonatos da Arena BDA",
+      "url": "/?view=tournament",
+      "icons": [{"src": "./favicon.svg", "sizes": "any", "type": "image/svg+xml"}]
+    },
+    {
+      "name": "Clubes",
+      "short_name": "Clubes",
+      "description": "Abrir os clubes do Clã BDA",
+      "url": "/?view=teams",
+      "icons": [{"src": "./favicon.svg", "sizes": "any", "type": "image/svg+xml"}]
+    },
+    {
+      "name": "Inscrições",
+      "short_name": "Inscrições",
+      "description": "Abrir a central de inscrições",
+      "url": "/?view=registrations",
+      "icons": [{"src": "./favicon.svg", "sizes": "any", "type": "image/svg+xml"}]
     }
   ]
 }

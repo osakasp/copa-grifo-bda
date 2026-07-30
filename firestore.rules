@@ -13,7 +13,7 @@ service cloud.firestore {
     }
 
     function isRegistration(documentId) {
-      return documentId.matches('registration-.*');
+      return documentId.matches('registration-[a-z0-9-]{8,80}');
     }
 
     function validPublicRegistration() {
@@ -78,6 +78,7 @@ service cloud.firestore {
         && request.resource.data.schemaVersion == 1
         && request.resource.data.status == 'pending'
         && request.resource.data.source == 'arena-bda-public'
+        && request.resource.data.createdAt == request.time
         && request.resource.data.teamName is string
         && request.resource.data.teamName.size() >= 2
         && request.resource.data.teamName.size() <= 55
@@ -92,6 +93,8 @@ service cloud.firestore {
         && request.resource.data.requesterEmail is string
         && request.resource.data.requesterEmail.size() <= 160
         && request.resource.data.createdAtClient is int
+        && request.resource.data.createdAtClient <= request.time.toMillis() + 300000
+        && request.resource.data.createdAtClient >= request.time.toMillis() - 86400000
         && request.resource.data.original is map
         && request.resource.data.changes is map
         && request.resource.data.removeBadge is bool
@@ -140,6 +143,8 @@ service cloud.firestore {
         && request.resource.data.text.size() >= 1
         && request.resource.data.text.size() <= 180
         && request.resource.data.createdAtClient is int
+        && request.resource.data.createdAtClient <= request.time.toMillis() + 300000
+        && request.resource.data.createdAtClient >= request.time.toMillis() - 3600000
         && request.resource.data.createdAt == request.time
         && request.resource.data.source == 'arena-bda-live'
         && request.resource.data.status == 'visible';
