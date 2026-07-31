@@ -238,6 +238,35 @@
       updated: Date.now()
     };
 
+    if (normalize(next.ta) === normalize(next.tb)) {
+      return notify('Escolha dois clubes diferentes para o confronto');
+    }
+    const scoreASet = next.a !== '';
+    const scoreBSet = next.b !== '';
+    if (scoreASet !== scoreBSet) {
+      return notify('Informe os dois lados do placar');
+    }
+    const penaltyASet = next.pa !== '';
+    const penaltyBSet = next.pb !== '';
+    if (penaltyASet !== penaltyBSet) {
+      return notify('Informe os dois lados da disputa por pênaltis');
+    }
+    if (penaltyASet && next.pa === next.pb) {
+      return notify('A disputa por pênaltis precisa ter um vencedor');
+    }
+    if ([next.a, next.b, next.pa, next.pb].some(value =>
+      value !== '' && (!Number.isInteger(value) || value < 0 || value > 99)
+    )) {
+      return notify('Use placares inteiros entre 0 e 99');
+    }
+    if (next.wo !== 'none') {
+      next.a = '';
+      next.b = '';
+      next.pa = '';
+      next.pb = '';
+      next.status = 'Finalizado';
+    }
+
     if (next.status === 'Agendado' && (next.wo !== 'none' || (next.a !== '' && next.b !== ''))) {
       next.status = 'Finalizado';
     }
