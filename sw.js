@@ -1,4 +1,4 @@
-const CACHE = 'arena-bda-shell-v32-capture-toolbar';
+const CACHE = 'arena-bda-shell-v33-parallel-loader';
 const SHELL = [
   './',
   './index.html',

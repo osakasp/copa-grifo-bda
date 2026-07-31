@@ -138,12 +138,28 @@
         retryButton.classList.add('show');
       }
 
-      function loadScript(doc, src, timeoutMs = 15000) {
+      function queueScript(doc, src, timeoutMs = 15000, priority = 'auto') {
         return new Promise((resolve, reject) => {
           const absoluteSrc = new URL(src, doc.baseURI).href;
           const existing = Array.from(doc.scripts).find(script => script.dataset.arenaSrc === absoluteSrc);
           if (existing) {
-            resolve({ src, reused: true });
+            if (existing.dataset.arenaLoaded === 'true') {
+              resolve({ src, reused: true });
+              return;
+            }
+
+            const timeoutId = window.setTimeout(
+              () => reject(new Error(`Tempo esgotado ao aguardar ${src}`)),
+              timeoutMs
+            );
+            existing.addEventListener('load', () => {
+              clearTimeout(timeoutId);
+              resolve({ src, reused: true });
+            }, { once: true });
+            existing.addEventListener('error', () => {
+              clearTimeout(timeoutId);
+              reject(new Error(`Falha ao carregar ${src}`));
+            }, { once: true });
             return;
           }
 
@@ -161,6 +177,7 @@
               script.remove();
               reject(error);
             } else {
+              script.dataset.arenaLoaded = 'true';
               resolve({ src, reused: false });
             }
           }
@@ -170,6 +187,7 @@
 
           script.src = absoluteSrc;
           script.async = false;
+          script.fetchPriority = priority;
           script.dataset.arenaSrc = absoluteSrc;
           script.addEventListener('load', onLoad, { once: true });
           script.addEventListener('error', onError, { once: true });
@@ -177,39 +195,41 @@
         });
       }
 
-      async function loadSequence(doc, scripts, failures, timeoutMs) {
-        for (const src of scripts) {
-          try {
-            await loadScript(doc, src, timeoutMs);
-          } catch (error) {
+      async function loadOrderedBatch(doc, scripts, failures, timeoutMs) {
+        const requests = scripts.map((src, index) =>
+          queueScript(doc, src, timeoutMs + (index * 250), index < 6 ? 'high' : 'auto').catch(error => {
             failures.push({ src, error });
             console.error(`[Arena BDA] Falha no módulo ${src}`, error);
-          }
-        }
+          })
+        );
+        await Promise.all(requests);
       }
 
       async function enhanceArena(generation) {
         const win = frame.contentWindow;
         const doc = frame.contentDocument;
         if (!win || !doc || generation !== loadGeneration) return;
+        const startedAt = window.performance.now();
 
         doc.documentElement.dataset.theme = 'dark';
         doc.documentElement.style.colorScheme = 'dark';
         try { win.localStorage.removeItem('arena-bda-theme'); } catch {}
 
         const failures = [];
-        await loadSequence(doc, firebaseScripts, failures, 8000);
-        await loadSequence(doc, arenaScripts, failures, 10000);
+        await loadOrderedBatch(doc, firebaseScripts, failures, 12000);
+        if (generation !== loadGeneration) return;
+        await loadOrderedBatch(doc, arenaScripts, failures, 15000);
 
         if (generation !== loadGeneration) return;
 
-        if (!doc.documentElement.dataset.arenaLifecycleDispatched) {
-          doc.documentElement.dataset.arenaLifecycleDispatched = 'true';
-          doc.dispatchEvent(new win.Event('DOMContentLoaded', { bubbles: true }));
-          win.dispatchEvent(new win.Event('load'));
-        }
-
         doc.documentElement.dataset.arenaEnhanced = failures.length ? 'partial' : 'true';
+        doc.documentElement.dataset.arenaLoadMs = String(Math.round(window.performance.now() - startedAt));
+        win.dispatchEvent(new win.CustomEvent('arena:enhanced', {
+          detail: {
+            failures: failures.map(item => item.src),
+            loadMs: Number(doc.documentElement.dataset.arenaLoadMs)
+          }
+        }));
         if (failures.length && typeof win.toast === 'function') {
           win.toast('A Arena abriu, mas alguns recursos não carregaram');
         }
