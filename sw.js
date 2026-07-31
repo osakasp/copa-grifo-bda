@@ -1,4 +1,4 @@
-const CACHE = 'arena-bda-shell-v33-parallel-loader';
+const CACHE = 'arena-bda-shell-v34-professional-design';
 const SHELL = [
   './',
   './index.html',
