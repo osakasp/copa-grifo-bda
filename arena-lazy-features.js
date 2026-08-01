@@ -31,7 +31,7 @@
     ],
     tournament: [
       './confrontos-copa-grifo.js',
-      './gestor-inteligente.js?v=20260730-4',
+      './gestor-inteligente.js?v=20260801-1',
       './sorteio-campeonatos.js?v=20260730-1',
       './arena-editor-pro.js',
       './classificacao-automatica.js?v=20260730-1',
