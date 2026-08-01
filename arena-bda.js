@@ -7,8 +7,7 @@
     {id:'copa-francos',name:'Copa Francos',edition:'Próxima edição',format:'Mata-mata',status:'Planejado',phase:'Preparação',maxTeams:16,badge:'🕊️',participants:[],description:'Competição especial em homenagem à história do Francos FC BDA.'},
     {id:'supercopa',name:'SuperCopa BDA',edition:'Temporada atual',format:'Mata-mata',status:'Em andamento',phase:'Semifinais',maxTeams:4,badge:'⚡',participants:['São Paulo BDA','Flamestre BDA','CR Flamengo BDA','CV Cruz BDA'],description:'Confronto entre grandes campeões das ligas e copas do Clã BDA.'},
     {id:'liga-a',name:'Liga A BDA',edition:'Temporada encerrada',format:'Pontos corridos',status:'Finalizado',phase:'Campeão: Inter Brasil BDA',maxTeams:20,badge:'🥇',participants:['Inter Brasil BDA'],description:'A divisão de elite do Clã BDA.'},
-    {id:'liga-b',name:'Liga B BDA',edition:'Temporada encerrada',format:'Pontos corridos',status:'Finalizado',phase:'Campeão: Vasco da Gama BDA',maxTeams:20,badge:'🛡️',participants:['Vasco da Gama BDA'],description:'A divisão de acesso para a Liga A BDA.'},
-    {id:'copa-aguia',name:'Copa Águia BDA',edition:'Projeto futuro',format:'Mata-mata',status:'Planejado',phase:'Aguardando lançamento',maxTeams:16,badge:'🦅',participants:[],description:'Nova competição preparada para futuras temporadas do Clã BDA.'}
+    {id:'liga-b',name:'Liga B BDA',edition:'Temporada encerrada',format:'Pontos corridos',status:'Finalizado',phase:'Campeão: Vasco da Gama BDA',maxTeams:20,badge:'🛡️',participants:['Vasco da Gama BDA'],description:'A divisão de acesso para a Liga A BDA.'}
   ];
 
   const page = document.querySelector('[data-page="tournament"]');
@@ -51,7 +50,7 @@
   document.head.appendChild(style);
 
   function copy(value){return JSON.parse(JSON.stringify(value))}
-  function load(){try{const value=JSON.parse(localStorage.getItem(KEY));return Array.isArray(value)&&value.length?value:copy(seeds)}catch{return copy(seeds)}}
+  function load(){try{const value=JSON.parse(localStorage.getItem(KEY));if(!Array.isArray(value)||!value.length)return copy(seeds);const normalized=value.filter(item=>String(item?.id)!=='copa-aguia'&&!/copa\s+águia/i.test(String(item?.name||'')));if(normalized.length!==value.length)localStorage.setItem(KEY,JSON.stringify(normalized));return normalized}catch{return copy(seeds)}}
   function persist(previous){try{localStorage.setItem(KEY,JSON.stringify(tournaments));return true}catch{if(previous)tournaments=previous;toast('Não foi possível salvar os campeonatos');return false}}
   function safe(value){return String(value||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;')}
   function slug(value){return String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||`campeonato-${Date.now()}`}
