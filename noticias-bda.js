@@ -26,6 +26,7 @@
   let editingId = '';
   let db = null;
   let busy = false;
+  let pendingImage = '';
   let deepLink = new URLSearchParams(location.search).get('news') || '';
 
   const $ = (selector, root = document) => root.querySelector(selector);
@@ -33,7 +34,7 @@
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   const notify = message => typeof toast === 'function' ? toast(message) : console.info(message);
-  const clone = value => JSON.parse(JSON.stringify(value));
+  function clone(value) { return JSON.parse(JSON.stringify(value)); }
 
   function load() {
     try {
@@ -188,11 +189,90 @@
       const modal = document.createElement('div');
       modal.id = 'newsEditorModal';
       modal.className = 'modal-backdrop';
-      modal.innerHTML = `<div class="modal news-editor"><div class="news-editor-head"><div><span class="eyebrow">Redação BDA</span><h2 id="newsEditorTitle">Publicar notícia</h2></div><button class="news-close" data-news-editor-close>×</button></div><form id="newsForm"><div class="news-form-grid"><label class="wide">Título<input name="title" maxlength="100" required></label><label class="wide">Resumo<textarea name="summary" maxlength="240" required></textarea></label><label>Categoria<select name="category">${CATEGORIES.map(name => `<option>${name}</option>`).join('')}</select></label><label>Data<input name="date" type="date"></label><label class="wide">Imagem de capa por URL<input name="image" type="url" placeholder="https://..."></label><label class="wide">Texto da notícia<textarea class="news-text" name="content" required></textarea></label><label class="news-check"><input name="published" type="checkbox" checked><span>Publicar para todos</span></label><label class="news-check"><input name="featured" type="checkbox"><span>Marcar como destaque</span></label></div><div class="news-editor-actions"><button type="button" class="secondary" data-news-editor-close>Cancelar</button><button class="primary" id="newsSaveBtn">Salvar notícia</button></div></form></div>`;
+      modal.innerHTML = `<div class="modal news-editor"><div class="news-editor-head"><div><span class="eyebrow">Redação BDA</span><h2 id="newsEditorTitle">Publicar notícia</h2></div><button class="news-close" data-news-editor-close>×</button></div><form id="newsForm"><div class="news-form-grid"><label class="wide">Título<input name="title" maxlength="100" required></label><label class="wide">Resumo<textarea name="summary" maxlength="240" required></textarea></label><label>Categoria<select name="category">${CATEGORIES.map(name => `<option>${name}</option>`).join('')}</select></label><label>Data<input name="date" type="date"></label><section class="wide news-image-field"><span>Imagem de capa</span><div class="news-image-preview" id="newsImagePreview"><div><b>Nenhuma imagem</b><small>Escolha uma foto do celular</small></div></div><div class="news-image-actions"><label class="primary news-upload-button">Escolher imagem<input id="newsImageFile" type="file" accept="image/*"></label><button class="secondary" type="button" id="newsImageRemove">Remover</button></div><small id="newsImageStatus">JPG, PNG ou WebP. A imagem será otimizada automaticamente.</small><details class="news-image-url"><summary>Usar endereço de imagem</summary><input name="imageUrl" type="url" placeholder="https://..."></details></section><label class="wide">Texto da notícia<textarea class="news-text" name="content" required></textarea></label><label class="news-check"><input name="published" type="checkbox" checked><span>Publicar para todos</span></label><label class="news-check"><input name="featured" type="checkbox"><span>Marcar como destaque</span></label></div><div class="news-editor-actions"><button type="button" class="secondary" data-news-editor-close>Cancelar</button><button class="primary" id="newsSaveBtn">Salvar notícia</button></div></form></div>`;
       modal.addEventListener('click', event => { if (event.target === modal) closeEditor(); });
       document.body.append(modal);
       $('#newsForm').addEventListener('submit', saveArticle);
+      $('#newsImageFile').addEventListener('change', handleImageUpload);
+      $('#newsImageRemove').addEventListener('click', removePendingImage);
+      $('#newsForm').elements.imageUrl.addEventListener('input', event => {
+        if (!pendingImage) renderImagePreview(event.currentTarget.value.trim());
+      });
     }
+  }
+
+  function imageBytes(dataUrl) {
+    const encoded = String(dataUrl || '').split(',')[1] || '';
+    return Math.ceil(encoded.length * 0.75);
+  }
+
+  function loadUploadImage(file) {
+    return new Promise((resolve, reject) => {
+      const source = URL.createObjectURL(file);
+      const image = new Image();
+      image.onload = () => { URL.revokeObjectURL(source); resolve(image); };
+      image.onerror = () => { URL.revokeObjectURL(source); reject(new Error('Formato de imagem não suportado')); };
+      image.src = source;
+    });
+  }
+
+  async function optimizeUpload(file) {
+    if (!file?.type?.startsWith('image/')) throw new Error('Escolha um arquivo de imagem');
+    if (file.size > 12 * 1024 * 1024) throw new Error('A imagem original deve ter no máximo 12 MB');
+    const image = await loadUploadImage(file);
+    const scale = Math.min(1, 1280 / Math.max(image.naturalWidth, image.naturalHeight));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+    canvas.getContext('2d', { alpha: false }).drawImage(image, 0, 0, canvas.width, canvas.height);
+    let output = '';
+    for (const quality of [.82, .74, .66, .58, .5]) {
+      output = canvas.toDataURL('image/webp', quality);
+      if (imageBytes(output) <= 320 * 1024) break;
+    }
+    if (!output.startsWith('data:image/webp')) output = canvas.toDataURL('image/jpeg', .72);
+    if (imageBytes(output) > 420 * 1024) throw new Error('A imagem continuou muito grande após a otimização');
+    return output;
+  }
+
+  function renderImagePreview(source = '') {
+    const preview = $('#newsImagePreview');
+    if (!preview) return;
+    preview.innerHTML = source
+      ? `<img src="${escapeHtml(source)}" alt="Prévia da imagem de capa">`
+      : '<div><b>Nenhuma imagem</b><small>Escolha uma foto do celular</small></div>';
+    $('#newsImageRemove').disabled = !source;
+  }
+
+  async function handleImageUpload(event) {
+    const file = event.currentTarget.files?.[0];
+    if (!file) return;
+    const status = $('#newsImageStatus');
+    status.textContent = 'Otimizando imagem...';
+    event.currentTarget.disabled = true;
+    try {
+      pendingImage = await optimizeUpload(file);
+      $('#newsForm').elements.imageUrl.value = '';
+      renderImagePreview(pendingImage);
+      status.textContent = `Imagem pronta • ${Math.ceil(imageBytes(pendingImage) / 1024)} KB`;
+    } catch (error) {
+      pendingImage = '';
+      event.currentTarget.value = '';
+      renderImagePreview();
+      status.textContent = error.message || 'Não foi possível processar a imagem';
+      notify(status.textContent);
+    } finally {
+      event.currentTarget.disabled = false;
+    }
+  }
+
+  function removePendingImage() {
+    pendingImage = '';
+    const form = $('#newsForm');
+    form.elements.imageUrl.value = '';
+    $('#newsImageFile').value = '';
+    $('#newsImageStatus').textContent = 'JPG, PNG ou WebP. A imagem será otimizada automaticamente.';
+    renderImagePreview();
   }
 
   function paragraphs(text) {
@@ -224,7 +304,11 @@
     form.elements.summary.value = item?.summary || '';
     form.elements.category.value = item?.category || CATEGORIES[0];
     form.elements.date.value = dateInput(item?.publishedAt);
-    form.elements.image.value = item?.image || '';
+    pendingImage = String(item?.image || '').startsWith('data:image/') ? item.image : '';
+    form.elements.imageUrl.value = pendingImage ? '' : item?.image || '';
+    $('#newsImageFile').value = '';
+    $('#newsImageStatus').textContent = pendingImage ? `Imagem pronta • ${Math.ceil(imageBytes(pendingImage) / 1024)} KB` : 'JPG, PNG ou WebP. A imagem será otimizada automaticamente.';
+    renderImagePreview(pendingImage || form.elements.imageUrl.value);
     form.elements.content.value = item?.content || '';
     form.elements.published.checked = item?.published !== false;
     form.elements.featured.checked = Boolean(item?.featured);
@@ -236,6 +320,7 @@
   function closeEditor() {
     $('#newsEditorModal')?.classList.remove('show');
     editingId = '';
+    pendingImage = '';
   }
 
   function slug(title) {
@@ -264,7 +349,7 @@
       id: old?.id || slug(form.elements.title.value),
       title: form.elements.title.value.trim(), summary: form.elements.summary.value.trim(),
       content: form.elements.content.value.trim(), category: form.elements.category.value,
-      image: form.elements.image.value.trim(), featured: form.elements.featured.checked,
+      image: pendingImage || form.elements.imageUrl.value.trim(), featured: form.elements.featured.checked,
       published: form.elements.published.checked, author: old?.author || currentEmail() || 'Admin BDA',
       createdAt: old?.createdAt || now,
       publishedAt: form.elements.date.value ? new Date(`${form.elements.date.value}T12:00:00`).getTime() : now,
@@ -371,7 +456,7 @@
       .news-filters{display:flex;gap:7px;overflow-x:auto;margin:18px 0 12px;padding-bottom:4px;scrollbar-width:none}.news-filters button{flex:0 0 auto;min-height:36px;padding:0 12px;border:1px solid var(--line);border-radius:999px;color:var(--muted);background:rgba(255,255,255,.035);font-size:8px;font-weight:900;text-transform:uppercase}.news-filters button.active{color:#171107;border-color:var(--gold);background:linear-gradient(135deg,var(--gold-soft),var(--gold))}
       .news-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.news-card{overflow:hidden;padding:0;cursor:pointer}.news-cover{position:relative;height:150px;padding:11px;display:flex;gap:7px;background:radial-gradient(circle at 76% 25%,rgba(242,215,125,.34),transparent 25%),linear-gradient(145deg,#173923,#07100c);background-position:center;background-size:cover}.news-mark{position:absolute;right:13px;bottom:5px;color:rgba(255,255,255,.13);font:900 58px "Barlow Condensed",sans-serif}.news-body{padding:14px}.news-body time{color:var(--muted);font-size:8px}.news-card h3{margin:7px 0 6px;font-size:23px;line-height:.98;text-transform:uppercase}.news-card p{display:-webkit-box;overflow:hidden;margin:0;color:#b9c7be;font-size:10px;line-height:1.5;-webkit-line-clamp:3;-webkit-box-orient:vertical}.news-meta{display:flex;justify-content:space-between;gap:8px;margin-top:13px;padding-top:10px;border-top:1px solid var(--line);color:var(--muted);font-size:8px}.news-admin{display:flex;gap:7px;margin-top:11px}.news-admin button{flex:1;min-height:35px;border:1px solid var(--line);border-radius:10px;color:var(--text);background:rgba(255,255,255,.045);font-size:8px;font-weight:900;text-transform:uppercase}.news-home{margin-top:25px}.news-home-track{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(240px,32%);gap:11px;overflow-x:auto;padding:2px 2px 10px}.news-card.compact .news-cover{height:112px}.news-card.compact h3{font-size:20px}.news-card.compact p{display:none}.news-empty{grid-column:1/-1}
       #newsArticleModal,#newsEditorModal{z-index:92000;place-items:center}.news-article{position:relative;width:min(100%,820px);max-height:calc(100dvh - 24px);padding:0;overflow:auto}.news-close{width:43px;height:43px;padding:0;border:1px solid rgba(255,255,255,.16);border-radius:13px;color:#fff;background:rgba(3,8,6,.82);font-size:24px}.news-article>.news-close{position:absolute;right:13px;top:13px;z-index:3}.news-article>img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover}.news-article-copy{padding:22px}.news-article-top{display:flex;justify-content:space-between;gap:10px}.news-article-top time{color:var(--muted);font-size:9px}.news-article h2{margin:13px 0 8px;font-size:clamp(34px,7vw,54px);line-height:.92;text-transform:uppercase}.news-summary{color:#d8e1db;font-size:14px;line-height:1.55}.news-author{padding:0 0 14px;border-bottom:1px solid var(--line);color:var(--muted);font-size:10px}.news-article-text p{margin:16px 0;color:#d8e1db;font-size:13px;line-height:1.75}.news-article-actions{display:flex;justify-content:flex-end;gap:8px;padding-top:15px;border-top:1px solid var(--line)}
-      .news-editor{width:min(100%,760px);max-height:calc(100dvh - 24px);overflow:auto}.news-editor-head{display:flex;justify-content:space-between;gap:13px;margin-bottom:16px}.news-editor-head h2{margin:4px 0 0;font-size:34px;text-transform:uppercase}.news-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.news-form-grid .wide{grid-column:1/-1}.news-form-grid textarea{min-height:82px}.news-form-grid .news-text{min-height:210px}.news-check{display:flex;grid-template-columns:auto 1fr;align-items:center;gap:9px;min-height:45px;padding:10px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.03)}.news-check input{width:20px;height:20px;margin:0}.news-check span{color:var(--text);font-size:10px;text-transform:none}.news-editor-actions{position:sticky;bottom:-20px;display:flex;justify-content:flex-end;gap:8px;margin:16px -20px -20px;padding:13px 20px calc(13px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:rgba(16,29,22,.96)}
+      .news-editor{width:min(100%,760px);max-height:calc(100dvh - 24px);overflow:auto}.news-editor-head{display:flex;justify-content:space-between;gap:13px;margin-bottom:16px}.news-editor-head h2{margin:4px 0 0;font-size:34px;text-transform:uppercase}.news-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.news-form-grid .wide{grid-column:1/-1}.news-form-grid textarea{min-height:82px}.news-form-grid .news-text{min-height:210px}.news-image-field{display:grid;gap:9px;padding:12px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.025)}.news-image-field>span{color:var(--muted);font-size:9px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.news-image-preview{overflow:hidden;display:grid;place-items:center;aspect-ratio:16/8;border:1px dashed var(--line-strong);border-radius:13px;background:#020704}.news-image-preview img{display:block;width:100%;height:100%;object-fit:cover}.news-image-preview div{text-align:center}.news-image-preview b,.news-image-preview small{display:block}.news-image-preview b{font-size:11px}.news-image-preview small,.news-image-field>small{margin-top:4px;color:var(--muted);font-size:8px;text-transform:none;letter-spacing:0}.news-image-actions{display:grid;grid-template-columns:1fr auto;gap:8px}.news-upload-button{display:grid;place-items:center;min-height:44px;cursor:pointer}.news-upload-button input{position:absolute;width:1px;height:1px;overflow:hidden;opacity:0}.news-image-actions button{min-height:44px}.news-image-actions button:disabled{opacity:.4}.news-image-url summary{padding:8px 0;color:var(--gold-soft);cursor:pointer;font-size:8px;font-weight:900;text-transform:uppercase}.news-image-url input{margin-top:5px}.news-check{display:flex;grid-template-columns:auto 1fr;align-items:center;gap:9px;min-height:45px;padding:10px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.03)}.news-check input{width:20px;height:20px;margin:0}.news-check span{color:var(--text);font-size:10px;text-transform:none}.news-editor-actions{position:sticky;bottom:-20px;display:flex;justify-content:flex-end;gap:8px;margin:16px -20px -20px;padding:13px 20px calc(13px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:rgba(16,29,22,.96)}
       @media(max-width:820px){.news-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.news-home-track{grid-auto-columns:minmax(230px,60%)}}@media(max-width:560px){:root{--nav-h:82px}.bottom-nav.has-news{width:calc(100% - 12px);bottom:6px;padding:6px;grid-template-columns:repeat(6,minmax(45px,1fr))}.bottom-nav.has-news .nav-btn{font-size:7px}.bottom-nav.has-news .nav-btn i{font-size:18px}.news-page-head{display:grid;align-items:start}.news-page-head button{width:100%}.news-lead{min-height:330px;padding:20px;grid-template-columns:1fr}.news-lead-mark{display:none}.news-grid{grid-template-columns:1fr}.news-cover{height:170px}.news-home-track{grid-auto-columns:minmax(250px,84%)}.news-form-grid{grid-template-columns:1fr}.news-form-grid .wide{grid-column:auto}.news-article-top{display:grid}.news-article-actions,.news-editor-actions{display:grid}.news-article-actions button,.news-editor-actions button{width:100%}}@media(max-width:360px){.bottom-nav.has-news .nav-btn span{font-size:6px}.bottom-nav.has-news .nav-btn i{font-size:16px}}
     `;
     document.head.append(style);
