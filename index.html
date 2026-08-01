@@ -70,23 +70,26 @@
         'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js'
       ];
 
-      const arenaScripts = [
+      const coreScripts = [
         './arena-dom-events.js?v=20260801-1',
         './arena-media-performance.js?v=20260801-1',
-        './firebase-auth.js?v=20260726-2',
-        './notificacoes-bda.js?v=20260727-1',
         './team-badges.js',
         './bda-logo.js',
         './arena-bda.js?v=20260801-1',
-        './firestore-sync.js?v=20260726-3',
-        './cloud-recovery.js?v=20260727-3',
-        './admin-panel.js?v=20260726-3',
         './home-campeonato-atual-v2.js',
         './arena-lazy-features.js?v=20260801-1',
         './navegacao-arena-v2.js',
-        './arena-design-system.js?v=20260801-2',
+        './arena-design-system.js?v=20260801-2'
+      ];
+
+      const cloudScripts = [
+        './firebase-auth.js?v=20260801-3',
+        './notificacoes-bda.js?v=20260801-2',
+        './firestore-sync.js?v=20260801-4',
+        './cloud-recovery.js?v=20260801-4',
+        './admin-panel.js?v=20260801-4',
         './arena-auth-consumers.js?v=20260726-1',
-        './site-health.js?v=20260727-3'
+        './site-health.js?v=20260801-4'
       ];
 
       let loadingTimeoutId = 0;
@@ -196,24 +199,61 @@
         doc.documentElement.style.colorScheme = 'dark';
         try { win.localStorage.removeItem('arena-bda-theme'); } catch {}
 
-        const failures = [];
-        await loadOrderedBatch(doc, firebaseScripts, failures, 12000);
-        if (generation !== loadGeneration) return;
-        await loadOrderedBatch(doc, arenaScripts, failures, 15000);
+        const coreFailures = [];
+        const cloudFailures = [];
+        let cloudPromise = null;
+        let cloudReady = false;
+
+        const ensureCloud = reason => {
+          if (cloudPromise) return cloudPromise;
+          cloudPromise = (async () => {
+            doc.documentElement.dataset.arenaCloud = 'loading';
+            await loadOrderedBatch(doc, firebaseScripts, cloudFailures, 12000);
+            if (generation !== loadGeneration) return;
+            await loadOrderedBatch(doc, cloudScripts, cloudFailures, 15000);
+            if (generation !== loadGeneration) return;
+            cloudReady = true;
+            doc.documentElement.dataset.arenaCloud = cloudFailures.length ? 'partial' : 'ready';
+            win.dispatchEvent(new win.CustomEvent('arena:cloud-ready', {
+              detail: { reason, failures: cloudFailures.map(item => item.src) }
+            }));
+          })();
+          return cloudPromise;
+        };
+
+        doc.addEventListener('click', event => {
+          const adminButton = event.target instanceof win.Element && event.target.closest('#adminBtn');
+          if (!adminButton || cloudReady) return;
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          adminButton.setAttribute('aria-busy', 'true');
+          adminButton.textContent = 'CARREGANDO...';
+          ensureCloud('admin').then(() => doc.getElementById('adminBtn')?.click()).catch(error => {
+            console.error('[Arena BDA] Falha ao preparar login', error);
+          });
+        }, true);
+
+        await loadOrderedBatch(doc, coreScripts, coreFailures, 15000);
 
         if (generation !== loadGeneration) return;
 
-        doc.documentElement.dataset.arenaEnhanced = failures.length ? 'partial' : 'true';
+        doc.documentElement.dataset.arenaEnhanced = coreFailures.length ? 'partial' : 'true';
         doc.documentElement.dataset.arenaLoadMs = String(Math.round(window.performance.now() - startedAt));
         win.dispatchEvent(new win.CustomEvent('arena:enhanced', {
           detail: {
-            failures: failures.map(item => item.src),
+            failures: coreFailures.map(item => item.src),
             loadMs: Number(doc.documentElement.dataset.arenaLoadMs)
           }
         }));
-        if (failures.length && typeof win.toast === 'function') {
+        if (coreFailures.length && typeof win.toast === 'function') {
           win.toast('A Arena abriu, mas alguns recursos não carregaram');
         }
+
+        const startCloudWhenIdle = () => ensureCloud('idle').catch(error => {
+          console.error('[Arena BDA] Recursos online não carregaram', error);
+        });
+        if ('requestIdleCallback' in win) win.requestIdleCallback(startCloudWhenIdle, { timeout: 3500 });
+        else win.setTimeout(startCloudWhenIdle, 2500);
       }
 
       function validArenaDocument() {
