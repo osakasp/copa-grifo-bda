@@ -61,5 +61,5 @@
   };
 
   reinforce();
-  new MutationObserver(reinforce).observe(document.body, { childList: true, subtree: true });
+  window.ArenaDOMEvents.subscribe(reinforce, { selector: '#adminPanel,.admin-panel,[data-admin]' });
 })();

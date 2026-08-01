@@ -374,9 +374,7 @@
   function schedule() {
     clearTimeout(timer);
     timer = setTimeout(() => {
-      observer?.disconnect();
       decorateButton();
-      observer?.observe(document.body, { childList: true, subtree: true });
     }, 70);
   }
 
@@ -414,8 +412,7 @@
   `;
   document.head.append(style);
 
-  observer = new MutationObserver(schedule);
-  observer.observe(document.body, { childList: true, subtree: true });
+  window.ArenaDOMEvents.subscribe(schedule, { selector: '#standPhoto,#autoStandings,.stand-group' });
   schedule();
 
   window.ArenaBDATableExporter = { open: openStudio, refresh: schedule, generate };

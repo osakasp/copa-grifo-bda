@@ -664,11 +664,10 @@
     };
   }
 
-  const observer = new MutationObserver(() => {
+  window.ArenaDOMEvents.subscribe(() => {
     clearTimeout(observerTimer);
     observerTimer = setTimeout(decorateCards, 45);
-  });
-  observer.observe(document.body, { childList: true, subtree: true });
+  }, { selector: '.team-card,.club-card,[data-team]' });
   decorateCards();
 
   window.ArenaBDAClubProfiles = {
