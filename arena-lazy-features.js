@@ -19,7 +19,7 @@
       './galeria-historica-v2.js?v=20260727-2'
     ],
     season: [
-      './temporada-bda.js?v=20260801-1'
+      './temporada-bda.js?v=20260801-2'
     ],
     teams: [
       './perfis-clubes.js?v=20260726-2',
