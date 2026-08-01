@@ -11,8 +11,7 @@
     {id:'copa-francos',name:'Copa Francos',edition:'Próxima edição',format:'Mata-mata',status:'Planejado',phase:'Preparação',maxTeams:16,badge:'🕊️',participants:[],description:'Competição especial em homenagem à história do Francos FC BDA.'},
     {id:'supercopa',name:'SuperCopa BDA',edition:'Temporada atual',format:'Mata-mata',status:'Em andamento',phase:'Semifinais',maxTeams:4,badge:'⚡',participants:['São Paulo BDA','Flamestre BDA','CR Flamengo BDA','CV Cruz BDA'],description:'Confronto entre grandes campeões das ligas e copas do Clã BDA.'},
     {id:'liga-a',name:'Liga A BDA',edition:'Temporada encerrada',format:'Pontos corridos',status:'Finalizado',phase:'Campeão: Inter Brasil BDA',maxTeams:20,badge:'🥇',participants:['Inter Brasil BDA'],description:'A divisão de elite do Clã BDA.'},
-    {id:'liga-b',name:'Liga B BDA',edition:'Temporada encerrada',format:'Pontos corridos',status:'Finalizado',phase:'Campeão: Vasco da Gama BDA',maxTeams:20,badge:'🛡️',participants:['Vasco da Gama BDA'],description:'A divisão de acesso para a Liga A BDA.'},
-    {id:'copa-aguia',name:'Copa Águia BDA',edition:'Projeto futuro',format:'Mata-mata',status:'Planejado',phase:'Aguardando lançamento',maxTeams:16,badge:'🦅',participants:[],description:'Nova competição preparada para futuras temporadas do Clã BDA.'}
+    {id:'liga-b',name:'Liga B BDA',edition:'Temporada encerrada',format:'Pontos corridos',status:'Finalizado',phase:'Campeão: Vasco da Gama BDA',maxTeams:20,badge:'🛡️',participants:['Vasco da Gama BDA'],description:'A divisão de acesso para a Liga A BDA.'}
   ];
 
   const DATASETS = {
