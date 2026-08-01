@@ -1,4 +1,4 @@
-const VERSION = 'v40-media-performance';
+const VERSION = 'v41-deferred-firebase';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
