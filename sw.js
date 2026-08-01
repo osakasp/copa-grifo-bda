@@ -1,4 +1,4 @@
-const CACHE = 'arena-bda-shell-v36-central-dom-events';
+const CACHE = 'arena-bda-shell-v37-section-loading';
 const SHELL = [
   './',
   './index.html',

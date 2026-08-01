@@ -1,9 +1,10 @@
 (() => {
   'use strict';
 
-  const ORDER = ['home', 'history', 'tournament', 'registrations', 'ranking', 'champions', 'teams', 'community'];
+  const ORDER = ['home', 'news', 'history', 'tournament', 'registrations', 'ranking', 'champions', 'teams', 'community'];
   const META = {
     home: ['⌂', 'Início', 'Visão geral da arena'],
+    news: ['📰', 'Notícias', 'Comunicados e novidades'],
     history: ['📜', 'História', 'Memória oficial do clã'],
     tournament: ['🏆', 'Campeonatos', 'Copas, ligas e confrontos'],
     registrations: ['✍️', 'Inscrições', 'Vagas e aprovações'],
@@ -123,7 +124,7 @@
           <footer><img src="${iconUrl()}" alt="Grifo"><span><b>Clã BDA</b><small>Todos os campeonatos em uma só arena.</small></span></footer>
         </section>`;
 
-      ['history', 'champions', 'teams', 'community'].forEach(page => {
+      ['news', 'history', 'champions', 'teams', 'community'].forEach(page => {
         const [icon, label, description] = META[page];
         const button = document.createElement('button');
         button.type = 'button';
@@ -170,7 +171,7 @@
 
     const more = $('.arena-mobile-item[data-mobile-more]');
     if (more) {
-      const active = ['history', 'champions', 'teams', 'community'].includes(page);
+      const active = ['news', 'history', 'champions', 'teams', 'community'].includes(page);
       more.classList.toggle('active', active);
       active ? more.setAttribute('aria-current', 'page') : more.removeAttribute('aria-current');
     }

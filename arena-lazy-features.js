@@ -3,28 +3,66 @@
 
   const TABLE_EXPORT_SRC = './exportar-tabela-copa-facil.js?v=20260726-2';
   const BUNDLES = Object.freeze({
+    champions: [
+      './champion-banners.js'
+    ],
+    registrations: [
+      './central-inscricoes.js'
+    ],
+    ranking: [
+      './arena-editor-pro.js',
+      './ranking-bda.js'
+    ],
     history: [
+      './arena-editor-pro.js',
       './historia-cla.js?v=20260727-2',
       './galeria-historica-v2.js?v=20260727-2'
     ],
     teams: [
-      './profile-observer-scope.js?v=20260726-1',
       './perfis-clubes.js?v=20260726-2',
       './editor-perfis-times.js?v=20260726-2',
       './club-profile-router.js?v=20260726-2',
-      './solicitacoes-edicao-times.js?v=20260726-1',
-      './profile-observer-scope-end.js?v=20260726-1'
+      './solicitacoes-edicao-times.js?v=20260726-1'
     ],
     news: [
       './noticias-bootstrap.js?v=20260727-1',
-      './noticias-bda.js?v=20260727-2'
+      './noticias-bda.js?v=20260727-2',
+      './noticias-nav-fix.js?v=20260727-1'
     ],
     tournament: [
+      './confrontos-copa-grifo.js',
+      './gestor-inteligente.js?v=20260730-4',
+      './sorteio-campeonatos.js?v=20260730-1',
+      './arena-editor-pro.js',
+      './classificacao-automatica.js?v=20260730-1',
+      './gerador-grupos-ligas.js',
+      './logo-liga.js',
+      './cores-automaticas-campeonatos.js?v=20260726-1',
+      './midia-campeonato-refresh.js?v=20260726-1',
+      './copa-francos-design-lite.js?v=20260726-2',
+      './confronto-editor-v2.js?v=20260730-2',
+      './resultados-cards-pro.js?v=20260726-1',
+      './placar-mobile-stability.js?v=20260727-1',
+      './captura-confrontos-simples.js?v=20260730-1',
       './match-center-bda.js?v=20260727-1',
       './regulamento-interativo.js?v=20260727-1'
     ]
   });
-  const PAGE_BUNDLE = Object.freeze({ history: 'history', teams: 'teams', news: 'news' });
+  const PAGE_BUNDLE = Object.freeze({
+    champions: 'champions',
+    history: 'history',
+    news: 'news',
+    ranking: 'ranking',
+    registrations: 'registrations',
+    teams: 'teams',
+    tournament: 'tournament'
+  });
+  const ROUTES = Object.freeze({
+    history: ['📜', 'História'],
+    registrations: ['✍️', 'Inscrições'],
+    ranking: ['📊', 'Ranking'],
+    news: ['📰', 'Notícias']
+  });
   const scriptPromises = new Map();
   const bundlePromises = new Map();
   const loadedBundles = new Set();
@@ -161,6 +199,28 @@
     window.ArenaBDAMotion?.refresh?.();
   }
 
+  function ensureRoutes() {
+    const nav = document.querySelector('.bottom-nav');
+    const main = document.querySelector('main');
+    Object.entries(ROUTES).forEach(([page, meta]) => {
+      if (main && !document.querySelector(`[data-page="${page}"]`)) {
+        const section = document.createElement('section');
+        section.className = 'page arena-lazy-page';
+        section.dataset.page = page;
+        section.innerHTML = `<div class="arena-section-loading"><span>${meta[0]}</span><b>${meta[1]}</b><small>O conteúdo será carregado ao abrir.</small></div>`;
+        main.append(section);
+      }
+      if (nav && !nav.querySelector(`[data-go="${page}"]`)) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'nav-btn';
+        button.dataset.go = page;
+        button.innerHTML = `<i>${meta[0]}</i><span>${meta[1]}</span>`;
+        nav.append(button);
+      }
+    });
+  }
+
   async function loadPage(page, trigger = null) {
     const bundle = PAGE_BUNDLE[page];
     if (!bundle) {
@@ -238,8 +298,13 @@
       return;
     }
 
-    if (page === 'tournament' || (event.target instanceof Element && event.target.closest('[data-open-tournament],[data-home-tournament]'))) {
-      scheduleTournamentExtras();
+    const tournamentTrigger = event.target instanceof Element ? event.target.closest('[data-open-tournament],[data-home-tournament]') : null;
+    if (tournamentTrigger && !loadedBundles.has('tournament')) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      setRouteLoading(tournamentTrigger, true);
+      loadBundle('tournament').then(() => tournamentTrigger.click()).catch(() => notify('Não foi possível carregar o campeonato')).finally(() => setRouteLoading(tournamentTrigger, false));
     }
   }, true);
 
@@ -279,11 +344,8 @@
 
   function backgroundWarmup() {
     idle(() => {
-      ['news', 'history', 'teams', 'tournament'].forEach(prefetchBundle);
       const constrained = connection?.saveData || /(^|-)2g$/.test(connection?.effectiveType || '');
-      if (!constrained && document.querySelector('.page.active')?.dataset.page === 'home') {
-        window.setTimeout(() => loadBundle('news').catch(() => {}), 1800);
-      }
+      if (!constrained && document.querySelector('.page.active')?.dataset.page === 'home') prefetchBundle('tournament');
     }, 1800);
   }
 
@@ -292,6 +354,7 @@
   style.textContent = `
     .arena-route-loading{position:relative;opacity:.68!important;cursor:wait!important}
     .arena-route-loading:after{content:"";position:absolute;right:9px;top:9px;width:10px;height:10px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:arenaLazySpin .7s linear infinite}
+    .arena-section-loading{display:grid;place-items:center;gap:6px;min-height:240px;padding:28px;color:var(--muted);text-align:center}.arena-section-loading>span{font-size:38px}.arena-section-loading>b{color:var(--text);font-size:13px}.arena-section-loading>small{font-size:9px}
     @keyframes arenaLazySpin{to{transform:rotate(360deg)}}
     @media(prefers-reduced-motion:reduce){.arena-route-loading:after{animation:none}}
   `;
@@ -306,6 +369,7 @@
     state: () => ({ loaded: [...loadedBundles], loading: [...bundlePromises.keys()], prefetched: prefetched.size })
   });
 
+  ensureRoutes();
   initialRoute();
   backgroundWarmup();
 })();
