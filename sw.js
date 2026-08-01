@@ -1,4 +1,4 @@
-const VERSION = 'v43-home-match-rotation';
+const VERSION = 'v44-season-page';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
