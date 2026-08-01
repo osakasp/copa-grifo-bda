@@ -1,4 +1,4 @@
-const VERSION = 'v44-season-page';
+const VERSION = 'v45-francos-season';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
