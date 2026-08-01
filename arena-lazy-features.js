@@ -18,6 +18,9 @@
       './historia-cla.js?v=20260727-2',
       './galeria-historica-v2.js?v=20260727-2'
     ],
+    season: [
+      './temporada-bda.js?v=20260801-1'
+    ],
     teams: [
       './perfis-clubes.js?v=20260726-2',
       './editor-perfis-times.js?v=20260726-2',
@@ -51,6 +54,7 @@
   const PAGE_BUNDLE = Object.freeze({
     champions: 'champions',
     history: 'history',
+    season: 'season',
     news: 'news',
     ranking: 'ranking',
     registrations: 'registrations',
@@ -59,6 +63,7 @@
   });
   const ROUTES = Object.freeze({
     history: ['📜', 'História'],
+    season: ['🗓️', 'Temporada'],
     registrations: ['✍️', 'Inscrições'],
     ranking: ['📊', 'Ranking'],
     news: ['📰', 'Notícias']
