@@ -286,11 +286,10 @@
   document.head.append(style);
 
   let timer = 0;
-  const observer = new MutationObserver(() => {
+  window.ArenaDOMEvents.subscribe(() => {
     clearTimeout(timer);
     timer = setTimeout(run, 20);
-  });
-  observer.observe(document.body, { childList: true, subtree: true });
+  }, { selector: '#arenaDetail,.arena-card,.gi-head' });
   window.addEventListener('arena:tournament-logo-updated', run);
   run();
 })();

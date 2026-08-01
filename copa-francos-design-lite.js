@@ -91,14 +91,12 @@
   function decorate() {
     if (decorating) return;
     decorating = true;
-    observer?.disconnect();
     try {
       decorateCard();
       decorateHero();
       decorateManager();
     } finally {
       decorating = false;
-      observer?.observe(document.body, { childList: true, subtree: true });
     }
   }
 
@@ -145,8 +143,7 @@
   `;
   document.head.append(style);
 
-  observer = new MutationObserver(schedule);
-  observer.observe(document.body, { childList: true, subtree: true });
+  window.ArenaDOMEvents.subscribe(schedule, { selector: '#giManager,.gi-game,.gi-bracket,.arena-card' });
   window.addEventListener('storage', schedule);
   window.addEventListener('arena:tournament-logo-updated', schedule);
   schedule();

@@ -143,8 +143,7 @@
     if (event.target.closest('[data-go],[data-mobile-go],[data-sheet-go]')) setTimeout(syncActive, 35);
   });
 
-  const observer = new MutationObserver(refresh);
-  observer.observe(document.body, { childList: true, subtree: true });
+  window.ArenaDOMEvents.subscribe(refresh, { selector: '.bottom-nav,[data-page="news"],[data-go="news"]' });
 
   window.ArenaBDANewsNavigation = Object.freeze({ refresh, open: () => go('news') });
   refresh();

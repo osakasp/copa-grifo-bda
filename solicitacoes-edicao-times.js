@@ -701,8 +701,7 @@
   `;
   document.head.append(style);
 
-  const observer = new MutationObserver(scheduleDecorate);
-  observer.observe(document.body, { childList: true, subtree: true });
+  window.ArenaDOMEvents.subscribe(scheduleDecorate, { selector: '.team-card,.club-card,[data-team],#adminPanel' });
   window.addEventListener('arena:team-edit-request-updated', renderAdminQueue);
   window.addEventListener('arena:team-profile-updated', scheduleDecorate);
   window.addEventListener('storage', event => {

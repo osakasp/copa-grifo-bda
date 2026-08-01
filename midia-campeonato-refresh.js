@@ -48,6 +48,6 @@
   };
 
   window.addEventListener('arena:tournament-logo-updated', later);
-  new MutationObserver(later).observe(document.body, { childList: true, subtree: true });
+  window.ArenaDOMEvents.subscribe(later, { selector: '#arenaDetail,.arena-card,.gi-head' });
   refresh();
 })();

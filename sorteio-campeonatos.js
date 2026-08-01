@@ -812,7 +812,6 @@
     firebase.auth().onAuthStateChanged(user => { currentUser = user; scheduleButtons(); });
   }
 
-  const observer = new MutationObserver(scheduleButtons);
-  observer.observe(document.body, { childList: true, subtree: true });
+  window.ArenaDOMEvents.subscribe(scheduleButtons, { selector: '#giManager,.gi-head,[data-page="tournament"]' });
   scheduleButtons();
 })();

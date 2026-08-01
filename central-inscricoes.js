@@ -119,5 +119,5 @@ const style=document.createElement('style');style.textContent=`.bottom-nav{grid-
 
 installNavigation();render();
 if(window.firebase&&firebase.firestore&&firebase.auth){db=firebase.firestore();firebase.auth().onAuthStateChanged(current=>{user=current;listenAdmin()})}
-new MutationObserver(()=>{clearTimeout(renderTimer);renderTimer=setTimeout(installNavigation,100)}).observe(document.body,{childList:true,subtree:true});
+window.ArenaDOMEvents.subscribe(()=>{clearTimeout(renderTimer);renderTimer=setTimeout(installNavigation,100)},{selector:'.bottom-nav,[data-page]'});
 })();

@@ -334,6 +334,5 @@
   installRipple();
   enhanceStructure();
 
-  const observer = new MutationObserver(() => requestAnimationFrame(enhanceStructure));
-  observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+  window.ArenaDOMEvents.subscribe(() => requestAnimationFrame(enhanceStructure), { selector: 'body,.app-view,.bottom-nav,.arena-card' });
 })();

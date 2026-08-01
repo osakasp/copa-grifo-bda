@@ -214,13 +214,12 @@
 
   ensureField();
   decorateLogos();
-  const observer = new MutationObserver(() => {
+  window.ArenaDOMEvents.subscribe(() => {
     clearTimeout(timer);
     timer = setTimeout(() => {
       ensureField();
       decorateLogos();
     }, 100);
-  });
-  observer.observe(document.body, { childList: true, subtree: true });
+  }, { selector: '#arenaDetail,.arena-card,[data-arena-field="leagueLogo"]' });
   window.addEventListener('arena:tournament-logo-updated', decorateLogos);
 })();

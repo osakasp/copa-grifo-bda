@@ -789,10 +789,9 @@
     });
   }
 
-  const observer = new MutationObserver(() => {
+  window.ArenaDOMEvents.subscribe(() => {
     clearTimeout(observerTimer);
     observerTimer = setTimeout(ensure, 80);
-  });
-  observer.observe(document.body, { childList: true, subtree: true });
+  }, { selector: '#giManager,.gi-content,.gi-config' });
   ensure();
 })();

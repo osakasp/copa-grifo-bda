@@ -199,10 +199,9 @@
     }
   }, true);
 
-  const observer = new MutationObserver(mutations => {
+  window.ArenaDOMEvents.subscribe(mutations => {
     if (mutations.some(m => [...m.addedNodes, ...m.removedNodes].some(node => node instanceof Element && (node.id === 'giManager' || node.matches?.('.gi-content,.gi-phase,.gi-game') || node.querySelector?.('#giManager,.gi-phase,.gi-game'))))) schedule();
-  });
-  observer.observe(document.body, { childList: true, subtree: true });
+  }, { selector: '#giManager,.gi-content,.gi-phase,.gi-game' });
   ['arena:matches-updated','arena:quick-score-saved','arena:permissions-updated'].forEach(name => window.addEventListener(name, schedule));
 
   const style = document.createElement('style');

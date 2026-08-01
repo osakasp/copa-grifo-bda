@@ -460,9 +460,8 @@
     }, error => console.error('Falha ao carregar a história do clã', error));
   }
 
-  const observer = new MutationObserver(() => {
+  window.ArenaDOMEvents.subscribe(() => {
     clearTimeout(structureTimer);
     structureTimer = setTimeout(ensureStructure, 100);
-  });
-  observer.observe(document.body, { childList: true, subtree: true });
+  }, { selector: '#historyCapture,[data-page="history"]' });
 })();

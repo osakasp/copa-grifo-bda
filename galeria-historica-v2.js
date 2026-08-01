@@ -590,13 +590,12 @@
     }, error => console.error('Falha ao carregar a galeria histórica', error));
   }
 
-  const observer = new MutationObserver(() => {
+  window.ArenaDOMEvents.subscribe(() => {
     clearTimeout(observerTimer);
     observerTimer = setTimeout(() => {
       if ($('#historyCapture') && !$('#clanHistoryGallerySection')) render();
     }, 100);
-  });
-  observer.observe(document.body, { childList: true, subtree: true });
+  }, { selector: '#historyCapture,#clanHistoryGallerySection' });
 
   render();
 })();
