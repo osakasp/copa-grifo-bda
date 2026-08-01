@@ -43,7 +43,7 @@
   <main class="stage">
     <section class="loading" id="loadingPanel" aria-live="polite">
       <div class="loader-card">
-        <div class="griffin"><img src="./favicon.svg" alt="Escudo oficial Arena BDA"></div>
+        <div class="griffin"><img src="./favicon.svg" alt="Escudo oficial Arena BDA" width="76" height="76" decoding="async" fetchpriority="high"></div>
         <h1 id="loadingTitle">Carregando a Arena BDA</h1>
         <p id="loadingMessage">Preparando campeonatos, clubes e resultados...</p>
         <div class="spinner" id="spinner" aria-hidden="true"></div>
@@ -72,6 +72,7 @@
 
       const arenaScripts = [
         './arena-dom-events.js?v=20260801-1',
+        './arena-media-performance.js?v=20260801-1',
         './firebase-auth.js?v=20260726-2',
         './notificacoes-bda.js?v=20260727-1',
         './team-badges.js',
