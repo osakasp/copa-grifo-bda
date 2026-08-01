@@ -1,4 +1,4 @@
-const CACHE = 'arena-bda-shell-v38-design-system';
+const CACHE = 'arena-bda-shell-v39-home-tournament-redesign';
 const SHELL = [
   './',
   './index.html',

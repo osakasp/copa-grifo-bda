@@ -512,7 +512,7 @@
     if (!manager) {
       manager = document.createElement('div');
       const legacy = $('.arena-legacy', detail);
-      legacy ? detail.insertBefore(manager, legacy) : detail.append(manager);
+      legacy?.parentNode ? legacy.parentNode.insertBefore(manager, legacy) : detail.append(manager);
     }
     manager.outerHTML = view();
     $$('.arena-legacy', detail).forEach(element => { element.hidden = true; });
