@@ -110,12 +110,16 @@
     const nav = $('.bottom-nav');
     if (!main || !nav) return false;
 
-    if (!$('[data-page="news"]')) {
-      const page = document.createElement('section');
+    let page = $('[data-page="news"]');
+    if (!page) {
+      page = document.createElement('section');
       page.className = 'page news-page';
       page.dataset.page = 'news';
-      page.innerHTML = `<div class="news-page-head"><div><span class="eyebrow">Central de informação</span><h1>Notícias BDA</h1><p>Resultados, comunicados, campeonatos e histórias dos clubes.</p></div><button class="primary" id="newsCreateBtn" hidden>+ Publicar notícia</button></div><div id="newsLead"></div><div class="news-filters" id="newsFilters"></div><div class="news-grid" id="newsGrid"></div>`;
       main.append(page);
+    }
+    if (!$('#newsGrid', page)) {
+      page.className = 'page news-page';
+      page.innerHTML = `<div class="news-page-head"><div><span class="eyebrow">Central de informação</span><h1>Notícias BDA</h1><p>Resultados, comunicados, campeonatos e histórias dos clubes.</p></div><button class="primary" id="newsCreateBtn" hidden>+ Publicar notícia</button></div><div id="newsLead"></div><div class="news-filters" id="newsFilters"></div><div class="news-grid" id="newsGrid"></div>`;
     }
 
     if (!nav.querySelector('[data-go="news"]')) {
