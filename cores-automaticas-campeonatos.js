@@ -95,6 +95,23 @@
       border: 'rgba(220,232,241,.37)',
       glow: 'rgba(94,151,204,.30)'
     },
+    superLeague: {
+      label: 'BDA Super League',
+      description: 'Roxo, azul profundo e violeta',
+      icon: '🌟',
+      primary: '#7457ff',
+      soft: '#b7a8ff',
+      secondary: '#2d7dff',
+      bg: '#02030c',
+      bg2: '#090b28',
+      surface: '#19194b',
+      surface2: '#060718',
+      text: '#f8f7ff',
+      muted: '#b9b6d2',
+      success: '#8eb9ff',
+      border: 'rgba(183,168,255,.42)',
+      glow: 'rgba(116,87,255,.31)'
+    },
     aguia: {
       label: 'Copa Águia BDA',
       description: 'Azul royal, dourado e preto',
@@ -137,6 +154,7 @@
     if (value.includes('supercopa') || value.includes('super copa')) return 'supercopa';
     if (/liga\s*a(?:\s|$)/.test(value)) return 'ligaA';
     if (/liga\s*b(?:\s|$)/.test(value)) return 'ligaB';
+    if (value.includes('super league') || value.includes('superleague')) return 'superLeague';
     if (value.includes('aguia')) return 'aguia';
     if (value.includes('grifo')) return 'grifo';
     return 'default';
@@ -214,15 +232,42 @@
   }
 
   function decorateTournamentCards() {
-    $$('.arena-card').forEach(card => {
-      const name = $('.arena-body h3', card)?.textContent?.trim();
+    $$('.arena-card,.arena-home-card').forEach(card => {
+      const name = $('.arena-body h3', card)?.textContent?.trim() || $('h3', card)?.textContent?.trim();
       if (!name) return;
       const theme = themeFor(name);
-      card.dataset.competitionTheme = theme.key;
-      card.style.setProperty('--competition-primary', theme.primary);
-      card.style.setProperty('--competition-soft', theme.soft);
-      card.style.setProperty('--competition-bg', theme.bg2);
+      applyCompetitionVariables(card, theme);
+      const symbol = $('.arena-symbol', card);
+      if (symbol) symbol.textContent = theme.icon;
     });
+  }
+
+  function applyCompetitionVariables(element, theme) {
+    if (!element) return;
+    element.dataset.competitionTheme = theme.key;
+    element.style.setProperty('--competition-primary', theme.primary);
+    element.style.setProperty('--competition-soft', theme.soft);
+    element.style.setProperty('--competition-secondary', theme.secondary);
+    element.style.setProperty('--competition-bg', theme.bg);
+    element.style.setProperty('--competition-bg-2', theme.bg2);
+    element.style.setProperty('--competition-surface', theme.surface);
+    element.style.setProperty('--competition-surface-2', theme.surface2);
+    element.style.setProperty('--competition-text', theme.text);
+    element.style.setProperty('--competition-muted', theme.muted);
+    element.style.setProperty('--competition-border', theme.border);
+    element.style.setProperty('--competition-glow', theme.glow);
+  }
+
+  function decorateActiveCompetition() {
+    const detail = $('#arenaDetail');
+    const name = $('.arena-hero-copy h2', detail)?.textContent?.trim()
+      || $('#giManager .gi-head h2')?.textContent?.trim();
+    if (!name) return;
+    const theme = themeFor(name);
+    applyCompetitionVariables(detail, theme);
+    applyCompetitionVariables($('#giManager'), theme);
+    const symbol = $('.arena-hero-symbol', detail);
+    if (symbol) symbol.textContent = theme.icon;
   }
 
   function run() {
@@ -230,6 +275,7 @@
     if (modal) applyConfiguratorTheme(modal);
     $$('.art-shot-stage').forEach(applyStageTheme);
     decorateTournamentCards();
+    decorateActiveCompetition();
   }
 
   window.ArenaBDACompetitionThemes = {
@@ -280,7 +326,23 @@
     .art-auto-theme-card span,.art-auto-theme-card b,.art-auto-theme-card small{display:block}.art-auto-theme-card span{color:var(--art-soft);font-size:7px;font-weight:900;letter-spacing:.14em;text-transform:uppercase}.art-auto-theme-card b{margin-top:4px;color:var(--art-text);font-size:13px;text-transform:uppercase}.art-auto-theme-card small{margin-top:3px;color:var(--art-muted);font-size:8px;line-height:1.4}
     .art-auto-theme-swatches{display:flex;gap:5px}.art-auto-theme-swatches i{width:20px;height:20px;border:2px solid rgba(255,255,255,.18);border-radius:50%;box-shadow:0 5px 12px rgba(0,0,0,.28)}
 
-    .arena-card[data-competition-theme]{position:relative}.arena-card[data-competition-theme] .arena-cover{box-shadow:inset 0 -3px var(--competition-primary)!important}.arena-card[data-competition-theme] .arena-status{border-color:color-mix(in srgb,var(--competition-primary) 58%,transparent)!important}.arena-card[data-competition-theme] .arena-edition{color:var(--competition-soft)!important}
+    .arena-card[data-competition-theme],.arena-home-card[data-competition-theme]{position:relative;border-color:color-mix(in srgb,var(--competition-primary) 28%,transparent)!important;background:linear-gradient(150deg,var(--competition-surface),var(--competition-surface-2))!important}
+    .arena-card[data-competition-theme]:before,.arena-home-card[data-competition-theme]:before{content:"";position:absolute;inset:0 0 auto;height:2px;background:linear-gradient(90deg,transparent,var(--competition-primary),transparent);opacity:.75}
+    .arena-card[data-competition-theme] .arena-cover{background:radial-gradient(circle at 78% 10%,color-mix(in srgb,var(--competition-primary) 34%,transparent),transparent 32%),linear-gradient(145deg,var(--competition-surface),var(--competition-bg))!important;box-shadow:inset 0 -3px var(--competition-primary)!important}
+    .arena-card[data-competition-theme] .arena-status{border-color:color-mix(in srgb,var(--competition-primary) 58%,transparent)!important}.arena-card[data-competition-theme] .arena-edition,.arena-home-card[data-competition-theme] .eyebrow{color:var(--competition-soft)!important}
+    .arena-card[data-competition-theme] .arena-open,.arena-home-card[data-competition-theme] button{border-color:color-mix(in srgb,var(--competition-primary) 32%,transparent)!important;color:var(--competition-soft)!important;background:color-mix(in srgb,var(--competition-primary) 8%,transparent)!important}
+
+    #arenaDetail[data-competition-theme]{--gold:var(--competition-primary);--gold-soft:var(--competition-soft);--green:var(--competition-secondary);--line-strong:var(--competition-border)}
+    #arenaDetail[data-competition-theme] .arena-hero{border-color:var(--competition-border)!important;background:radial-gradient(circle at 82% 10%,color-mix(in srgb,var(--competition-primary) 34%,transparent),transparent 31%),linear-gradient(145deg,var(--competition-surface),var(--competition-bg) 72%)!important;box-shadow:0 26px 66px rgba(0,0,0,.44),0 0 28px var(--competition-glow)!important}
+    #arenaDetail[data-competition-theme] .arena-hero:after{background:linear-gradient(180deg,color-mix(in srgb,var(--competition-bg) 8%,transparent),var(--competition-bg) 94%)!important}
+    #arenaDetail[data-competition-theme] .arena-hero-symbol{filter:drop-shadow(0 0 18px var(--competition-glow))}
+    #arenaDetail[data-competition-theme] .arena-stat{border-color:color-mix(in srgb,var(--competition-primary) 22%,transparent)!important;background:linear-gradient(150deg,var(--competition-surface),var(--competition-surface-2))!important}
+    #arenaDetail[data-competition-theme] .arena-stat b{color:var(--competition-soft)!important}
+
+    #giManager[data-competition-theme]{--gold:var(--competition-primary);--gold-soft:var(--competition-soft);--green:var(--competition-secondary);--line-strong:var(--competition-border)}
+    #giManager[data-competition-theme] .gi-head{border-color:var(--competition-border)!important;background:radial-gradient(circle at 92% 0,color-mix(in srgb,var(--competition-primary) 30%,transparent),transparent 35%),linear-gradient(145deg,var(--competition-surface),var(--competition-bg) 74%)!important;box-shadow:0 22px 58px rgba(0,0,0,.38),0 0 24px var(--competition-glow)!important}
+    #giManager[data-competition-theme] .gi-game,#giManager[data-competition-theme] .gip-card{border-color:color-mix(in srgb,var(--competition-primary) 20%,transparent)!important;background:linear-gradient(155deg,var(--competition-surface),var(--competition-surface-2))!important}
+    #giManager[data-competition-theme] .gi-score-input:focus{border-color:var(--competition-primary)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--competition-primary) 15%,transparent)!important}
     @media(max-width:650px){.art-auto-theme-card{grid-template-columns:44px 1fr}.art-auto-theme-icon{width:43px;height:43px}.art-auto-theme-swatches{grid-column:1/-1}.art-auto-theme-swatches i{width:18px;height:18px}}
   `;
   document.head.append(style);
@@ -289,7 +351,7 @@
   window.ArenaDOMEvents.subscribe(() => {
     clearTimeout(timer);
     timer = setTimeout(run, 20);
-  }, { selector: '#arenaDetail,.arena-card,.gi-head' });
+  }, { selector: '#arenaDetail,.arena-card,.arena-home-card,.gi-head' });
   window.addEventListener('arena:tournament-logo-updated', run);
   run();
 })();
