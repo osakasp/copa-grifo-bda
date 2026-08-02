@@ -36,13 +36,18 @@
     progress.innerHTML = '<i></i>';
     document.body.append(progress);
 
+    let frame = 0;
     const update = () => {
+      frame = 0;
       const total = Math.max(1, document.documentElement.scrollHeight - innerHeight);
       const percent = Math.min(100, Math.max(0, scrollY / total * 100));
       progress.style.setProperty('--arena-progress', `${percent}%`);
     };
-    addEventListener('scroll', update, { passive: true });
-    addEventListener('resize', update, { passive: true });
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    addEventListener('scroll', schedule, { passive: true });
+    addEventListener('resize', schedule, { passive: true });
     update();
   }
 
@@ -56,15 +61,26 @@
     button.addEventListener('click', () => scrollTo({ top: 0, behavior: 'smooth' }));
     document.body.append(button);
 
-    const update = () => button.classList.toggle('show', scrollY > 520);
-    addEventListener('scroll', update, { passive: true });
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      button.classList.toggle('show', scrollY > 520);
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    addEventListener('scroll', schedule, { passive: true });
     update();
   }
 
   function installRipple() {
     document.addEventListener('pointerdown', event => {
       const button = event.target.closest('button');
-      if (!button || button.disabled || button.closest('.history-gallery-media')) return;
+      if (
+        !button || button.disabled || button.closest('.history-gallery-media')
+        || document.documentElement.classList.contains('arena-performance-lite')
+        || matchMedia('(pointer:coarse)').matches
+      ) return;
       const rect = button.getBoundingClientRect();
       const size = Math.max(rect.width, rect.height) * 1.45;
       const ripple = document.createElement('span');
