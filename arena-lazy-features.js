@@ -40,7 +40,7 @@
       './classificacao-automatica.js?v=20260730-1',
       './gerador-grupos-ligas.js',
       './logo-liga.js',
-      './cores-automaticas-campeonatos.js?v=20260726-1',
+      './cores-automaticas-campeonatos.js?v=20260802-2',
       './midia-campeonato-refresh.js?v=20260726-1',
       './copa-francos-design-lite.js?v=20260726-2',
       './confronto-editor-v2.js?v=20260802-2',
