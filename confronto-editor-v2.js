@@ -298,7 +298,9 @@
       saveButton.textContent = 'Salvando...';
     }
 
+    const editingTournamentId = currentTournamentId;
     try {
+      window.ArenaBDAScoreSync?.begin?.(editingTournamentId);
       store[currentTournamentId] = list;
       localStorage.setItem(MATCH_KEY, JSON.stringify(store));
       await persistCloud(currentTournamentId, list);
@@ -315,6 +317,7 @@
         : 'O confronto foi salvo neste aparelho, mas a nuvem falhou');
       window.ArenaBDAMatchManager?.render?.();
     } finally {
+      window.ArenaBDAScoreSync?.end?.(editingTournamentId);
       saving = false;
       if (saveButton?.isConnected) {
         saveButton.disabled = false;

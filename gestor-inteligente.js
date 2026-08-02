@@ -16,6 +16,27 @@
   let observer = null;
   let rendering = false;
 
+  const scoreSync = window.ArenaBDAScoreSync || (() => {
+    const pending = new Map();
+    const api = {
+      begin(id) {
+        const key = String(id || '');
+        pending.set(key, (pending.get(key) || 0) + 1);
+      },
+      end(id) {
+        const key = String(id || '');
+        const count = (pending.get(key) || 0) - 1;
+        if (count > 0) pending.set(key, count);
+        else pending.delete(key);
+      },
+      isPending(id) {
+        return (pending.get(String(id || '')) || 0) > 0;
+      }
+    };
+    window.ArenaBDAScoreSync = api;
+    return api;
+  })();
+
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const escapeHtml = value => String(value ?? '')
@@ -353,6 +374,9 @@
     cloudUnsubscribe?.();
     cloudUnsubscribe = db.collection('arenaData').doc(`confrontos-${tournamentId}`).onSnapshot(snapshot => {
       const remote = snapshot.data()?.games;
+      // Enquanto um placar local está sendo enviado, o Firestore ainda pode
+      // entregar o snapshot anterior. Aplicá-lo aqui faria o placar voltar.
+      if (scoreSync.isPending(tournamentId)) return;
       if (!snapshot.exists || !Array.isArray(remote) || JSON.stringify(remote) === JSON.stringify(rawGames())) return;
       const store = matchStore();
       store[tournamentId] = remote;
