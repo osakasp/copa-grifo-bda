@@ -5,10 +5,12 @@
   const CRITICAL_IMAGE = '.brand-mark img,.griffin img,.arena-side-logo img,.hero img,[data-media-priority="high"]';
   const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
   let frame = 0;
+  let runtimeLite = false;
 
   function isLiteMode() {
     return Boolean(
       matchMedia('(prefers-reduced-motion: reduce)').matches
+      || runtimeLite
       || connection?.saveData
       || (navigator.deviceMemory && navigator.deviceMemory <= 4)
       || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4)
@@ -20,6 +22,30 @@
     document.documentElement.dataset.arenaPerformance = lite ? 'lite' : 'full';
     document.documentElement.classList.toggle('arena-performance-lite', lite);
     return lite;
+  }
+
+  function measureFrameBudget() {
+    if (document.hidden || isLiteMode()) return;
+    let samples = 0;
+    let slowFrames = 0;
+    let previous = performance.now();
+
+    const sample = now => {
+      const elapsed = now - previous;
+      previous = now;
+      if (elapsed > 25) slowFrames += 1;
+      samples += 1;
+      if (samples < 36) {
+        requestAnimationFrame(sample);
+        return;
+      }
+      if (slowFrames >= 8) {
+        runtimeLite = true;
+        syncPerformanceMode();
+      }
+      document.documentElement.dataset.arenaSlowFrames = String(slowFrames);
+    };
+    requestAnimationFrame(sample);
   }
 
   function preserveImageRatio(image) {
@@ -68,6 +94,11 @@
       html.arena-performance-lite{scroll-behavior:auto!important}
       html.arena-performance-lite .topbar,html.arena-performance-lite .arena-side-nav,html.arena-performance-lite .arena-mobile-nav,html.arena-performance-lite .arena-detail-nav,html.arena-performance-lite #giManager>nav,html.arena-performance-lite .pro-admin-bar{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
       html.arena-performance-lite .hero::before,html.arena-performance-lite .app::before,html.arena-performance-lite .app::after{filter:none!important;animation:none!important}
+      html.arena-performance-lite .arena-button-ripple{display:none!important}
+      html.arena-performance-lite .page.active{animation-duration:.18s!important;animation-timing-function:ease-out!important}
+      html.arena-performance-lite .arena-notification-button.has-unread>span,html.arena-performance-lite .mc-live-pill.active i{animation:none!important}
+      html.arena-performance-lite .arena-card,html.arena-performance-lite .gi-game,html.arena-performance-lite .home-command nav button{transition-duration:.12s!important}
+      html.arena-performance-lite .modal-backdrop,html.arena-performance-lite .ame2-backdrop,html.arena-performance-lite .history-gallery-lightbox{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
       @media (hover:none),(pointer:coarse){[class*="card"]:hover,button:hover,a:hover{transform:none!important}}
       @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0s!important}}
     `;
@@ -82,6 +113,8 @@
   syncPerformanceMode();
   syncVisibility();
   optimizeImages();
+  if (document.readyState === 'complete') setTimeout(measureFrameBudget, 900);
+  else window.addEventListener('load', () => setTimeout(measureFrameBudget, 900), { once: true, passive: true });
   document.addEventListener('visibilitychange', syncVisibility, { passive: true });
   connection?.addEventListener?.('change', syncPerformanceMode, { passive: true });
   window.ArenaDOMEvents?.subscribe(scheduleImages, { selector: 'img' });
