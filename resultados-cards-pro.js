@@ -6,6 +6,7 @@
   const pendingScores = new Map();
   const cloudTimers = new Map();
   const cloudCards = new Map();
+  const scoreSync = window.ArenaBDAScoreSync;
 
   let observer = null;
   let enhanceFrame = 0;
@@ -223,7 +224,9 @@
 
   function queueCloudSave(tid, cardId) {
     if (!cloudCards.has(tid)) cloudCards.set(tid, new Set());
+    const startsBatch = cloudCards.get(tid).size === 0;
     cloudCards.get(tid).add(String(cardId));
+    if (startsBatch) scoreSync?.begin?.(tid);
     clearTimeout(cloudTimers.get(tid));
 
     cloudTimers.set(tid, setTimeout(async () => {
@@ -254,6 +257,7 @@
         notify('O placar foi salvo neste aparelho, mas a nuvem não respondeu');
       } finally {
         cloudCards.set(tid, new Set());
+        scoreSync?.end?.(tid);
         setTimeout(() => cards.forEach(card => markCard(card, '', '')), 2200);
       }
     }, 850));
