@@ -109,7 +109,12 @@
       team.classList.add('gip-team', index === 0 ? 'gip-team-home' : 'gip-team-away');
       const score = $('.gi-score-input,.gi-score', team);
       if (score) {
-        if (score.matches?.('.gi-score-input')) score.dataset.quickSavedValue = score.value;
+        if (score.matches?.('.gi-score-input')) {
+          score.dataset.quickSavedValue = score.value;
+          const teamName = $('strong', team)?.textContent?.trim() || (index === 0 ? 'Time A' : 'Time B');
+          score.setAttribute('aria-label', `Placar de ${teamName}`);
+          score.setAttribute('inputmode', 'numeric');
+        }
         scoreBoard.append(score);
       }
       if (index === 0) {
@@ -365,41 +370,41 @@
     #giManager .gi-phase>div{margin-bottom:10px;padding:0 2px}
     #giManager .gi-phase>div h3{font-size:23px;letter-spacing:.02em}
     #giManager .gi-phase>main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
-    #giManager .gip-card{position:relative;overflow:hidden;padding:0!important;border:1px solid rgba(255,255,255,.10)!important;border-radius:21px!important;background:linear-gradient(180deg,rgba(16,31,23,.98),rgba(5,12,8,.98))!important;box-shadow:0 16px 42px rgba(0,0,0,.30)!important;contain:layout paint;transform:translateZ(0)}
+    #giManager .gip-card{position:relative;overflow:hidden;padding:0!important;border:1px solid rgba(255,255,255,.10)!important;border-radius:18px!important;background:linear-gradient(180deg,rgba(16,31,23,.98),rgba(5,12,8,.98))!important;box-shadow:0 12px 32px rgba(0,0,0,.26)!important;contain:layout paint;transform:translateZ(0)}
     #giManager .gip-card:before{content:"";position:absolute;inset:0 0 auto;height:2px;background:linear-gradient(90deg,transparent,var(--gold-soft,#f5dc86),transparent);opacity:.62}
-    #giManager .gip-card-head{display:flex!important;align-items:center;justify-content:space-between;gap:10px;margin:0!important;padding:13px 14px 11px!important;border-bottom:1px solid rgba(255,255,255,.075)}
-    #giManager .gip-status{display:inline-flex;align-items:center;min-height:25px;padding:0 9px!important;border:1px solid rgba(255,255,255,.10);border-radius:999px;color:#bdd0c2!important;background:rgba(255,255,255,.055)!important;font-size:8px!important;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+    #giManager .gip-card-head{display:flex!important;align-items:center;justify-content:space-between;gap:8px;margin:0!important;padding:9px 11px 8px!important;border-bottom:1px solid rgba(255,255,255,.075)}
+    #giManager .gip-status{display:inline-flex;align-items:center;min-height:22px;padding:0 8px!important;border:1px solid rgba(255,255,255,.10);border-radius:999px;color:#bdd0c2!important;background:rgba(255,255,255,.055)!important;font-size:7px!important;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
     #giManager .gip-status.is-finished{border-color:rgba(77,225,139,.24);color:#8ff0b5!important;background:rgba(77,225,139,.10)!important}
     #giManager .gip-status.is-live{border-color:rgba(255,206,85,.28);color:#ffe08b!important;background:rgba(255,206,85,.10)!important}
     #giManager .gip-status.is-alert{border-color:rgba(255,118,130,.28);color:#ffadb5!important;background:rgba(255,118,130,.10)!important}
-    #giManager .gip-meta{margin-left:auto;color:#9fb0a5!important;font-size:8px!important;font-weight:750;text-align:right}
+    #giManager .gip-meta{overflow:hidden;margin-left:auto;color:#9fb0a5!important;font-size:7px!important;font-weight:750;text-align:right;text-overflow:ellipsis;white-space:nowrap}
     #giManager .gip-save-state{flex:0 0 auto;padding:5px 7px;border-radius:999px;color:#a9b8ae;background:rgba(255,255,255,.055);font-size:7px;font-weight:900;text-transform:uppercase}
     #giManager .gip-save-state[data-state="saving"]{color:#ffe08b;background:rgba(255,206,85,.10)}
     #giManager .gip-save-state[data-state="ok"]{color:#8ff0b5;background:rgba(77,225,139,.10)}
     #giManager .gip-save-state[data-state="error"]{color:#ffadb5;background:rgba(255,118,130,.10)}
-    #giManager .gip-match-body{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:10px;padding:15px 14px 13px}
-    #giManager .gip-team{display:flex!important;flex-direction:column;align-items:flex-start;justify-content:center;gap:8px;min-width:0;min-height:102px;padding:11px!important;border:1px solid rgba(255,255,255,.07)!important;border-radius:15px!important;background:rgba(255,255,255,.028)!important}
+    #giManager .gip-match-body{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;padding:10px 11px}
+    #giManager .gip-team{display:flex!important;flex-direction:column;align-items:flex-start;justify-content:center;gap:6px;min-width:0;min-height:78px;padding:8px!important;border:1px solid rgba(255,255,255,.07)!important;border-radius:13px!important;background:rgba(255,255,255,.028)!important}
     #giManager .gip-team-away{align-items:flex-end;text-align:right}
     #giManager .gip-team.winner{color:#fff!important;border-color:rgba(245,220,134,.32)!important;background:linear-gradient(145deg,rgba(245,220,134,.11),rgba(255,255,255,.025))!important;box-shadow:inset 0 0 0 1px rgba(245,220,134,.04)}
-    #giManager .gip-team .gi-badge{width:50px!important;height:50px!important;border:1px solid rgba(255,255,255,.13);box-shadow:0 9px 20px rgba(0,0,0,.24)}
+    #giManager .gip-team .gi-badge{width:40px!important;height:40px!important;border:1px solid rgba(255,255,255,.13);box-shadow:0 7px 16px rgba(0,0,0,.22)}
     #giManager .gip-team>div{width:100%;min-width:0}
-    #giManager .gip-team strong{font-size:12px!important;line-height:1.15}
+    #giManager .gip-team strong{display:-webkit-box!important;overflow:hidden!important;white-space:normal!important;font-size:10px!important;line-height:1.18;-webkit-box-orient:vertical;-webkit-line-clamp:2}
     #giManager .gip-team small{margin-top:3px;font-size:7px!important}
-    #giManager .gip-scoreboard{display:grid;grid-template-columns:48px 16px 48px;align-items:center;justify-items:center;gap:4px;padding:10px 8px;border:1px solid rgba(245,220,134,.20);border-radius:17px;background:linear-gradient(180deg,rgba(2,7,4,.96),rgba(10,20,14,.96));box-shadow:0 10px 26px rgba(0,0,0,.30)}
+    #giManager .gip-scoreboard{display:grid;grid-template-columns:42px 13px 42px;align-items:center;justify-items:center;gap:3px;padding:7px 6px;border:1px solid rgba(245,220,134,.20);border-radius:14px;background:linear-gradient(180deg,rgba(2,7,4,.96),rgba(10,20,14,.96));box-shadow:0 8px 20px rgba(0,0,0,.26)}
     #giManager .gip-score-separator{color:#708078;font:900 17px/1 "Barlow Condensed",sans-serif}
     #giManager .gip-scoreboard .gi-score{min-width:0!important;color:#fff;font:900 31px/1 "Barlow Condensed",sans-serif!important}
-    #giManager .gip-scoreboard .gi-score-input{box-sizing:border-box;width:48px!important;height:46px!important;margin:0!important;padding:0!important;border:1px solid rgba(255,255,255,.13)!important;border-radius:12px!important;color:#fff!important;background:#030806!important;font:900 27px/1 "Barlow Condensed",sans-serif!important;text-align:center!important;outline:none}
+    #giManager .gip-scoreboard .gi-score-input{box-sizing:border-box;width:42px!important;height:40px!important;margin:0!important;padding:0!important;border:1px solid rgba(255,255,255,.13)!important;border-radius:10px!important;color:#fff!important;background:#030806!important;font:900 24px/1 "Barlow Condensed",sans-serif!important;text-align:center!important;outline:none}
     #giManager .gip-scoreboard .gi-score-input:focus{border-color:var(--gold,#d8b248)!important;box-shadow:0 0 0 3px rgba(216,178,72,.13)}
     #giManager .gip-aggregate{margin:0 14px 11px!important;padding:9px 10px!important;border:1px solid rgba(245,220,134,.13)!important;border-radius:11px!important;background:rgba(245,220,134,.045)!important}
     #giManager .gip-aggregate span{font-size:7px!important}.gip-aggregate b{font-size:8px!important}
     #giManager .gip-note{margin:0 14px 11px!important;padding:9px 10px!important;border:1px solid rgba(255,255,255,.06);border-radius:11px!important;color:#afbeb4!important;background:rgba(255,255,255,.025)!important;font-size:8px!important;line-height:1.45}
-    #giManager .gip-actions{display:flex!important;align-items:center;justify-content:flex-end;gap:7px;margin:0!important;padding:10px 14px 13px!important;border-top:1px solid rgba(255,255,255,.075)!important}
-    #giManager .gip-actions button{min-height:38px;padding:0 11px!important;border:1px solid rgba(255,255,255,.10)!important;border-radius:11px!important;color:#dce7df!important;background:rgba(255,255,255,.045)!important;font-size:8px!important;font-weight:900!important;text-transform:uppercase}
+    #giManager .gip-actions{display:flex!important;align-items:center;justify-content:flex-end;gap:6px;margin:0!important;padding:8px 11px 10px!important;border-top:1px solid rgba(255,255,255,.075)!important}
+    #giManager .gip-actions button{min-height:33px;padding:0 9px!important;border:1px solid rgba(255,255,255,.10)!important;border-radius:9px!important;color:#dce7df!important;background:rgba(255,255,255,.045)!important;font-size:7px!important;font-weight:900!important;text-transform:uppercase}
     #giManager .gip-actions button:hover{border-color:rgba(245,220,134,.32)!important;background:rgba(245,220,134,.08)!important}
     #giManager .gip-actions button.danger{margin-left:auto;color:#ffadb5!important;border-color:rgba(255,118,130,.16)!important;background:rgba(255,118,130,.055)!important}
     #giManager .gip-card>.gi-editor{display:none!important}
     #giManager .gip-card>.old-match-photo-bar{margin:0 14px 10px!important;padding:0!important;border:0!important}
-    #giManager .gip-card .old-match-photo-button{min-height:43px!important;padding:7px 10px!important;border-color:rgba(255,255,255,.10)!important;border-radius:11px!important;background:rgba(255,255,255,.035)!important;box-shadow:none!important}
+    #giManager .gip-card .old-match-photo-button{min-height:36px!important;padding:5px 8px!important;border-color:rgba(255,255,255,.10)!important;border-radius:10px!important;background:rgba(255,255,255,.035)!important;box-shadow:none!important}
     #giManager .gip-card .old-match-photo-button>span:first-child{width:30px!important;height:30px!important}
     #giManager .gip-card .old-match-photo-copy b{font-size:8px!important}.gip-card .old-match-photo-copy small{font-size:7px!important}
     #giManager .gip-card .old-match-photo-button i{display:none!important}
@@ -410,12 +415,12 @@
     @media(max-width:430px){
       #giManager .gip-card-head{align-items:flex-start;flex-wrap:wrap}
       #giManager .gip-meta{order:3;width:100%;margin-left:0;text-align:left}
-      #giManager .gip-match-body{grid-template-columns:minmax(0,1fr) 96px minmax(0,1fr);gap:7px;padding:12px 10px}
-      #giManager .gip-team{min-height:96px;padding:9px!important}
-      #giManager .gip-team .gi-badge{width:43px!important;height:43px!important}
-      #giManager .gip-team strong{font-size:10px!important}
-      #giManager .gip-scoreboard{grid-template-columns:38px 12px 38px;padding:8px 5px}
-      #giManager .gip-scoreboard .gi-score-input{width:38px!important;height:42px!important;font-size:24px!important}
+      #giManager .gip-match-body{grid-template-columns:minmax(0,1fr) 91px minmax(0,1fr);gap:5px;padding:9px 7px}
+      #giManager .gip-team{min-height:74px;padding:7px!important}
+      #giManager .gip-team .gi-badge{width:36px!important;height:36px!important}
+      #giManager .gip-team strong{font-size:9px!important}
+      #giManager .gip-scoreboard{grid-template-columns:35px 11px 35px;padding:6px 4px}
+      #giManager .gip-scoreboard .gi-score-input{width:35px!important;height:38px!important;font-size:22px!important}
       #giManager .gip-scoreboard .gi-score{font-size:27px!important}
       #giManager .gip-actions{flex-wrap:wrap}
       #giManager .gip-actions button{flex:1 1 120px}
