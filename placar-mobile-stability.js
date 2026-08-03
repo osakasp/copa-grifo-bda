@@ -25,7 +25,15 @@
     clearTimeout(cleanupTimer);
     requestAnimationFrame(() => {
       if (!input.isConnected || document.activeElement !== input) return;
-      input.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+      const viewport = window.visualViewport;
+      const top = viewport?.offsetTop || 0;
+      const bottom = top + (viewport?.height || window.innerHeight);
+      const rect = input.getBoundingClientRect();
+      const safeTop = top + 92;
+      const safeBottom = bottom - 82;
+      if (rect.top < safeTop || rect.bottom > safeBottom) {
+        input.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'auto' });
+      }
     });
   }
 

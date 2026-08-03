@@ -541,6 +541,20 @@
     const detail = $('#arenaDetail');
     if (!detail) return;
     inferTournament();
+    const focused = document.activeElement?.matches?.('#giManager .gi-score-input')
+      ? {
+          id: document.activeElement.dataset.id || '',
+          side: document.activeElement.dataset.score || ''
+        }
+      : null;
+    const visibleCard = focused?.id
+      ? $(`#giManager .gi-game[data-card="${CSS.escape(focused.id)}"]`)
+      : $$('#giManager .gi-game').find(card => {
+          const rect = card.getBoundingClientRect();
+          return rect.bottom > 110 && rect.top < innerHeight;
+        });
+    const anchor = visibleCard ? { id: visibleCard.dataset.card || '', top: visibleCard.getBoundingClientRect().top } : null;
+    const renderedTournamentId = tournamentId;
     rendering = true;
     observer?.disconnect();
     let manager = $('#giManager');
@@ -553,6 +567,25 @@
     $$('.arena-legacy', detail).forEach(element => { element.hidden = true; });
     observer?.observe(detail, { childList: true, subtree: true });
     rendering = false;
+
+    const restoreViewport = (restoreFocus = false) => {
+      if ($('#giManager')?.dataset.tid !== renderedTournamentId) return;
+      if (anchor?.id) {
+        const nextCard = $(`#giManager .gi-game[data-card="${CSS.escape(anchor.id)}"]`);
+        if (nextCard) {
+          const delta = nextCard.getBoundingClientRect().top - anchor.top;
+          if (Math.abs(delta) > 1) window.scrollBy({ top: delta, left: 0, behavior: 'auto' });
+        }
+      }
+      if (restoreFocus && focused?.id && focused?.side) {
+        const nextInput = $(`#giManager .gi-score-input[data-id="${CSS.escape(focused.id)}"][data-score="${CSS.escape(focused.side)}"]`);
+        nextInput?.focus({ preventScroll: true });
+      }
+    };
+    requestAnimationFrame(() => {
+      restoreViewport();
+      requestAnimationFrame(() => restoreViewport(true));
+    });
   }
 
   function add(phase = 'Oitavas de final') {
