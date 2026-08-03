@@ -67,7 +67,8 @@
       const firebaseScripts = [
         'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js',
         'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js',
-        'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js'
+        'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js',
+        'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js'
       ];
 
       const coreScripts = [
@@ -78,13 +79,13 @@
         './arena-bda.js?v=20260803-1',
         './cores-automaticas-campeonatos.js?v=20260802-2',
         './home-campeonato-atual-v2.js?v=20260803-1',
-        './arena-lazy-features.js?v=20260803-6',
-        './navegacao-arena-v2.js?v=20260803-1',
+        './arena-lazy-features.js?v=20260803-7',
+        './navegacao-arena-v2.js?v=20260803-2',
         './arena-design-system.js?v=20260803-2'
       ];
 
       const cloudScripts = [
-        './firebase-auth.js?v=20260801-3',
+        './firebase-auth.js?v=20260803-1',
         './notificacoes-bda.js?v=20260801-2',
         './firestore-sync.js?v=20260801-5',
         './cloud-recovery.js?v=20260801-4',
@@ -222,7 +223,15 @@
           return cloudPromise;
         };
 
+        win.ArenaBDAEnsureCloud = reason => ensureCloud(reason || 'feature');
+
         doc.addEventListener('click', event => {
+          const cloudFeature = event.target instanceof win.Element
+            && event.target.closest('[data-go="community"],[data-mobile-go="community"],[data-sheet-go="community"],[data-go="feedback"],[data-mobile-go="feedback"],[data-sheet-go="feedback"]');
+          if (cloudFeature && !cloudReady) ensureCloud(cloudFeature.dataset.go || cloudFeature.dataset.mobileGo || cloudFeature.dataset.sheetGo || 'feature').catch(error => {
+            console.error('[Arena BDA] Falha ao preparar recurso online', error);
+          });
+
           const adminButton = event.target instanceof win.Element && event.target.closest('#adminBtn');
           if (!adminButton || cloudReady) return;
           event.preventDefault();

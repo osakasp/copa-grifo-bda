@@ -34,7 +34,10 @@
       'auth/missing-password': 'Digite a senha',
       'auth/too-many-requests': 'Muitas tentativas. Tente novamente mais tarde',
       'auth/network-request-failed': 'Falha de conexão com o Firebase',
-      'auth/user-disabled': 'Esta conta foi desativada'
+      'auth/user-disabled': 'Esta conta foi desativada',
+      'auth/email-already-in-use': 'Este e-mail já possui uma conta',
+      'auth/weak-password': 'Use uma senha com pelo menos 6 caracteres',
+      'auth/operation-not-allowed': 'O cadastro por e-mail ainda não foi liberado no Firebase'
     };
     return messages[error?.code] || 'Não foi possível entrar';
   }
@@ -60,6 +63,7 @@
       user: user || null,
       email: normalizeEmail(user?.email),
       isAuthenticated: Boolean(user),
+      isMember: Boolean(user),
       isAdmin: isAdminUser(user)
     });
   }
@@ -68,7 +72,8 @@
     currentUser = user || null;
     const state = stateFor(currentUser);
     document.documentElement.classList.toggle('arena-admin-authenticated', state.isAdmin);
-    document.documentElement.dataset.arenaAuth = state.isAdmin ? 'admin' : state.isAuthenticated ? 'unauthorized' : 'visitor';
+    document.documentElement.classList.toggle('arena-member-authenticated', state.isAuthenticated);
+    document.documentElement.dataset.arenaAuth = state.isAdmin ? 'admin' : state.isAuthenticated ? 'member' : 'visitor';
 
     subscribers.forEach(listener => {
       try {
@@ -89,6 +94,7 @@
     currentEmail: () => normalizeEmail(currentUser?.email),
     state: () => stateFor(currentUser),
     isAdmin: user => isAdminUser(user === undefined ? currentUser : user),
+    isMember: () => Boolean(currentUser),
     subscribe(listener, immediate = true) {
       if (typeof listener !== 'function') return () => {};
       subscribers.add(listener);
@@ -97,6 +103,12 @@
     },
     signIn(email, password) {
       return auth.signInWithEmailAndPassword(normalizeEmail(email), password);
+    },
+    async register(email, password, displayName) {
+      const credential = await auth.createUserWithEmailAndPassword(normalizeEmail(email), password);
+      await credential.user.updateProfile({ displayName: String(displayName || '').trim().slice(0, 40) });
+      publish(credential.user);
+      return credential;
     },
     signOut() {
       return auth.signOut();
@@ -121,11 +133,6 @@
   auth.onAuthStateChanged(user => {
     const state = publish(user);
     setAdminState(state.isAdmin);
-
-    if (user && !state.isAdmin) {
-      showToast('Esta conta não possui permissão administrativa');
-      auth.signOut().catch(() => {});
-    }
   });
 
   const oldAdminButton = document.getElementById('adminBtn');
@@ -134,96 +141,154 @@
   const adminButton = oldAdminButton.cloneNode(true);
   oldAdminButton.replaceWith(adminButton);
   adminButton.textContent = 'ENTRAR';
-  adminButton.setAttribute('aria-label', 'Entrar no painel administrativo');
+  adminButton.setAttribute('aria-label', 'Entrar na Comunidade BDA');
 
   const subtitle = document.querySelector('.brand-copy span');
-  if (subtitle) subtitle.textContent = 'Arena competitiva • Login protegido';
+  if (subtitle) subtitle.textContent = 'Arena competitiva • Comunidade do Clã';
 
   const adminModal = document.getElementById('adminModal');
   if (adminModal) {
     adminModal.innerHTML = `
-      <div class="modal">
-        <h2 id="adminModalTitle">Login administrativo</h2>
-        <p>Entre com uma conta autorizada no Firebase. A senha não fica salva no código do site.</p>
-        <div class="form-grid">
-          <label>E-mail
-            <input id="adminEmail" type="email" value="claboleirosdeatitude@gmail.com" autocomplete="username" inputmode="email">
-          </label>
-          <label>Senha
-            <input id="adminPassword" type="password" autocomplete="current-password" placeholder="Sua senha do Firebase">
-          </label>
-        </div>
-        <div class="form-actions">
-          <button type="button" class="secondary" id="adminCancelBtn">Cancelar</button>
-          <button type="button" class="primary" id="adminLoginBtn">Entrar</button>
-        </div>
-        <button type="button" class="ghost" id="adminResetBtn" style="width:100%;margin-top:10px">Redefinir senha por e-mail</button>
+      <div class="modal member-auth-modal">
+        <div class="member-auth-brand"><span>⚽</span><div><span class="eyebrow">Rede oficial do clã</span><h2 id="adminModalTitle">Comunidade BDA</h2></div></div>
+        <p id="memberAuthDescription">Entre para publicar, comentar, seguir membros e conversar em particular.</p>
+        <nav class="member-auth-tabs" aria-label="Acesso à comunidade"><button type="button" class="active" data-auth-mode="login">Entrar</button><button type="button" data-auth-mode="register">Criar conta</button></nav>
+        <form id="memberAuthForm">
+          <div class="form-grid">
+            <label id="memberNameLabel" hidden>Nome no clã
+              <input id="memberName" maxlength="40" autocomplete="name" placeholder="Como você quer aparecer">
+            </label>
+            <label>E-mail
+              <input id="adminEmail" type="email" autocomplete="username" inputmode="email" placeholder="seuemail@exemplo.com" required>
+            </label>
+            <label>Senha
+              <input id="adminPassword" type="password" minlength="6" autocomplete="current-password" placeholder="Mínimo de 6 caracteres" required>
+            </label>
+            <label id="memberConfirmLabel" hidden>Confirmar senha
+              <input id="memberConfirmPassword" type="password" minlength="6" autocomplete="new-password" placeholder="Digite a senha novamente">
+            </label>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="secondary" id="adminCancelBtn">Cancelar</button>
+            <button type="submit" class="primary" id="adminLoginBtn">Entrar</button>
+          </div>
+        </form>
+        <button type="button" class="ghost" id="adminResetBtn">Esqueci minha senha</button>
+        <small class="member-auth-note">Contas administrativas continuam com acesso exclusivo ao painel de campeonatos.</small>
       </div>`;
   }
 
-  adminButton.addEventListener('click', async () => {
-    if (auth.currentUser) {
-      try {
-        await authApi.signOut();
-        showToast('Sessão administrativa encerrada');
-      } catch {
-        showToast('Não foi possível encerrar a sessão');
-      }
-      return;
-    }
+  const authStyle = document.createElement('style');
+  authStyle.id = 'memberAuthStyles';
+  authStyle.textContent = `
+    .member-auth-modal{width:min(100%,470px)!important}.member-auth-brand{display:flex;align-items:center;gap:11px}.member-auth-brand>span{display:grid;place-items:center;width:48px;height:48px;border:1px solid rgba(242,215,125,.35);border-radius:15px;background:rgba(216,178,72,.09);font-size:23px}.member-auth-brand h2{margin:3px 0 0}.member-auth-modal>p{margin:12px 0;color:var(--muted);font-size:10px;line-height:1.55}.member-auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:13px;padding:5px;border:1px solid var(--line);border-radius:13px;background:#07100c}.member-auth-tabs button{min-height:38px;border:0;border-radius:9px;color:var(--muted);background:transparent;font-size:9px;font-weight:900;text-transform:uppercase}.member-auth-tabs button.active{color:#171107;background:linear-gradient(135deg,var(--gold-soft),var(--gold))}.member-auth-modal #adminResetBtn{width:100%;min-height:39px;margin-top:8px}.member-auth-note{display:block;margin-top:11px;color:var(--muted);font-size:7px;line-height:1.5;text-align:center}.admin-btn[data-account-state=member]{color:var(--green);border-color:rgba(79,223,143,.35)}
+  `;
+  document.head.append(authStyle);
 
+  let authMode = 'login';
+
+  function openAuthModal(mode = 'login') {
+    setAuthMode(mode);
     if (typeof openModal === 'function') openModal('adminModal');
     else document.getElementById('adminModal')?.classList.add('show');
-    document.getElementById('adminPassword')?.focus();
+    window.setTimeout(() => document.getElementById(mode === 'register' ? 'memberName' : 'adminEmail')?.focus(), 0);
+  }
+
+  function closeAuthModal() {
+    if (typeof closeModal === 'function') closeModal('adminModal');
+    else document.getElementById('adminModal')?.classList.remove('show');
+  }
+
+  function setAuthMode(mode) {
+    authMode = mode === 'register' ? 'register' : 'login';
+    document.querySelectorAll('[data-auth-mode]').forEach(button => button.classList.toggle('active', button.dataset.authMode === authMode));
+    const registering = authMode === 'register';
+    document.getElementById('memberNameLabel').hidden = !registering;
+    document.getElementById('memberConfirmLabel').hidden = !registering;
+    document.getElementById('memberName').required = registering;
+    document.getElementById('memberConfirmPassword').required = registering;
+    document.getElementById('adminPassword').autocomplete = registering ? 'new-password' : 'current-password';
+    document.getElementById('adminLoginBtn').textContent = registering ? 'Criar minha conta' : 'Entrar';
+    document.getElementById('adminResetBtn').hidden = registering;
+    document.getElementById('memberAuthDescription').textContent = registering
+      ? 'Crie seu perfil para participar da comunidade do Clã BDA.'
+      : 'Entre para publicar, comentar, seguir membros e conversar em particular.';
+  }
+
+  adminButton.addEventListener('click', () => {
+    if (currentUser) {
+      if (window.ArenaBDACommunity?.openOwnProfile) window.ArenaBDACommunity.openOwnProfile();
+      else if (typeof navigate === 'function') navigate('community');
+      return;
+    }
+    openAuthModal('login');
   });
 
-  async function loginAdmin() {
+  async function createPublicProfile(user, displayName) {
+    if (!window.firebase || typeof firebase.firestore !== 'function') return;
+    await firebase.firestore().collection('members').doc(user.uid).set({
+      uid: user.uid,
+      displayName: String(displayName || user.displayName || 'Membro BDA').trim().slice(0, 40),
+      team: '',
+      bio: '',
+      avatar: '',
+      role: isAdminUser(user) ? 'admin' : 'member',
+      status: 'active',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+  }
+
+  async function submitAuth(event) {
+    event?.preventDefault?.();
     const emailInput = document.getElementById('adminEmail');
     const passwordInput = document.getElementById('adminPassword');
     const loginButton = document.getElementById('adminLoginBtn');
     const email = normalizeEmail(emailInput?.value);
     const password = passwordInput?.value || '';
+    const name = document.getElementById('memberName')?.value.trim() || '';
+    const confirmation = document.getElementById('memberConfirmPassword')?.value || '';
 
     if (!email || !password) {
       showToast('Digite o e-mail e a senha');
       return;
     }
+    if (authMode === 'register' && name.length < 2) return showToast('Digite seu nome no clã');
+    if (password.length < 6) return showToast('Use uma senha com pelo menos 6 caracteres');
+    if (authMode === 'register' && password !== confirmation) return showToast('As senhas não coincidem');
 
     if (loginButton) {
       loginButton.disabled = true;
-      loginButton.textContent = 'Entrando...';
+      loginButton.textContent = authMode === 'register' ? 'Criando conta...' : 'Entrando...';
     }
 
     try {
-      const credential = await authApi.signIn(email, password);
-      if (!isAdminUser(credential.user)) {
-        await authApi.signOut();
-        showToast('Esta conta não possui permissão administrativa');
-        return;
+      const credential = authMode === 'register'
+        ? await authApi.register(email, password, name)
+        : await authApi.signIn(email, password);
+      if (authMode === 'register') {
+        try { await createPublicProfile(credential.user, name); }
+        catch (profileError) { console.error('Não foi possível criar o perfil inicial', profileError); }
       }
-
       if (passwordInput) passwordInput.value = '';
-      if (typeof closeModal === 'function') closeModal('adminModal');
-      else document.getElementById('adminModal')?.classList.remove('show');
-      showToast('Login administrativo confirmado');
+      const confirmInput = document.getElementById('memberConfirmPassword');
+      if (confirmInput) confirmInput.value = '';
+      closeAuthModal();
+      showToast(authMode === 'register' ? 'Conta criada. Bem-vindo à Comunidade BDA!' : 'Login confirmado');
+      if (typeof navigate === 'function') navigate('community');
     } catch (error) {
       showToast(authErrorMessage(error));
     } finally {
       if (loginButton) {
         loginButton.disabled = false;
-        loginButton.textContent = 'Entrar';
+        loginButton.textContent = authMode === 'register' ? 'Criar minha conta' : 'Entrar';
       }
     }
   }
 
-  document.getElementById('adminLoginBtn')?.addEventListener('click', loginAdmin);
-  document.getElementById('adminPassword')?.addEventListener('keydown', event => {
-    if (event.key === 'Enter') loginAdmin();
-  });
-  document.getElementById('adminCancelBtn')?.addEventListener('click', () => {
-    if (typeof closeModal === 'function') closeModal('adminModal');
-    else document.getElementById('adminModal')?.classList.remove('show');
-  });
+  document.querySelectorAll('[data-auth-mode]').forEach(button => button.addEventListener('click', () => setAuthMode(button.dataset.authMode)));
+  document.getElementById('memberAuthForm')?.addEventListener('submit', submitAuth);
+  document.getElementById('adminCancelBtn')?.addEventListener('click', closeAuthModal);
   document.getElementById('adminResetBtn')?.addEventListener('click', async () => {
     const email = normalizeEmail(document.getElementById('adminEmail')?.value);
     if (!email) {
@@ -238,4 +303,18 @@
       showToast(authErrorMessage(error));
     }
   });
+
+  authApi.subscribe(state => {
+    const label = state.isAdmin
+      ? 'ADMIN'
+      : state.isAuthenticated
+        ? String(state.user?.displayName || 'MINHA CONTA').split(/\s+/)[0].slice(0, 12).toUpperCase()
+        : 'ENTRAR';
+    adminButton.textContent = label;
+    adminButton.classList.toggle('active', state.isAuthenticated);
+    adminButton.dataset.accountState = state.isAdmin ? 'admin' : state.isAuthenticated ? 'member' : 'visitor';
+    adminButton.setAttribute('aria-label', state.isAuthenticated ? 'Abrir meu perfil na Comunidade BDA' : 'Entrar na Comunidade BDA');
+  });
+
+  window.ArenaBDAAuthUI = Object.freeze({ open: openAuthModal, close: closeAuthModal, mode: setAuthMode });
 })();

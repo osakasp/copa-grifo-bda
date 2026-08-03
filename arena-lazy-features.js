@@ -24,6 +24,12 @@
     flash: [
       './copas-flash.js?v=20260803-2'
     ],
+    community: [
+      './comunidade-social.js?v=20260803-2'
+    ],
+    feedback: [
+      './feedback-bda.js?v=20260803-1'
+    ],
     teams: [
       './perfis-clubes.js?v=20260726-2',
       './editor-perfis-times.js?v=20260726-2',
@@ -63,7 +69,9 @@
     ranking: 'ranking',
     registrations: 'registrations',
     teams: 'teams',
-    tournament: 'tournament'
+    tournament: 'tournament',
+    community: 'community',
+    feedback: 'feedback'
   });
   const ROUTES = Object.freeze({
     history: ['📜', 'História'],
@@ -71,7 +79,8 @@
     flash: ['⚡', 'Copas Flash'],
     registrations: ['✍️', 'Inscrições'],
     ranking: ['📊', 'Ranking'],
-    news: ['📰', 'Notícias']
+    news: ['📰', 'Notícias'],
+    feedback: ['💬', 'Feedback']
   });
   const scriptPromises = new Map();
   const bundlePromises = new Map();
