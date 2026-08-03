@@ -22,7 +22,7 @@
       './temporada-bda.js?v=20260801-2'
     ],
     flash: [
-      './copas-flash.js?v=20260803-1'
+      './copas-flash.js?v=20260803-2'
     ],
     teams: [
       './perfis-clubes.js?v=20260726-2',
