@@ -34,7 +34,7 @@
     ],
     tournament: [
       './confrontos-copa-grifo.js',
-      './gestor-inteligente.js?v=20260803-2',
+      './gestor-inteligente.js?v=20260803-3',
       './sorteio-campeonatos.js?v=20260730-1',
       './arena-editor-pro.js',
       './classificacao-automatica.js?v=20260730-1',
@@ -45,7 +45,7 @@
       './copa-francos-design-lite.js?v=20260726-2',
       './confronto-editor-v2.js?v=20260802-2',
       './resultados-cards-pro.js?v=20260803-1',
-      './placar-mobile-stability.js?v=20260727-1',
+      './placar-mobile-stability.js?v=20260803-1',
       './captura-confrontos-simples.js?v=20260730-1',
       './match-center-bda.js?v=20260727-1',
       './regulamento-interativo.js?v=20260727-1'
