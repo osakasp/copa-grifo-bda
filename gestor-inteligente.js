@@ -51,6 +51,17 @@
     .toLowerCase();
   const notify = message => typeof toast === 'function' ? toast(message) : console.info(message);
   const hasNumber = value => value !== '' && value != null && !Number.isNaN(Number(value));
+  const stable = value => {
+    if (Array.isArray(value)) return value.map(stable);
+    if (value && typeof value === 'object') {
+      return Object.keys(value).sort().reduce((result, key) => {
+        result[key] = stable(value[key]);
+        return result;
+      }, {});
+    }
+    return value;
+  };
+  const stableStringify = value => JSON.stringify(stable(value));
 
   function adminActive() {
     if (authCore?.isAdmin) return authCore.isAdmin();
@@ -377,7 +388,7 @@
       // Enquanto um placar local está sendo enviado, o Firestore ainda pode
       // entregar o snapshot anterior. Aplicá-lo aqui faria o placar voltar.
       if (scoreSync.isPending(tournamentId)) return;
-      if (!snapshot.exists || !Array.isArray(remote) || JSON.stringify(remote) === JSON.stringify(rawGames())) return;
+      if (!snapshot.exists || !Array.isArray(remote) || stableStringify(remote) === stableStringify(rawGames())) return;
       const store = matchStore();
       store[tournamentId] = remote;
       localStorage.setItem(MATCH_KEY, JSON.stringify(store));
