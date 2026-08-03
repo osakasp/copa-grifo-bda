@@ -408,7 +408,7 @@
     #giManager .gip-card .old-match-photo-button>span:first-child{width:30px!important;height:30px!important}
     #giManager .gip-card .old-match-photo-copy b{font-size:8px!important}.gip-card .old-match-photo-copy small{font-size:7px!important}
     #giManager .gip-card .old-match-photo-button i{display:none!important}
-    @media(max-width:720px){
+    @media(max-width:980px),(hover:none) and (pointer:coarse){
       #giManager .gi-phase>main{grid-template-columns:1fr}
       #giManager .gip-card{contain:layout paint}
     }
