@@ -706,9 +706,9 @@
   document.addEventListener('click', handleClicks);
   document.addEventListener('input', handleInputs);
 
-  observer = new MutationObserver(mutations => {
-    if (rendering) return;
-    if (mutations.some(mutation => !(mutation.target instanceof Element && mutation.target.closest('#giManager')))) render();
+  observer = new MutationObserver(() => {
+    if (rendering || $('#giManager') || !$('#arenaDetail')) return;
+    render();
   });
 
   const observerRoot = $('#arenaDetail') || $('[data-page="tournament"]') || document.body;
