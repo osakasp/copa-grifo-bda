@@ -2,6 +2,7 @@
   'use strict';
 
   const MATCH_KEY = 'bda-v3-confrontos';
+  const SCORE_HISTORY_KEY = 'arena-bda-score-history-v1';
   const authCore = window.ArenaBDAAuth;
   const pendingScores = new Map();
   const cloudTimers = new Map();
@@ -10,6 +11,7 @@
 
   let observer = null;
   let enhanceFrame = 0;
+  let scoreHistory = readScoreHistory();
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -40,6 +42,53 @@
     } catch {
       return {};
     }
+  }
+
+  function readScoreHistory() {
+    try {
+      const value = JSON.parse(sessionStorage.getItem(SCORE_HISTORY_KEY) || '[]');
+      return Array.isArray(value) ? value.slice(-20) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function persistScoreHistory() {
+    try { sessionStorage.setItem(SCORE_HISTORY_KEY, JSON.stringify(scoreHistory.slice(-20))); } catch {}
+  }
+
+  function historyAvailable(tid = tournamentId()) {
+    return scoreHistory.some(item => item?.tid === tid && item?.game?.id);
+  }
+
+  function updateUndoButton() {
+    const button = $('#giManager [data-undo-score]');
+    if (!button) return;
+    const available = historyAvailable();
+    button.disabled = !available;
+    button.title = available ? 'Restaurar o placar anterior' : 'Nenhuma alteração de placar nesta sessão';
+  }
+
+  function ensureUndoButton() {
+    const actions = $('#giManager .gi-head>div:last-child');
+    if (!actions || !isAdmin()) return;
+    let button = $('[data-undo-score]', actions);
+    if (!button) {
+      button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'ghost gip-undo-score';
+      button.dataset.undoScore = '';
+      button.textContent = '↶ Desfazer placar';
+      actions.append(button);
+    }
+    updateUndoButton();
+  }
+
+  function rememberScore(tid, game) {
+    scoreHistory.push({ tid, game: { ...game }, savedAt: Date.now() });
+    scoreHistory = scoreHistory.slice(-20);
+    persistScoreHistory();
+    updateUndoButton();
   }
 
   function tournamentId() {
@@ -153,6 +202,7 @@
   function enhanceAll() {
     enhanceFrame = 0;
     $$('#giManager .gi-game').forEach(enhanceCard);
+    ensureUndoButton();
   }
 
   function scheduleEnhance() {
@@ -285,6 +335,7 @@
     if (index < 0) return;
 
     const game = { ...list[index] };
+    rememberScore(tid, game);
     game[side] = input.value === '' ? '' : Math.max(0, Math.min(99, Number(input.value) || 0));
     game.updated = Date.now();
     if ((game.wo === 'a' || game.wo === 'b') || (hasNumber(game.a) && hasNumber(game.b))) game.status = 'Finalizado';
@@ -298,6 +349,34 @@
     updateMetrics(list);
     updateCards(list, game.tieId || game.id);
     queueCloudSave(tid, gameId);
+  }
+
+  function undoLastScore() {
+    if (!isAdmin()) return;
+    const tid = tournamentId();
+    const historyIndex = scoreHistory.findLastIndex(item => item?.tid === tid && item?.game?.id);
+    if (historyIndex < 0) return notify('Nenhuma alteração de placar para desfazer');
+
+    const [entry] = scoreHistory.splice(historyIndex, 1);
+    const store = readStore();
+    const list = Array.isArray(store[tid]) ? [...store[tid]] : [];
+    const gameIndex = list.findIndex(game => String(game?.id) === String(entry.game.id));
+    if (gameIndex < 0) {
+      persistScoreHistory();
+      updateUndoButton();
+      return notify('O confronto original não existe mais');
+    }
+
+    list[gameIndex] = { ...entry.game, updated: Date.now() };
+    store[tid] = list;
+    localStorage.setItem(MATCH_KEY, JSON.stringify(store));
+    persistScoreHistory();
+    window.ArenaBDAMatchManager?.render?.();
+    window.dispatchEvent(new CustomEvent('arena:matches-updated', {
+      detail: { tournamentId: tid, gameId: entry.game.id, source: 'undo-score' }
+    }));
+    queueCloudSave(tid, entry.game.id);
+    notify('Placar anterior restaurado');
   }
 
   function scheduleQuickScore(input, delay = 560) {
@@ -343,6 +422,11 @@
   }, true);
 
   document.addEventListener('click', event => {
+    if (event.target.closest('#giManager [data-undo-score]')) {
+      event.preventDefault();
+      undoLastScore();
+      return;
+    }
     const bracketGame = event.target.closest('#giManager [data-open]');
     if (bracketGame && isAdmin() && window.ArenaBDAMatchEditorV2?.open) {
       event.preventDefault();
@@ -403,6 +487,8 @@
     #giManager .gip-actions button:hover{border-color:rgba(245,220,134,.32)!important;background:rgba(245,220,134,.08)!important}
     #giManager .gip-actions button.danger{margin-left:auto;color:#ffadb5!important;border-color:rgba(255,118,130,.16)!important;background:rgba(255,118,130,.055)!important}
     #giManager .gip-card>.gi-editor{display:none!important}
+    #giManager .gip-undo-score{min-height:38px;padding:0 11px;border:1px solid rgba(255,255,255,.12);border-radius:11px;color:var(--gold-soft);background:rgba(255,255,255,.04);font-size:8px;font-weight:900;text-transform:uppercase}
+    #giManager .gip-undo-score:disabled{cursor:not-allowed;opacity:.42}
     #giManager .gip-card>.old-match-photo-bar{margin:0 14px 10px!important;padding:0!important;border:0!important}
     #giManager .gip-card .old-match-photo-button{min-height:36px!important;padding:5px 8px!important;border-color:rgba(255,255,255,.10)!important;border-radius:10px!important;background:rgba(255,255,255,.035)!important;box-shadow:none!important}
     #giManager .gip-card .old-match-photo-button>span:first-child{width:30px!important;height:30px!important}
