@@ -1,0 +1,28 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isArenaAdmin() {
+      return request.auth != null
+        && request.auth.token.email != null
+        && request.auth.token.email in [
+          'claboleirosdeatitude@gmail.com',
+          'miniamikaren@gmail.com'
+        ];
+    }
+
+    match /community/{uid}/{allPaths=**} {
+      allow read: if true;
+      allow create, update: if request.auth != null
+        && (request.auth.uid == uid || isArenaAdmin())
+        && request.resource.size < 700 * 1024
+        && request.resource.contentType == 'image/webp';
+      allow delete: if request.auth != null
+        && (request.auth.uid == uid || isArenaAdmin());
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

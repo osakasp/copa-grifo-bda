@@ -12,6 +12,181 @@ service cloud.firestore {
         ];
     }
 
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function validImageData(value, maxSize) {
+      return value is string
+        && value.size() <= maxSize
+        && (value.size() == 0
+          || value.matches('data:image/webp;base64,.*')
+          || value.matches('https://firebasestorage.googleapis.com/.*'));
+    }
+
+    function validMember(uid) {
+      return request.resource.data.keys().hasOnly([
+          'uid',
+          'displayName',
+          'team',
+          'bio',
+          'avatar',
+          'role',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ])
+        && request.resource.data.uid == uid
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() >= 2
+        && request.resource.data.displayName.size() <= 40
+        && request.resource.data.team is string
+        && request.resource.data.team.size() <= 55
+        && request.resource.data.bio is string
+        && request.resource.data.bio.size() <= 180
+        && validImageData(request.resource.data.avatar, 150000)
+        && request.resource.data.role in ['member', 'admin']
+        && request.resource.data.status in ['active', 'blocked']
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function validCommunityPost() {
+      return request.resource.data.keys().hasOnly([
+          'authorId',
+          'authorName',
+          'authorAvatar',
+          'authorTeam',
+          'text',
+          'image',
+          'status',
+          'createdAtClient',
+          'createdAt',
+          'updatedAt'
+        ])
+        && request.resource.data.authorId is string
+        && request.resource.data.authorName is string
+        && request.resource.data.authorName.size() >= 2
+        && request.resource.data.authorName.size() <= 40
+        && validImageData(request.resource.data.authorAvatar, 150000)
+        && request.resource.data.authorTeam is string
+        && request.resource.data.authorTeam.size() <= 55
+        && request.resource.data.text is string
+        && request.resource.data.text.size() <= 500
+        && validImageData(request.resource.data.image, 480000)
+        && (request.resource.data.text.size() > 0 || request.resource.data.image.size() > 0)
+        && request.resource.data.status in ['visible', 'hidden']
+        && request.resource.data.createdAtClient is int
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function validCommunityComment() {
+      return request.resource.data.keys().hasOnly([
+          'authorId',
+          'authorName',
+          'authorAvatar',
+          'text',
+          'status',
+          'createdAtClient',
+          'createdAt'
+        ])
+        && request.resource.data.authorId is string
+        && request.resource.data.authorName is string
+        && request.resource.data.authorName.size() >= 2
+        && request.resource.data.authorName.size() <= 40
+        && validImageData(request.resource.data.authorAvatar, 150000)
+        && request.resource.data.text is string
+        && request.resource.data.text.size() >= 1
+        && request.resource.data.text.size() <= 220
+        && request.resource.data.status == 'visible'
+        && request.resource.data.createdAtClient is int
+        && request.resource.data.createdAt == request.time;
+    }
+
+    function validThread() {
+      return request.resource.data.keys().hasOnly([
+          'participants',
+          'createdBy',
+          'lastText',
+          'lastSenderId',
+          'createdAt',
+          'updatedAt',
+          'updatedAtClient'
+        ])
+        && request.resource.data.participants is list
+        && request.resource.data.participants.size() == 2
+        && request.resource.data.participants[0] is string
+        && request.resource.data.participants[1] is string
+        && request.resource.data.participants[0] != request.resource.data.participants[1]
+        && request.resource.data.createdBy is string
+        && request.resource.data.lastText is string
+        && request.resource.data.lastText.size() <= 120
+        && request.resource.data.lastSenderId is string
+        && (request.resource.data.lastSenderId == '' || request.resource.data.lastSenderId in request.resource.data.participants)
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedAtClient is int;
+    }
+
+    function threadParticipant(threadId) {
+      return signedIn()
+        && request.auth.uid in get(/databases/$(database)/documents/memberThreads/$(threadId)).data.participants;
+    }
+
+    function validPrivateMessage() {
+      return request.resource.data.keys().hasOnly([
+          'senderId',
+          'text',
+          'status',
+          'createdAtClient',
+          'createdAt'
+        ])
+        && request.resource.data.senderId == request.auth.uid
+        && request.resource.data.text is string
+        && request.resource.data.text.size() >= 1
+        && request.resource.data.text.size() <= 500
+        && request.resource.data.status == 'visible'
+        && request.resource.data.createdAtClient is int
+        && request.resource.data.createdAt == request.time;
+    }
+
+    function validFeedback() {
+      return request.resource.data.keys().hasOnly([
+          'authorId',
+          'authorName',
+          'authorEmail',
+          'category',
+          'rating',
+          'message',
+          'contactAllowed',
+          'status',
+          'source',
+          'createdAtClient',
+          'createdAt',
+          'updatedAt'
+        ])
+        && request.resource.data.authorId is string
+        && request.resource.data.authorName is string
+        && request.resource.data.authorName.size() >= 2
+        && request.resource.data.authorName.size() <= 40
+        && request.resource.data.authorEmail is string
+        && request.resource.data.authorEmail.size() <= 160
+        && request.resource.data.category in ['design', 'performance', 'tournaments', 'community', 'bug', 'idea']
+        && request.resource.data.rating is int
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5
+        && request.resource.data.message is string
+        && request.resource.data.message.size() >= 10
+        && request.resource.data.message.size() <= 600
+        && request.resource.data.contactAllowed is bool
+        && request.resource.data.status in ['new', 'reviewing', 'resolved']
+        && request.resource.data.source == 'arena-bda-feedback'
+        && request.resource.data.createdAtClient is int
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt == request.time;
+    }
+
     function isRegistration(documentId) {
       return documentId.matches('registration-.*');
     }
@@ -161,6 +336,123 @@ service cloud.firestore {
       allow read: if true;
       allow create: if validLiveChatMessage();
       allow update, delete: if isArenaAdmin();
+    }
+
+    match /members/{uid} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && validMember(uid)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.status == 'active'
+        && (request.resource.data.role == 'member' || (request.resource.data.role == 'admin' && isArenaAdmin()));
+      allow update: if signedIn()
+        && validMember(uid)
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.createdAt == resource.data.createdAt
+        && (isArenaAdmin() || (
+          request.auth.uid == uid
+          && request.resource.data.role == resource.data.role
+          && request.resource.data.status == resource.data.status
+        ));
+      allow delete: if isArenaAdmin();
+    }
+
+    match /communityPosts/{postId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.authorId == request.auth.uid
+        && validCommunityPost()
+        && request.resource.data.status == 'visible'
+        && request.resource.data.createdAt == request.time;
+      allow update: if signedIn()
+        && validCommunityPost()
+        && request.resource.data.authorId == resource.data.authorId
+        && request.resource.data.createdAt == resource.data.createdAt
+        && (request.auth.uid == resource.data.authorId || isArenaAdmin());
+      allow delete: if signedIn()
+        && (request.auth.uid == resource.data.authorId || isArenaAdmin());
+
+      match /likes/{uid} {
+        allow read: if true;
+        allow create: if signedIn()
+          && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['userId', 'createdAt'])
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.createdAt == request.time;
+        allow delete: if signedIn() && request.auth.uid == uid;
+        allow update: if false;
+      }
+
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if signedIn()
+          && request.resource.data.authorId == request.auth.uid
+          && validCommunityComment();
+        allow delete: if signedIn()
+          && (request.auth.uid == resource.data.authorId || isArenaAdmin());
+        allow update: if false;
+      }
+    }
+
+    match /memberFollowing/{ownerId}/users/{targetId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.auth.uid == ownerId
+        && targetId != ownerId
+        && request.resource.data.keys().hasOnly(['targetId', 'createdAt'])
+        && request.resource.data.targetId == targetId
+        && request.resource.data.createdAt == request.time;
+      allow delete: if signedIn() && request.auth.uid == ownerId;
+      allow update: if false;
+    }
+
+    match /memberThreads/{threadId} {
+      allow read: if signedIn() && request.auth.uid in resource.data.participants;
+      allow create: if signedIn()
+        && validThread()
+        && request.auth.uid in request.resource.data.participants
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.lastText == ''
+        && request.resource.data.lastSenderId == ''
+        && request.resource.data.createdAt == request.time;
+      allow update: if signedIn()
+        && request.auth.uid in resource.data.participants
+        && validThread()
+        && request.resource.data.participants == resource.data.participants
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        allow read: if threadParticipant(threadId);
+        allow create: if threadParticipant(threadId) && validPrivateMessage();
+        allow delete: if threadParticipant(threadId) && resource.data.senderId == request.auth.uid;
+        allow update: if false;
+      }
+    }
+
+    match /siteFeedback/{feedbackId} {
+      allow create: if signedIn()
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.status == 'new'
+        && validFeedback()
+        && request.resource.data.createdAt == request.time;
+      allow read: if signedIn()
+        && (request.auth.uid == resource.data.authorId || isArenaAdmin());
+      allow update: if isArenaAdmin()
+        && validFeedback()
+        && request.resource.data.authorId == resource.data.authorId
+        && request.resource.data.authorName == resource.data.authorName
+        && request.resource.data.authorEmail == resource.data.authorEmail
+        && request.resource.data.category == resource.data.category
+        && request.resource.data.rating == resource.data.rating
+        && request.resource.data.message == resource.data.message
+        && request.resource.data.contactAllowed == resource.data.contactAllowed
+        && request.resource.data.source == resource.data.source
+        && request.resource.data.createdAtClient == resource.data.createdAtClient
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isArenaAdmin();
     }
 
     match /{document=**} {
