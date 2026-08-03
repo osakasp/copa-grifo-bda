@@ -44,7 +44,7 @@
       './midia-campeonato-refresh.js?v=20260726-1',
       './copa-francos-design-lite.js?v=20260726-2',
       './confronto-editor-v2.js?v=20260802-2',
-      './resultados-cards-pro.js?v=20260802-3',
+      './resultados-cards-pro.js?v=20260802-4',
       './placar-mobile-stability.js?v=20260727-1',
       './captura-confrontos-simples.js?v=20260730-1',
       './match-center-bda.js?v=20260727-1',
