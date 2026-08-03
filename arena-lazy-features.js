@@ -21,6 +21,9 @@
     season: [
       './temporada-bda.js?v=20260801-2'
     ],
+    flash: [
+      './copas-flash.js?v=20260803-1'
+    ],
     teams: [
       './perfis-clubes.js?v=20260726-2',
       './editor-perfis-times.js?v=20260726-2',
@@ -55,6 +58,7 @@
     champions: 'champions',
     history: 'history',
     season: 'season',
+    flash: 'flash',
     news: 'news',
     ranking: 'ranking',
     registrations: 'registrations',
@@ -64,6 +68,7 @@
   const ROUTES = Object.freeze({
     history: ['📜', 'História'],
     season: ['🗓️', 'Temporada'],
+    flash: ['⚡', 'Copas Flash'],
     registrations: ['✍️', 'Inscrições'],
     ranking: ['📊', 'Ranking'],
     news: ['📰', 'Notícias']
@@ -237,7 +242,8 @@
       await loadBundle(bundle);
       navigateTo(page);
     } catch (error) {
-      notify(`Não foi possível carregar ${page === 'news' ? 'as Notícias' : page === 'teams' ? 'os perfis dos clubes' : 'a História'}`);
+      const label = ROUTES[page]?.[1] || page;
+      notify(`Não foi possível carregar ${label}`);
     } finally {
       setRouteLoading(trigger, false);
     }
