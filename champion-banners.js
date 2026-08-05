@@ -195,6 +195,9 @@
     const form = originalForm.cloneNode(true);
     originalForm.replaceWith(form);
 
+    const submitButton = form.querySelector('button.primary');
+    if (submitButton) submitButton.type = 'submit';
+
     const formGrid = form.querySelector('.form-grid');
     const bannerField = document.createElement('label');
     bannerField.className = 'champion-banner-field';
