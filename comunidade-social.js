@@ -6,6 +6,7 @@
 
   const POST_LIMIT = 24;
   const MESSAGE_LIMIT = 100;
+  const META_CONCURRENCY = 4;
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const esc = value => String(value ?? '')
@@ -21,6 +22,7 @@
   let user = null;
   let ownProfile = null;
   let members = [];
+  let memberIndex = new Map();
   let posts = [];
   let threads = [];
   let messages = [];
@@ -32,9 +34,18 @@
   let postDraft = '';
   let postImage = '';
   let avatarDraft = '';
+  let memberSearch = '';
   const messageDrafts = new Map();
+  const pendingLikes = new Set();
+  const pendingComments = new Set();
+  const metaLoads = new Set();
   let connected = false;
   let connectionError = '';
+  let membersLoaded = false;
+  let postsLoaded = false;
+  let metaHydrationVersion = 0;
+  let publishingPost = false;
+  let sendingMessage = false;
   let authUnsubscribe = null;
   let membersUnsubscribe = null;
   let postsUnsubscribe = null;
@@ -47,11 +58,7 @@
   }
 
   function member(id) {
-    return members.find(item => item.id === id) || (ownProfile?.id === id ? ownProfile : null);
-  }
-
-  function displayName(id, fallback = 'Membro BDA') {
-    return member(id)?.displayName || fallback;
+    return memberIndex.get(id) || (ownProfile?.id === id ? ownProfile : null);
   }
 
   function initials(name) {
@@ -100,7 +107,7 @@
   function shell() {
     const account = user ? (ownProfile || member(user.uid) || { displayName: user.displayName || 'Membro BDA' }) : null;
     page.innerHTML = `<section class="social-hero">
-      <div><span class="eyebrow">Rede oficial do Clã BDA</span><h1>Comunidade</h1><p>Perfis, publicações, futebol e conversas em um espaço exclusivo para os membros.</p><div class="social-connection ${connectionError ? 'error' : ''}"><i></i>${esc(connectionError || (connected ? 'Comunidade online' : 'Preparando conexão...'))}</div></div>
+      <div><span class="eyebrow">Rede oficial do Clã BDA</span><h1>Comunidade</h1><p>Perfis, publicações, futebol e conversas em um espaço exclusivo para os membros.</p><div class="social-connection ${connectionError ? 'error' : ''}" role="status" aria-live="polite"><i></i><span>${esc(connectionError || (connected ? 'Comunidade online' : 'Preparando conexão...'))}</span>${connectionError ? '<button type="button" data-social-retry>Tentar novamente</button>' : ''}</div></div>
       <aside>${user ? `${avatar(account, 'large')}<div><b>${esc(account.displayName || 'Membro BDA')}</b><span>${esc(account.team || 'Time não informado')}</span></div><button type="button" data-social-own-profile>Meu perfil</button>` : `<span>⚽</span><div><b>Faça parte da comunidade</b><small>Crie sua conta gratuita com e-mail e senha.</small></div><button type="button" class="primary" data-social-login>Criar conta</button>`}</aside>
     </section>
     <nav class="social-nav" aria-label="Navegação da comunidade">
@@ -114,7 +121,12 @@
   }
 
   function syncNav() {
-    $$('.social-nav [data-social-view]').forEach(button => button.classList.toggle('active', button.dataset.socialView === activeView));
+    $$('.social-nav [data-social-view]').forEach(button => {
+      const active = button.dataset.socialView === activeView;
+      button.classList.toggle('active', active);
+      if (active) button.setAttribute('aria-current', 'page');
+      else button.removeAttribute('aria-current');
+    });
   }
 
   function composer() {
@@ -126,7 +138,7 @@
       <header>${avatar(profile)}<div><b>${esc(profile.displayName)}</b><span>Compartilhe com o Clã BDA</span></div></header>
       <textarea id="socialPostText" maxlength="500" rows="3" placeholder="No que você está pensando?">${esc(postDraft)}</textarea>
       <div class="social-post-preview" id="socialPostPreview" ${postImage ? '' : 'hidden'}>${postImage ? `<img src="${esc(postImage)}" alt="Prévia da publicação"><button type="button" data-social-remove-post-image>×</button>` : ''}</div>
-      <footer><label><input id="socialPostImage" type="file" accept="image/png,image/jpeg,image/webp" hidden><span>▧ Foto</span></label><small>Imagens são comprimidas automaticamente</small><button type="submit" class="primary">Publicar</button></footer>
+      <footer><label><input id="socialPostImage" type="file" accept="image/png,image/jpeg,image/webp" hidden ${publishingPost ? 'disabled' : ''}><span>▧ Foto</span></label><small>Imagens são comprimidas automaticamente</small><button type="submit" class="primary" ${publishingPost ? 'disabled aria-busy="true"' : ''}>${publishingPost ? 'Publicando...' : 'Publicar'}</button></footer>
     </form>`;
   }
 
@@ -140,14 +152,16 @@
     const author = member(post.authorId) || { displayName: post.authorName || 'Membro BDA', avatar: post.authorAvatar || '', team: post.authorTeam || '' };
     const meta = postMeta.get(post.id) || { likes: 0, liked: false, comments: [] };
     const canDelete = user && (user.uid === post.authorId || auth?.isAdmin?.());
+    const likePending = pendingLikes.has(post.id);
+    const commentPending = pendingComments.has(post.id);
     return `<article class="social-post" data-social-post="${esc(post.id)}">
       <header><button type="button" data-social-profile="${esc(post.authorId)}">${avatar(author)}<span><b>${esc(author.displayName)}</b><small>${esc(author.team || 'Clã BDA')} • ${relativeTime(post.createdAt, post.createdAtClient)}</small></span></button>${canDelete ? `<button type="button" class="social-post-menu" data-social-delete-post="${esc(post.id)}" aria-label="Excluir publicação">•••</button>` : ''}</header>
       ${post.text ? `<p class="social-post-text">${esc(post.text)}</p>` : ''}
       ${post.image ? `<img class="social-post-image" src="${esc(post.image)}" alt="Imagem publicada por ${esc(author.displayName)}" loading="lazy" decoding="async">` : ''}
       <div class="social-post-stats"><span>${meta.likes} ${meta.likes === 1 ? 'curtida' : 'curtidas'}</span><span>${meta.comments.length} ${meta.comments.length === 1 ? 'comentário' : 'comentários recentes'}</span></div>
-      <div class="social-post-actions"><button type="button" class="${meta.liked ? 'active' : ''}" data-social-like="${esc(post.id)}"><i>♥</i>${meta.liked ? 'Curtido' : 'Curtir'}</button><button type="button" data-social-focus-comment="${esc(post.id)}"><i>▤</i>Comentar</button><button type="button" data-social-profile="${esc(post.authorId)}"><i>●</i>Perfil</button></div>
+      <div class="social-post-actions"><button type="button" class="${meta.liked ? 'active' : ''}" data-social-like="${esc(post.id)}" ${likePending ? 'disabled aria-busy="true"' : ''}><i>♥</i>${likePending ? 'Salvando...' : meta.liked ? 'Curtido' : 'Curtir'}</button><button type="button" data-social-focus-comment="${esc(post.id)}"><i>▤</i>Comentar</button><button type="button" data-social-profile="${esc(post.authorId)}"><i>●</i>Perfil</button></div>
       <section class="social-comments" data-social-comments="${esc(post.id)}">${meta.comments.slice(-3).map(commentHtml).join('')}</section>
-      ${user ? `<form class="social-comment-form" data-social-comment-form="${esc(post.id)}">${avatar(ownProfile || member(user.uid), 'small')}<input maxlength="220" placeholder="Escreva um comentário..." required><button type="submit" aria-label="Enviar comentário">➤</button></form>` : ''}
+      ${user ? `<form class="social-comment-form" data-social-comment-form="${esc(post.id)}">${avatar(ownProfile || member(user.uid), 'small')}<input maxlength="220" placeholder="Escreva um comentário..." aria-label="Comentário" required ${commentPending ? 'disabled' : ''}><button type="submit" aria-label="Enviar comentário" ${commentPending ? 'disabled aria-busy="true"' : ''}>➤</button></form>` : ''}
     </article>`;
   }
 
@@ -168,13 +182,30 @@
   function renderFeed() {
     const content = $('#socialContent');
     if (!content) return;
-    content.innerHTML = `<div class="social-feed-layout"><section class="social-feed">${composer()}<div id="socialPostList">${posts.length ? posts.map(postHtml).join('') : '<div class="social-empty"><span>▦</span><b>O feed está começando</b><p>Seja o primeiro membro a publicar.</p></div>'}</div></section>${suggestions()}</div>`;
+    const list = !postsLoaded
+      ? `<div class="social-empty ${connectionError ? 'error' : 'loading'}"><span>${connectionError ? '!' : '•••'}</span><b>${connectionError ? 'Não foi possível carregar o feed' : 'Carregando publicações'}</b><p>${connectionError ? 'Confira a conexão e tente novamente.' : 'Buscando as novidades mais recentes do clã.'}</p>${connectionError ? '<button type="button" class="secondary" data-social-retry>Tentar novamente</button>' : ''}</div>`
+      : posts.length
+        ? posts.map(postHtml).join('')
+        : '<div class="social-empty"><span>▦</span><b>O feed está começando</b><p>Seja o primeiro membro a publicar.</p></div>';
+    content.innerHTML = `<div class="social-feed-layout"><section class="social-feed">${composer()}<div id="socialPostList" aria-live="polite">${list}</div></section>${suggestions()}</div>`;
+  }
+
+  function searchedMembers() {
+    const query = norm(memberSearch);
+    return query ? members.filter(item => norm(`${item.displayName} ${item.team}`).includes(query)) : members;
   }
 
   function renderMembers() {
     const content = $('#socialContent');
     if (!content) return;
-    content.innerHTML = `<section class="social-members-page"><header><div><span class="eyebrow">Pessoas do clã</span><h2>Membros da comunidade</h2><p>${members.length} perfis cadastrados</p></div><input id="socialMemberSearch" type="search" placeholder="Buscar membro ou time"></header><div class="social-members-grid" id="socialMembersGrid">${members.length ? members.map(memberCard).join('') : '<div class="social-empty"><b>Nenhum perfil disponível</b></div>'}</div></section>`;
+    const list = searchedMembers();
+    const status = memberSearch ? `${list.length} de ${members.length} perfis` : `${members.length} perfis cadastrados`;
+    const grid = !membersLoaded
+      ? `<div class="social-empty ${connectionError ? 'error' : 'loading'}"><span>${connectionError ? '!' : '•••'}</span><b>${connectionError ? 'Não foi possível carregar os membros' : 'Carregando membros'}</b>${connectionError ? '<button type="button" class="secondary" data-social-retry>Tentar novamente</button>' : ''}</div>`
+      : list.length
+        ? list.map(memberCard).join('')
+        : `<div class="social-empty"><b>${memberSearch ? 'Nenhum membro encontrado' : 'Nenhum perfil disponível'}</b></div>`;
+    content.innerHTML = `<section class="social-members-page"><header><div><span class="eyebrow">Pessoas do clã</span><h2>Membros da comunidade</h2><p id="socialMemberCount">${status}</p></div><input id="socialMemberSearch" type="search" value="${esc(memberSearch)}" placeholder="Buscar membro ou time" aria-label="Buscar membro ou time"></header><div class="social-members-grid" id="socialMembersGrid" aria-live="polite">${grid}</div></section>`;
   }
 
   function profilePosts(id) {
@@ -212,7 +243,7 @@
     if (!activeThreadId) return '<div class="social-empty social-conversation-empty"><span>✉</span><b>Escolha uma conversa</b><p>Ou abra o perfil de um membro para enviar uma mensagem.</p></div>';
     const thread = threads.find(item => item.id === activeThreadId);
     const contact = member(otherParticipant(thread || { participants: activeThreadId.split('__') })) || { displayName: 'Membro BDA' };
-    return `<section class="social-conversation"><header>${avatar(contact)}<button type="button" data-social-profile="${esc(contact.id || '')}"><b>${esc(contact.displayName)}</b><span>${esc(contact.team || 'Clã BDA')}</span></button></header><div class="social-message-list" id="socialMessageList">${messages.length ? messages.map(message => `<article class="social-message ${message.senderId === user?.uid ? 'mine' : ''}"><p>${esc(message.text)}</p><time>${relativeTime(message.createdAt, message.createdAtClient)}</time></article>`).join('') : '<div class="social-empty compact"><b>Envie a primeira mensagem</b></div>'}</div><form id="socialMessageForm"><input id="socialMessageInput" maxlength="500" value="${esc(messageDrafts.get(activeThreadId) || '')}" placeholder="Escreva uma mensagem..." required autocomplete="off"><button type="submit" class="primary" aria-label="Enviar mensagem">➤</button></form></section>`;
+    return `<section class="social-conversation"><header>${avatar(contact)}<button type="button" data-social-profile="${esc(contact.id || '')}"><b>${esc(contact.displayName)}</b><span>${esc(contact.team || 'Clã BDA')}</span></button></header><div class="social-message-list" id="socialMessageList" aria-live="polite">${messages.length ? messages.map(message => `<article class="social-message ${message.senderId === user?.uid ? 'mine' : ''}"><p>${esc(message.text)}</p><time>${relativeTime(message.createdAt, message.createdAtClient)}</time></article>`).join('') : '<div class="social-empty compact"><b>Envie a primeira mensagem</b></div>'}</div><form id="socialMessageForm"><input id="socialMessageInput" maxlength="500" value="${esc(messageDrafts.get(activeThreadId) || '')}" placeholder="Escreva uma mensagem..." aria-label="Mensagem" required autocomplete="off" ${sendingMessage ? 'disabled' : ''}><button type="submit" class="primary" aria-label="Enviar mensagem" ${sendingMessage ? 'disabled aria-busy="true"' : ''}>➤</button></form></section>`;
   }
 
   function renderMessages() {
@@ -260,6 +291,9 @@
     membersUnsubscribe?.();
     membersUnsubscribe = db.collection('members').limit(150).onSnapshot(snapshot => {
       members = snapshot.docs.map(document => ({ id: document.id, ...document.data() })).filter(item => item.status !== 'blocked').sort((a, b) => String(a.displayName).localeCompare(String(b.displayName), 'pt-BR'));
+      memberIndex = new Map(members.map(item => [item.id, item]));
+      membersLoaded = true;
+      if (connectionError === 'Perfis indisponíveis') connectionError = '';
       if (user) ownProfile = member(user.uid) || ownProfile;
       if ($('#socialContent')) renderActive();
       else shell();
@@ -274,6 +308,10 @@
     postsUnsubscribe?.();
     postsUnsubscribe = db.collection('communityPosts').orderBy('createdAtClient', 'desc').limit(POST_LIMIT).onSnapshot(snapshot => {
       posts = snapshot.docs.map(document => ({ id: document.id, ...document.data() })).filter(item => item.status === 'visible');
+      postsLoaded = true;
+      if (connectionError === 'Feed indisponível') connectionError = '';
+      const visiblePostIds = new Set(posts.map(post => post.id));
+      [...postMeta.keys()].forEach(id => { if (!visiblePostIds.has(id)) postMeta.delete(id); });
       renderActive();
       hydratePostMeta(posts);
     }, error => {
@@ -284,22 +322,38 @@
   }
 
   async function hydratePostMeta(list) {
-    await Promise.all(list.map(async post => {
-      try {
-        const [likesSnapshot, commentsSnapshot] = await Promise.all([
-          db.collection('communityPosts').doc(post.id).collection('likes').limit(250).get(),
-          db.collection('communityPosts').doc(post.id).collection('comments').orderBy('createdAtClient', 'asc').limit(20).get()
-        ]);
-        postMeta.set(post.id, {
-          likes: likesSnapshot.size,
-          liked: Boolean(user && likesSnapshot.docs.some(document => document.id === user.uid)),
-          comments: commentsSnapshot.docs.map(document => ({ id: document.id, ...document.data() }))
-        });
-        refreshPost(post.id);
-      } catch (error) {
-        console.error('Falha ao carregar interações', error);
+    const version = metaHydrationVersion;
+    const userId = user?.uid || '';
+    const queue = list.filter(post => {
+      const key = `${version}:${post.id}`;
+      if (postMeta.has(post.id) || metaLoads.has(key)) return false;
+      metaLoads.add(key);
+      return true;
+    });
+    const worker = async () => {
+      while (queue.length) {
+        const post = queue.shift();
+        const key = `${version}:${post.id}`;
+        try {
+          const [likesSnapshot, commentsSnapshot] = await Promise.all([
+            db.collection('communityPosts').doc(post.id).collection('likes').limit(250).get(),
+            db.collection('communityPosts').doc(post.id).collection('comments').orderBy('createdAtClient', 'desc').limit(20).get()
+          ]);
+          if (version !== metaHydrationVersion) continue;
+          postMeta.set(post.id, {
+            likes: likesSnapshot.size,
+            liked: Boolean(userId && likesSnapshot.docs.some(document => document.id === userId)),
+            comments: commentsSnapshot.docs.map(document => ({ id: document.id, ...document.data() })).reverse()
+          });
+          refreshPost(post.id);
+        } catch (error) {
+          console.error('Falha ao carregar interações', error);
+        } finally {
+          metaLoads.delete(key);
+        }
       }
-    }));
+    };
+    await Promise.all(Array.from({ length: Math.min(META_CONCURRENCY, queue.length) }, worker));
   }
 
   function refreshPost(id) {
@@ -335,6 +389,8 @@
   }
 
   async function handleAuth(state) {
+    metaHydrationVersion += 1;
+    postMeta.clear();
     user = state?.user || null;
     ownProfile = null;
     followingUnsubscribe?.(); followingUnsubscribe = null;
@@ -355,14 +411,19 @@
   async function createPost(event) {
     event.preventDefault();
     if (!user) return openLogin();
+    if (publishingPost) return;
     const input = $('#socialPostText');
     const button = $('#socialPostForm button[type="submit"]');
     const text = postDraft.trim();
     if (!text && !postImage) return notify('Escreva algo ou escolha uma foto');
+    publishingPost = true;
     button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
     button.textContent = postImage ? 'Enviando foto...' : 'Publicando...';
+    let uploadedImage = '';
+    let postSaved = false;
     try {
-      const image = postImage
+      uploadedImage = postImage
         ? await uploadImage(postImage, `community/${user.uid}/posts/${Date.now()}-${Math.random().toString(36).slice(2, 9)}.webp`)
         : '';
       await db.collection('communityPosts').add({
@@ -371,29 +432,36 @@
         authorAvatar: ownProfile?.avatar || '',
         authorTeam: ownProfile?.team || '',
         text: text.slice(0, 500),
-        image,
+        image: uploadedImage,
         status: 'visible',
         createdAtClient: Date.now(),
         createdAt: serverTime(),
         updatedAt: serverTime()
       });
+      postSaved = true;
       postImage = '';
       postDraft = '';
       input.value = '';
       notify('Publicação enviada');
     } catch (error) {
       console.error(error);
+      if (!postSaved && uploadedImage.startsWith('https://') && typeof window.firebase?.storage === 'function') {
+        firebase.storage().refFromURL(uploadedImage).delete().catch(() => {});
+      }
       notify('Não foi possível publicar');
     } finally {
-      button.disabled = false;
-      button.textContent = 'Publicar';
+      publishingPost = false;
+      renderActive();
     }
   }
 
   async function toggleLike(postId) {
     if (!user) return openLogin();
+    if (pendingLikes.has(postId)) return;
+    pendingLikes.add(postId);
     const reference = db.collection('communityPosts').doc(postId).collection('likes').doc(user.uid);
     const meta = postMeta.get(postId) || { likes: 0, liked: false, comments: [] };
+    refreshPost(postId);
     try {
       if (meta.liked) {
         await reference.delete();
@@ -409,15 +477,20 @@
     } catch (error) {
       console.error(error);
       notify('Não foi possível atualizar a curtida');
+    } finally {
+      pendingLikes.delete(postId);
+      refreshPost(postId);
     }
   }
 
   async function addComment(event, postId) {
     event.preventDefault();
     if (!user) return openLogin();
+    if (pendingComments.has(postId)) return;
     const input = $('input', event.target);
     const text = input?.value.trim() || '';
     if (!text) return;
+    pendingComments.add(postId);
     input.disabled = true;
     try {
       const reference = await db.collection('communityPosts').doc(postId).collection('comments').add({
@@ -438,7 +511,9 @@
       console.error(error);
       notify('Não foi possível comentar');
     } finally {
+      pendingComments.delete(postId);
       input.disabled = false;
+      refreshPost(postId);
     }
   }
 
@@ -518,19 +593,28 @@
   async function sendMessage(event) {
     event.preventDefault();
     if (!user || !activeThreadId) return;
+    if (sendingMessage) return;
     const input = $('input', event.target);
     const text = input?.value.trim() || '';
     if (!text) return;
+    sendingMessage = true;
     input.disabled = true;
     try {
       const now = Date.now();
       const threadReference = db.collection('memberThreads').doc(activeThreadId);
-      await threadReference.collection('messages').add({ senderId: user.uid, text: text.slice(0, 500), status: 'visible', createdAtClient: now, createdAt: serverTime() });
-      await threadReference.update({ lastText: text.slice(0, 120), lastSenderId: user.uid, updatedAtClient: now, updatedAt: serverTime() });
+      const messageReference = threadReference.collection('messages').doc();
+      const batch = db.batch();
+      batch.set(messageReference, { senderId: user.uid, text: text.slice(0, 500), status: 'visible', createdAtClient: now, createdAt: serverTime() });
+      batch.update(threadReference, { lastText: text.slice(0, 120), lastSenderId: user.uid, updatedAtClient: now, updatedAt: serverTime() });
+      await batch.commit();
       messageDrafts.delete(activeThreadId);
       input.value = '';
     } catch (error) { console.error(error); notify('Não foi possível enviar a mensagem'); }
-    finally { input.disabled = false; input.focus(); }
+    finally {
+      sendingMessage = false;
+      const currentInput = $('#socialMessageInput');
+      if (currentInput) { currentInput.disabled = false; currentInput.focus(); }
+    }
   }
 
   function readFile(file) {
@@ -590,7 +674,7 @@
       const modal = document.createElement('div');
       modal.className = 'modal-backdrop social-modal-backdrop';
       modal.id = 'socialProfileModal';
-      modal.innerHTML = `<section class="modal social-profile-modal"><header><div><span class="eyebrow">Seu espaço no clã</span><h2>Editar perfil</h2></div><button type="button" data-social-close-profile>×</button></header><form id="socialProfileForm"><div class="social-avatar-editor"><div id="socialAvatarPreview"></div><label><input id="socialAvatarInput" type="file" accept="image/png,image/jpeg,image/webp" hidden><span>Escolher foto</span></label></div><div class="form-grid"><label>Nome no clã<input id="socialProfileName" maxlength="40" required></label><label>Time<input id="socialProfileTeam" maxlength="55" placeholder="Seu time BDA"></label><label>Biografia<textarea id="socialProfileBio" maxlength="180" rows="4" placeholder="Conte um pouco sobre você"></textarea></label></div><footer><button type="button" class="secondary" data-social-close-profile>Cancelar</button><button type="submit" class="primary">Salvar perfil</button></footer></form></section>`;
+      modal.innerHTML = `<section class="modal social-profile-modal" role="dialog" aria-modal="true" aria-labelledby="socialProfileTitle"><header><div><span class="eyebrow">Seu espaço no clã</span><h2 id="socialProfileTitle">Editar perfil</h2></div><button type="button" data-social-close-profile aria-label="Fechar edição do perfil">×</button></header><form id="socialProfileForm"><div class="social-avatar-editor"><div id="socialAvatarPreview"></div><label><input id="socialAvatarInput" type="file" accept="image/png,image/jpeg,image/webp" hidden><span>Escolher foto</span></label></div><div class="form-grid"><label>Nome no clã<input id="socialProfileName" maxlength="40" required></label><label>Time<input id="socialProfileTeam" maxlength="55" placeholder="Seu time BDA"></label><label>Biografia<textarea id="socialProfileBio" maxlength="180" rows="4" placeholder="Conte um pouco sobre você"></textarea></label></div><footer><button type="button" class="secondary" data-social-close-profile>Cancelar</button><button type="submit" class="primary">Salvar perfil</button></footer></form></section>`;
       document.body.append(modal);
     }
   }
@@ -651,10 +735,29 @@
   }
 
   function filterMembers(value) {
-    const query = norm(value);
-    const list = query ? members.filter(item => norm(`${item.displayName} ${item.team}`).includes(query)) : members;
+    memberSearch = value;
+    const list = searchedMembers();
     const grid = $('#socialMembersGrid');
     if (grid) grid.innerHTML = list.length ? list.map(memberCard).join('') : '<div class="social-empty"><b>Nenhum membro encontrado</b></div>';
+    const count = $('#socialMemberCount');
+    if (count) count.textContent = memberSearch ? `${list.length} de ${members.length} perfis` : `${members.length} perfis cadastrados`;
+  }
+
+  function retryCommunityData() {
+    connectionError = '';
+    membersLoaded = false;
+    postsLoaded = false;
+    shell();
+    if (!connected) {
+      connect();
+      return;
+    }
+    loadMembers();
+    loadPosts();
+    if (user) {
+      loadFollowing();
+      loadThreads();
+    }
   }
 
   async function connect() {
@@ -689,6 +792,7 @@
       .social-profile-page{display:grid;gap:11px}.social-profile-cover{text-align:center;background:radial-gradient(circle at 50% 0,rgba(100,169,255,.18),transparent 34%),linear-gradient(150deg,rgba(18,35,25,.97),rgba(5,12,8,.98))}.social-profile-cover>div{display:grid;justify-items:center}.social-profile-cover>div b,.social-profile-cover>div small{display:block}.social-profile-cover>div b{margin-top:10px;font-size:23px}.social-profile-cover>div small{margin-top:5px;color:var(--social-blue);font-size:8px}.social-profile-cover>p{max-width:600px;margin:12px auto;color:#cbd8cf;font-size:9px;line-height:1.55}.social-profile-cover>section{display:flex;justify-content:center;gap:20px}.social-profile-cover>section span{color:var(--muted);font-size:7px;text-transform:uppercase}.social-profile-cover>section b{display:block;margin-bottom:3px;color:var(--text);font-size:12px}.social-profile-cover>footer{display:flex;justify-content:center;gap:8px;margin-top:15px}.social-profile-cover>footer button{min-height:39px;padding:0 13px;border:1px solid var(--line);border-radius:11px;color:var(--text);background:rgba(255,255,255,.04);font-size:8px;font-weight:900}.social-profile-cover>footer button.following{color:var(--social-green)}.social-profile-posts>header{margin-bottom:10px}.social-profile-posts>.social-post{margin-top:9px}
       .social-messages-page{display:grid;grid-template-columns:minmax(250px,.7fr) minmax(0,1.3fr);min-height:620px;overflow:hidden}.social-messages-page>aside{border-right:1px solid var(--line)}.social-messages-page>aside>header{padding:15px;border-bottom:1px solid var(--line)}.social-messages-page>aside>div{max-height:555px;overflow-y:auto}.social-thread{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;width:100%;padding:10px;border:0;border-bottom:1px solid var(--line);color:var(--text);background:transparent;text-align:left}.social-thread.active{background:rgba(100,169,255,.09)}.social-thread>span{min-width:0}.social-thread b,.social-thread small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.social-thread b{font-size:9px}.social-thread small{margin-top:4px;color:var(--muted);font-size:7px}.social-thread time{color:var(--muted);font-size:6px}.social-conversation{display:grid;grid-template-rows:auto 1fr auto;min-width:0;max-height:620px}.social-conversation>header{display:flex;align-items:center;gap:9px;padding:11px 13px;border-bottom:1px solid var(--line)}.social-conversation>header button{padding:0;border:0;color:var(--text);background:transparent;text-align:left}.social-conversation>header b,.social-conversation>header span{display:block}.social-conversation>header b{font-size:9px}.social-conversation>header span{margin-top:3px;color:var(--muted);font-size:7px}.social-message-list{display:flex;flex-direction:column;gap:6px;overflow-y:auto;padding:13px;background:rgba(0,0,0,.12)}.social-message{align-self:flex-start;max-width:78%;padding:8px 10px;border:1px solid var(--line);border-radius:5px 14px 14px 14px;background:rgba(255,255,255,.05)}.social-message.mine{align-self:flex-end;border-color:rgba(100,169,255,.18);border-radius:14px 5px 14px 14px;background:rgba(100,169,255,.11)}.social-message p{margin:0;color:#eef6f0;font-size:9px;line-height:1.45;white-space:pre-wrap}.social-message time{display:block;margin-top:4px;color:var(--muted);font-size:6px;text-align:right}.social-conversation>form{display:grid;grid-template-columns:1fr 43px;gap:7px;padding:10px;border-top:1px solid var(--line)}.social-conversation>form input{height:43px;padding:0 12px;border:1px solid var(--line);border-radius:13px;color:var(--text);background:#07100c;font-size:9px}.social-conversation>form button{width:43px;padding:0}.social-conversation-empty{border:0!important;border-radius:0!important}
       .social-empty{display:grid;place-items:center;gap:6px;min-height:230px;padding:25px;border:1px dashed var(--line);border-radius:17px;color:var(--muted);text-align:center}.social-empty.compact{min-height:130px}.social-empty>span{font-size:36px}.social-empty b{color:var(--text);font-size:11px}.social-empty p{max-width:360px;margin:0;font-size:8px;line-height:1.5}.social-empty button{margin-top:5px}.social-modal-open{overflow:hidden}.social-modal-backdrop{z-index:98}.social-profile-modal{width:min(520px,100%);padding:0!important}.social-profile-modal>header{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--line)}.social-profile-modal>header h2{margin:4px 0 0}.social-profile-modal>header button{width:39px;height:39px;border:1px solid var(--line);border-radius:11px;color:var(--text);background:rgba(255,255,255,.04);font-size:21px}.social-profile-modal form{padding:16px 18px}.social-profile-modal textarea{width:100%;margin-top:5px;padding:10px;border:1px solid var(--line);border-radius:10px;color:var(--text);background:#07100c;font-size:10px}.social-profile-modal form>footer{display:flex;justify-content:flex-end;gap:8px;margin-top:13px}.social-avatar-editor{display:grid;justify-items:center;gap:8px;margin-bottom:13px}.social-avatar-editor>div{overflow:hidden;display:grid;place-items:center;width:96px;height:96px;border:3px solid rgba(255,255,255,.14);border-radius:50%;color:#07100c;background:linear-gradient(145deg,#d7f1e2,#6ebf91);font-size:19px;font-weight:900}.social-avatar-editor img{width:100%;height:100%;object-fit:cover}.social-avatar-editor label span{display:inline-flex;align-items:center;min-height:36px;padding:0 10px;border:1px solid var(--line);border-radius:10px;color:#cce2ff;background:rgba(100,169,255,.06);font-size:8px;font-weight:900}
+      [data-page="community"] button:disabled,[data-page="community"] input:disabled{cursor:wait;opacity:.58}.social-connection button{margin-left:3px;padding:2px 6px;border:1px solid currentColor;border-radius:999px;color:inherit;background:transparent;font:inherit;text-transform:inherit}.social-empty.loading>span{letter-spacing:4px;color:var(--social-blue)}.social-empty.error{border-color:rgba(255,105,120,.28)}.social-empty.error>span{color:#ff9fac;font-weight:900}.social-empty.error button{min-height:38px;padding:0 12px}
       @media(max-width:900px){.social-hero,.social-feed-layout{grid-template-columns:1fr}.social-suggestions{position:static}.social-members-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.social-messages-page{grid-template-columns:1fr}.social-messages-page>aside{border-right:0;border-bottom:1px solid var(--line)}.social-messages-page>aside>div{max-height:240px}.social-conversation{min-height:540px}}
       @media(max-width:620px){[data-page="community"]{gap:10px}.social-hero{min-height:390px;padding:22px 17px;border-radius:24px}.social-hero h1{font-size:65px}.social-hero>aside{grid-template-columns:auto 1fr}.social-hero>aside>button{grid-column:1/-1;width:100%}.social-nav{top:61px}.social-nav button{gap:3px;font-size:7px}.social-nav button i{font-size:12px}.social-login-card{grid-template-columns:auto 1fr}.social-login-card button{grid-column:1/-1;width:100%}.social-composer>footer{flex-wrap:wrap}.social-composer>footer small{display:none}.social-members-page>header{align-items:stretch;flex-direction:column}.social-members-page>header input{width:100%}.social-members-grid{grid-template-columns:1fr}.social-profile-cover>footer{display:grid;grid-template-columns:1fr 1fr}.social-profile-cover>footer button{width:100%}.social-message{max-width:88%}}
       @media(max-width:420px){.social-nav button span{display:none}.social-nav button i{font-size:17px}.social-post-actions button{font-size:7px}.social-profile-cover>footer{grid-template-columns:1fr}.social-hero>aside .social-avatar{width:50px;height:50px}.social-members-page,.social-profile-cover,.social-profile-posts{padding:13px}}
@@ -708,6 +812,7 @@
     if (event.target.closest('[data-social-edit-profile]')) { openProfileEditor(); return; }
     if (event.target.closest('[data-social-close-profile]')) { closeProfileEditor(); return; }
     if (event.target.closest('[data-social-logout]')) { logout(); return; }
+    if (event.target.closest('[data-social-retry]')) { retryCommunityData(); return; }
     const follow = event.target.closest('[data-social-follow]');
     if (follow) { toggleFollow(follow.dataset.socialFollow); return; }
     const message = event.target.closest('[data-social-message]');
