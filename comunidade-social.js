@@ -385,7 +385,7 @@
       await db.collection('communityPosts').add({
         authorId: user.uid,
         authorName: ownProfile?.displayName || user.displayName || 'Membro BDA',
-        authorAvatar: ownProfile?.avatar || '',
+        authorAvatar: ownProfile?.avatar?.startsWith('data:image/') ? '' : (ownProfile?.avatar || ''),
         authorTeam: ownProfile?.team || '',
         text: text.slice(0, 500),
         image,
@@ -440,7 +440,7 @@
       const reference = await db.collection('communityPosts').doc(postId).collection('comments').add({
         authorId: user.uid,
         authorName: ownProfile?.displayName || user.displayName || 'Membro BDA',
-        authorAvatar: ownProfile?.avatar || '',
+        authorAvatar: ownProfile?.avatar?.startsWith('data:image/') ? '' : (ownProfile?.avatar || ''),
         text: text.slice(0, 220),
         status: 'visible',
         createdAtClient: Date.now(),
@@ -643,23 +643,36 @@
     const name = $('#socialProfileName').value.trim();
     if (name.length < 2) return notify('Digite seu nome no clã');
     const button = $('#socialProfileForm button[type="submit"]');
+    const originalButtonText = button.textContent;
     button.disabled = true;
+    button.textContent = 'Salvando...';
     try {
       const data = {
         displayName: name.slice(0, 40),
         team: $('#socialProfileTeam').value.trim().slice(0, 55),
         bio: $('#socialProfileBio').value.trim().slice(0, 180),
-        avatar: await uploadImage(avatarDraft, `community/${user.uid}/profile/avatar.webp`),
+        avatar: avatarDraft?.startsWith('data:image/webp;base64,') ? avatarDraft : (avatarDraft || ''),
         updatedAt: serverTime()
       };
       await db.collection('members').doc(user.uid).update(data);
-      await user.updateProfile({ displayName: data.displayName });
+      try { await user.updateProfile({ displayName: data.displayName }); }
+      catch (error) { console.warn('O perfil foi salvo, mas o nome da conta não foi sincronizado', error); }
       ownProfile = { ...(ownProfile || {}), id: user.uid, ...data };
       closeProfileEditor();
       shell();
       notify('Perfil atualizado');
-    } catch (error) { console.error(error); notify('Não foi possível atualizar o perfil'); }
-    finally { button.disabled = false; }
+    } catch (error) {
+      console.error('Não foi possível atualizar o perfil', error);
+      const code = String(error?.code || '');
+      notify(code.includes('permission-denied')
+        ? 'O Firebase recusou a alteração do perfil'
+        : code.includes('unavailable') || code.includes('network')
+          ? 'Sem conexão para salvar o perfil'
+          : 'Não foi possível atualizar o perfil');
+    } finally {
+      button.disabled = false;
+      button.textContent = originalButtonText;
+    }
   }
 
   async function logout() {
@@ -768,7 +781,7 @@
     if (event.target.id === 'socialAvatarInput') {
       const file = event.target.files?.[0];
       if (!file) return;
-      try { notify('Preparando a foto...'); avatarDraft = await compressImage(file, 320, 80000); renderAvatarPreview(); }
+      try { notify('Preparando a foto...'); avatarDraft = await compressImage(file, 220, 32000); renderAvatarPreview(); }
       catch (error) { console.error(error); notify(error.message || 'Não foi possível preparar a foto'); }
     }
   });
