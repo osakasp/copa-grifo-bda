@@ -4,7 +4,8 @@
   const TABLE_EXPORT_SRC = './exportar-tabela-copa-facil.js?v=20260726-2';
   const BUNDLES = Object.freeze({
     champions: [
-      './champion-banners.js?v=20260805-1'
+      './champion-banners.js?v=20260805-1',
+      './ranking-campeoes.js?v=20260806-1'
     ],
     registrations: [
       './central-inscricoes.js'
