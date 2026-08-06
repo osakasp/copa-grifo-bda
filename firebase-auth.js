@@ -143,6 +143,14 @@
   adminButton.textContent = 'ENTRAR';
   adminButton.setAttribute('aria-label', 'Entrar na Comunidade BDA');
 
+  const logoutButton = adminButton.cloneNode(false);
+  logoutButton.id = 'memberLogoutBtn';
+  logoutButton.classList.add('member-logout-btn');
+  logoutButton.textContent = 'SAIR';
+  logoutButton.hidden = true;
+  logoutButton.setAttribute('aria-label', 'Sair da Comunidade BDA');
+  adminButton.insertAdjacentElement('afterend', logoutButton);
+
   const subtitle = document.querySelector('.brand-copy span');
   if (subtitle) subtitle.textContent = 'Arena competitiva • Comunidade do Clã';
 
@@ -222,6 +230,21 @@
       return;
     }
     openAuthModal('login');
+  });
+
+  logoutButton.addEventListener('click', async () => {
+    logoutButton.disabled = true;
+    logoutButton.textContent = 'SAINDO...';
+    try {
+      await authApi.signOut();
+      showToast('Você saiu da comunidade');
+    } catch (error) {
+      console.error('Não foi possível sair da Comunidade BDA', error);
+      showToast('Não foi possível sair da conta');
+    } finally {
+      logoutButton.disabled = false;
+      logoutButton.textContent = 'SAIR';
+    }
   });
 
   async function createPublicProfile(user, displayName) {
@@ -314,6 +337,7 @@
     adminButton.classList.toggle('active', state.isAuthenticated);
     adminButton.dataset.accountState = state.isAdmin ? 'admin' : state.isAuthenticated ? 'member' : 'visitor';
     adminButton.setAttribute('aria-label', state.isAuthenticated ? 'Abrir meu perfil na Comunidade BDA' : 'Entrar na Comunidade BDA');
+    logoutButton.hidden = !state.isAuthenticated;
   });
 
   window.ArenaBDAAuthUI = Object.freeze({ open: openAuthModal, close: closeAuthModal, mode: setAuthMode });

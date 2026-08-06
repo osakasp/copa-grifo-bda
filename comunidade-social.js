@@ -66,6 +66,19 @@
     return `<span class="social-avatar ${className}">${content}</span>`;
   }
 
+  function fallbackProfile(currentUser) {
+    return {
+      id: currentUser.uid,
+      uid: currentUser.uid,
+      displayName: String(currentUser.displayName || currentUser.email?.split('@')[0] || 'Membro BDA').slice(0, 40),
+      team: '',
+      bio: '',
+      avatar: '',
+      role: auth?.isAdmin?.() ? 'admin' : 'member',
+      status: 'active'
+    };
+  }
+
   function dateValue(value, fallback = 0) {
     if (value?.toDate) return value.toDate().getTime();
     if (value instanceof Date) return value.getTime();
@@ -187,7 +200,10 @@
     const id = selectedProfileId || user?.uid || members[0]?.id;
     const profile = member(id);
     if (!profile) {
-      content.innerHTML = `<div class="social-empty"><b>Perfil não encontrado</b><button type="button" data-social-view="members">Ver membros</button></div>`;
+      const ownProfileMissing = Boolean(user && id === user.uid);
+      content.innerHTML = ownProfileMissing
+        ? `<div class="social-empty"><b>Perfil não encontrado</b><p>Sua conta continua conectada, mas os dados do perfil não carregaram.</p><button type="button" class="primary" data-social-logout>Sair da conta</button></div>`
+        : `<div class="social-empty"><b>Perfil não encontrado</b><button type="button" data-social-view="members">Ver membros</button></div>`;
       return;
     }
     const own = user?.uid === profile.id;
@@ -342,6 +358,7 @@
     messagesUnsubscribe?.(); messagesUnsubscribe = null;
     following = new Set(); threads = []; messages = []; activeThreadId = '';
     if (user && db) {
+      ownProfile = fallbackProfile(user);
       try { await ensureProfile(user); }
       catch (error) { console.error(error); notify('Seu perfil ainda não pôde ser preparado'); }
       loadFollowing();
