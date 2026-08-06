@@ -28,6 +28,7 @@
   let busy = false;
   let pendingImage = '';
   let deepLink = new URLSearchParams(location.search).get('news') || '';
+  let searchTerm = '';
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const escapeHtml = value => String(value ?? '')
@@ -35,6 +36,9 @@
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   const notify = message => typeof toast === 'function' ? toast(message) : console.info(message);
   function clone(value) { return JSON.parse(JSON.stringify(value)); }
+  function normalize(value) {
+    return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  }
 
   function load() {
     try {
@@ -71,7 +75,10 @@
 
   function visible() {
     const list = isAdmin() ? sorted() : sorted(news.filter(item => item.published !== false));
-    return category === 'Todas' ? list : list.filter(item => item.category === category);
+    const filtered = category === 'Todas' ? list : list.filter(item => item.category === category);
+    const query = normalize(searchTerm);
+    if (!query) return filtered;
+    return filtered.filter(item => normalize(`${item.title} ${item.summary} ${item.content} ${item.author} ${item.category}`).includes(query));
   }
 
   function dateText(value) {
@@ -84,23 +91,22 @@
     return `${Math.max(1, Math.ceil(words / 180))} min`;
   }
 
-  function cover(item) {
-    return item.image ? ` style="background-image:linear-gradient(180deg,rgba(3,8,6,.08),rgba(3,8,6,.92)),url('${escapeHtml(item.image)}')"` : '';
-  }
-
   function card(item, compact = false) {
-    return `<article class="card news-card${compact ? ' compact' : ''}" data-news-open="${escapeHtml(item.id)}">
-      <div class="news-cover"${cover(item)}>
-        <span class="news-category">${escapeHtml(item.category || 'Notícias')}</span>
+    const author = escapeHtml(item.author || 'Admin BDA');
+    const initial = escapeHtml(String(item.author || 'BDA').trim().charAt(0).toUpperCase() || 'B');
+    return `<article class="card news-card${compact ? ' compact' : ''}" data-news-open="${escapeHtml(item.id)}" tabindex="0" role="button" aria-label="Abrir notícia: ${escapeHtml(item.title)}">
+      <div class="news-cover ${item.image ? 'has-image' : ''}">
+        ${item.image ? `<img src="${escapeHtml(item.image)}" alt="Imagem completa de ${escapeHtml(item.title)}" loading="lazy" decoding="async">` : ''}
+        <div class="news-cover-badges"><span class="news-category">${escapeHtml(item.category || 'Notícias')}</span>
         ${item.featured ? '<span class="news-featured">Destaque</span>' : ''}
-        ${item.published === false ? '<span class="news-draft">Rascunho</span>' : ''}
-        ${item.image ? '' : '<b class="news-mark">BDA</b>'}
+        ${item.published === false ? '<span class="news-draft">Rascunho</span>' : ''}</div>
+        ${item.image ? '' : '<b class="news-mark">BDA<small>NEWS</small></b>'}
       </div>
       <div class="news-body">
-        <time>${dateText(item.publishedAt)}</time>
+        <div class="news-kicker"><time>${dateText(item.publishedAt)}</time><span>${readingTime(item.content)} de leitura</span></div>
         <h3>${escapeHtml(item.title)}</h3>
         <p>${escapeHtml(item.summary)}</p>
-        <div class="news-meta"><span>${escapeHtml(item.author || 'Admin BDA')}</span><span>${readingTime(item.content)}</span></div>
+        <div class="news-meta"><span class="news-byline"><i>${initial}</i><b>${author}</b></span><span class="news-card-arrow" aria-hidden="true">↗</span></div>
         ${isAdmin() && !compact ? `<div class="news-admin"><button data-news-edit="${escapeHtml(item.id)}">Editar</button><button class="danger" data-news-delete="${escapeHtml(item.id)}">Excluir</button></div>` : ''}
       </div>
     </article>`;
@@ -120,7 +126,7 @@
     }
     if (!$('#newsGrid', page)) {
       page.className = 'page news-page';
-      page.innerHTML = `<div class="news-page-head"><div><span class="eyebrow">Central de informação</span><h1>Notícias BDA</h1><p>Resultados, comunicados, campeonatos e histórias dos clubes.</p></div><button class="primary" id="newsCreateBtn" hidden>+ Publicar notícia</button></div><div id="newsLead"></div><div class="news-filters" id="newsFilters"></div><div class="news-grid" id="newsGrid"></div>`;
+      page.innerHTML = `<section class="news-page-head"><div class="news-head-copy"><span class="eyebrow">Redação oficial do Clã BDA</span><h1>Central de notícias</h1><p>Resultados, decisões, bastidores e histórias que movimentam a Arena BDA.</p><div class="news-head-actions"><button class="primary" id="newsCreateBtn" hidden>+ Publicar notícia</button><span class="news-live"><i></i>Arquivo oficial atualizado</span></div></div><aside class="news-desk-stats" id="newsDeskStats"></aside></section><div id="newsLead"></div><section class="news-discovery"><header><div><span class="eyebrow">Acompanhe a Arena</span><h2>Últimas da BDA</h2></div><label class="news-search"><span>⌕</span><input id="newsSearch" type="search" placeholder="Buscar notícia, clube ou campeonato" autocomplete="off"></label></header><div class="news-filters" id="newsFilters"></div></section><div class="news-grid" id="newsGrid"></div>`;
     }
 
     if (!nav.querySelector('[data-go="news"]')) {
@@ -145,6 +151,15 @@
     return true;
   }
 
+  function renderStats() {
+    const published = news.filter(item => item.published !== false);
+    const categories = new Set(published.map(item => item.category).filter(Boolean));
+    const latest = sorted(published)[0];
+    const root = $('#newsDeskStats');
+    if (!root) return;
+    root.innerHTML = `<article><b>${published.length}</b><span>publicadas</span></article><article><b>${categories.size}</b><span>editorias</span></article><article><b>${latest ? dateText(latest.publishedAt).replace(/ de /g, ' ') : '—'}</b><span>última atualização</span></article>`;
+  }
+
   function renderFilters() {
     $('#newsFilters').innerHTML = ['Todas', ...CATEGORIES].map(name => `<button class="${category === name ? 'active' : ''}" data-news-filter="${name}">${name}</button>`).join('');
   }
@@ -152,12 +167,28 @@
   function renderLead() {
     const list = isAdmin() ? sorted() : sorted(news.filter(item => item.published !== false));
     const item = list.find(entry => entry.featured) || list[0];
-    $('#newsLead').innerHTML = item ? `<article class="news-lead" data-news-open="${escapeHtml(item.id)}"${cover(item)}><div><div class="news-labels"><span class="news-category">${escapeHtml(item.category)}</span>${item.published === false ? '<span class="news-draft">Rascunho</span>' : ''}</div><time>${dateText(item.publishedAt)}</time><h2>${escapeHtml(item.title)}</h2><p>${escapeHtml(item.summary)}</p><button class="primary" data-news-open="${escapeHtml(item.id)}">Ler notícia</button></div>${item.image ? '' : '<b class="news-lead-mark">BDA<small>NEWS</small></b>'}</article>` : '<div class="empty">A primeira notícia publicada aparecerá aqui.</div>';
+    $('#newsLead').innerHTML = item ? `<article class="news-lead ${item.image ? 'has-image' : 'no-image'}" data-news-open="${escapeHtml(item.id)}">
+      <div class="news-lead-media">
+        ${item.image ? `<img src="${escapeHtml(item.image)}" alt="Imagem completa de ${escapeHtml(item.title)}" decoding="async" fetchpriority="high">` : ''}
+        <div class="news-labels"><span class="news-category">${escapeHtml(item.category)}</span>${item.published === false ? '<span class="news-draft">Rascunho</span>' : ''}</div>
+        ${item.image ? '' : '<b class="news-lead-mark">BDA<small>NEWS</small></b>'}
+      </div>
+      <div class="news-lead-copy">
+        <span class="news-lead-kicker"><i></i>Notícia em destaque</span>
+        <time>${dateText(item.publishedAt)} • ${readingTime(item.content)} de leitura</time>
+        <h2>${escapeHtml(item.title)}</h2>
+        <p>${escapeHtml(item.summary)}</p>
+        <footer><span>Por <strong>${escapeHtml(item.author || 'Admin BDA')}</strong></span><button class="primary" data-news-open="${escapeHtml(item.id)}">Ler matéria <b>→</b></button></footer>
+      </div>
+    </article>` : '<div class="empty">A primeira notícia publicada aparecerá aqui.</div>';
   }
 
   function renderGrid() {
     const list = visible();
-    $('#newsGrid').innerHTML = list.length ? list.map(item => card(item)).join('') : '<div class="empty news-empty">Nenhuma notícia nesta categoria.</div>';
+    const message = searchTerm
+      ? `Nenhum resultado para “${escapeHtml(searchTerm)}”.`
+      : 'Nenhuma notícia nesta categoria.';
+    $('#newsGrid').innerHTML = list.length ? list.map(item => card(item)).join('') : `<div class="empty news-empty"><b>${message}</b><span>Tente outra categoria ou termo de busca.</span></div>`;
   }
 
   function renderHome() {
@@ -168,6 +199,7 @@
   function render() {
     if (!build()) return;
     $('#newsCreateBtn').hidden = !isAdmin();
+    renderStats();
     renderFilters();
     renderLead();
     renderGrid();
@@ -438,7 +470,17 @@
       if (open) { event.preventDefault(); openArticle(open.dataset.newsOpen); }
     });
     $('#newsCreateBtn')?.addEventListener('click', () => openEditor());
+    $('#newsSearch')?.addEventListener('input', event => {
+      searchTerm = event.currentTarget.value;
+      renderGrid();
+    });
     document.addEventListener('keydown', event => {
+      const card = event.target.closest?.('.news-card[data-news-open]');
+      if (card && (event.key === 'Enter' || event.key === ' ')) {
+        event.preventDefault();
+        openArticle(card.dataset.newsOpen);
+        return;
+      }
       if (event.key !== 'Escape') return;
       if ($('#newsEditorModal')?.classList.contains('show')) closeEditor();
       else closeArticle();
@@ -450,14 +492,21 @@
     const style = document.createElement('style');
     style.id = 'newsBdaStyles';
     style.textContent = `
-      .bottom-nav.has-news{grid-template-columns:repeat(6,minmax(0,1fr))}.news-page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:4px 2px 18px}.news-page-head h1{margin:6px 0 4px;font-size:clamp(38px,8vw,62px)}.news-page-head p{margin:0;color:var(--muted);font-size:12px}
-      .news-lead{position:relative;overflow:hidden;min-height:350px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;padding:28px;border:1px solid var(--line-strong);border-radius:28px;background:radial-gradient(circle at 82% 20%,rgba(242,215,125,.34),transparent 24%),linear-gradient(145deg,#183a26,#07100c);background-position:center;background-size:cover;box-shadow:var(--shadow);cursor:pointer}.news-lead:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 10%,rgba(3,8,6,.12) 38%,rgba(3,8,6,.92))}.news-lead>div,.news-lead-mark{position:relative;z-index:2}.news-lead>div{max-width:720px}.news-labels{display:flex;gap:7px}.news-lead time{display:block;margin-top:14px;color:#bdc9c0;font-size:10px}.news-lead h2{margin:8px 0 7px;font-size:clamp(34px,7vw,58px);line-height:.92;text-transform:uppercase}.news-lead p{max-width:650px;margin:0;color:#d4ddd7;font-size:12px;line-height:1.55}.news-lead button{margin-top:17px}.news-lead-mark{color:rgba(255,255,255,.13);font:900 76px/.7 "Barlow Condensed",sans-serif;text-align:center}.news-lead-mark small{display:block;font-size:23px;letter-spacing:.18em}
-      .news-category,.news-featured,.news-draft{display:inline-flex;align-items:center;min-height:25px;padding:0 9px;border-radius:999px;font-size:7px;font-weight:900;letter-spacing:.09em;text-transform:uppercase}.news-category{color:#171107;background:linear-gradient(135deg,var(--gold-soft),var(--gold))}.news-featured{color:#a8f1c4;background:rgba(79,223,143,.13);border:1px solid rgba(79,223,143,.24)}.news-draft{color:#ffcf78;background:rgba(255,188,65,.13);border:1px solid rgba(255,188,65,.22)}
-      .news-filters{display:flex;gap:7px;overflow-x:auto;margin:18px 0 12px;padding-bottom:4px;scrollbar-width:none}.news-filters button{flex:0 0 auto;min-height:36px;padding:0 12px;border:1px solid var(--line);border-radius:999px;color:var(--muted);background:rgba(255,255,255,.035);font-size:8px;font-weight:900;text-transform:uppercase}.news-filters button.active{color:#171107;border-color:var(--gold);background:linear-gradient(135deg,var(--gold-soft),var(--gold))}
-      .news-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.news-card{overflow:hidden;padding:0;cursor:pointer}.news-cover{position:relative;height:150px;padding:11px;display:flex;gap:7px;background:radial-gradient(circle at 76% 25%,rgba(242,215,125,.34),transparent 25%),linear-gradient(145deg,#173923,#07100c);background-position:center;background-size:cover}.news-mark{position:absolute;right:13px;bottom:5px;color:rgba(255,255,255,.13);font:900 58px "Barlow Condensed",sans-serif}.news-body{padding:14px}.news-body time{color:var(--muted);font-size:8px}.news-card h3{margin:7px 0 6px;font-size:23px;line-height:.98;text-transform:uppercase}.news-card p{display:-webkit-box;overflow:hidden;margin:0;color:#b9c7be;font-size:10px;line-height:1.5;-webkit-line-clamp:3;-webkit-box-orient:vertical}.news-meta{display:flex;justify-content:space-between;gap:8px;margin-top:13px;padding-top:10px;border-top:1px solid var(--line);color:var(--muted);font-size:8px}.news-admin{display:flex;gap:7px;margin-top:11px}.news-admin button{flex:1;min-height:35px;border:1px solid var(--line);border-radius:10px;color:var(--text);background:rgba(255,255,255,.045);font-size:8px;font-weight:900;text-transform:uppercase}.news-home{margin-top:25px}.news-home-track{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(240px,32%);gap:11px;overflow-x:auto;padding:2px 2px 10px}.news-card.compact .news-cover{height:112px}.news-card.compact h3{font-size:20px}.news-card.compact p{display:none}.news-empty{grid-column:1/-1}
-      #newsArticleModal,#newsEditorModal{z-index:92000;place-items:center}.news-article{position:relative;width:min(100%,820px);max-height:calc(100dvh - 24px);padding:0;overflow:auto}.news-close{width:43px;height:43px;padding:0;border:1px solid rgba(255,255,255,.16);border-radius:13px;color:#fff;background:rgba(3,8,6,.82);font-size:24px}.news-article>.news-close{position:absolute;right:13px;top:13px;z-index:3}.news-article>img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover}.news-article-copy{padding:22px}.news-article-top{display:flex;justify-content:space-between;gap:10px}.news-article-top time{color:var(--muted);font-size:9px}.news-article h2{margin:13px 0 8px;font-size:clamp(34px,7vw,54px);line-height:.92;text-transform:uppercase}.news-summary{color:#d8e1db;font-size:14px;line-height:1.55}.news-author{padding:0 0 14px;border-bottom:1px solid var(--line);color:var(--muted);font-size:10px}.news-article-text p{margin:16px 0;color:#d8e1db;font-size:13px;line-height:1.75}.news-article-actions{display:flex;justify-content:flex-end;gap:8px;padding-top:15px;border-top:1px solid var(--line)}
-      .news-editor{width:min(100%,760px);max-height:calc(100dvh - 24px);overflow:auto}.news-editor-head{display:flex;justify-content:space-between;gap:13px;margin-bottom:16px}.news-editor-head h2{margin:4px 0 0;font-size:34px;text-transform:uppercase}.news-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.news-form-grid .wide{grid-column:1/-1}.news-form-grid textarea{min-height:82px}.news-form-grid .news-text{min-height:210px}.news-image-field{display:grid;gap:9px;padding:12px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.025)}.news-image-field>span{color:var(--muted);font-size:9px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.news-image-preview{overflow:hidden;display:grid;place-items:center;aspect-ratio:16/8;border:1px dashed var(--line-strong);border-radius:13px;background:#020704}.news-image-preview img{display:block;width:100%;height:100%;object-fit:cover}.news-image-preview div{text-align:center}.news-image-preview b,.news-image-preview small{display:block}.news-image-preview b{font-size:11px}.news-image-preview small,.news-image-field>small{margin-top:4px;color:var(--muted);font-size:8px;text-transform:none;letter-spacing:0}.news-image-actions{display:grid;grid-template-columns:1fr auto;gap:8px}.news-upload-button{display:grid;place-items:center;min-height:44px;cursor:pointer}.news-upload-button input{position:absolute;width:1px;height:1px;overflow:hidden;opacity:0}.news-image-actions button{min-height:44px}.news-image-actions button:disabled{opacity:.4}.news-image-url summary{padding:8px 0;color:var(--gold-soft);cursor:pointer;font-size:8px;font-weight:900;text-transform:uppercase}.news-image-url input{margin-top:5px}.news-check{display:flex;grid-template-columns:auto 1fr;align-items:center;gap:9px;min-height:45px;padding:10px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.03)}.news-check input{width:20px;height:20px;margin:0}.news-check span{color:var(--text);font-size:10px;text-transform:none}.news-editor-actions{position:sticky;bottom:-20px;display:flex;justify-content:flex-end;gap:8px;margin:16px -20px -20px;padding:13px 20px calc(13px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:rgba(16,29,22,.96)}
-      @media(max-width:820px){.news-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.news-home-track{grid-auto-columns:minmax(230px,60%)}}@media(max-width:560px){:root{--nav-h:82px}.bottom-nav.has-news{width:calc(100% - 12px);bottom:6px;padding:6px;grid-template-columns:repeat(6,minmax(45px,1fr))}.bottom-nav.has-news .nav-btn{font-size:7px}.bottom-nav.has-news .nav-btn i{font-size:18px}.news-page-head{display:grid;align-items:start}.news-page-head button{width:100%}.news-lead{min-height:330px;padding:20px;grid-template-columns:1fr}.news-lead-mark{display:none}.news-grid{grid-template-columns:1fr}.news-cover{height:170px}.news-home-track{grid-auto-columns:minmax(250px,84%)}.news-form-grid{grid-template-columns:1fr}.news-form-grid .wide{grid-column:auto}.news-article-top{display:grid}.news-article-actions,.news-editor-actions{display:grid}.news-article-actions button,.news-editor-actions button{width:100%}}@media(max-width:360px){.bottom-nav.has-news .nav-btn span{font-size:6px}.bottom-nav.has-news .nav-btn i{font-size:16px}}
+      .bottom-nav.has-news{grid-template-columns:repeat(6,minmax(0,1fr))}
+      .news-page{--news-blue:#7eb7ff;--news-ink:#07100c}.news-page-head{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(310px,.75fr);gap:20px;align-items:end;min-height:330px;margin:4px 0 18px;padding:clamp(24px,4vw,44px);border:1px solid rgba(126,183,255,.22);border-radius:30px;background:radial-gradient(circle at 78% 18%,rgba(126,183,255,.22),transparent 27%),radial-gradient(circle at 15% 100%,rgba(79,223,143,.13),transparent 31%),linear-gradient(140deg,#102d21 0%,#081711 52%,#07100c 100%);box-shadow:0 24px 70px rgba(0,0,0,.34)}
+      .news-page-head:after{content:"BDA";position:absolute;right:-18px;top:-42px;color:rgba(255,255,255,.035);font:900 clamp(140px,20vw,260px)/1 "Barlow Condensed",sans-serif;letter-spacing:-.05em;pointer-events:none}.news-head-copy,.news-desk-stats{position:relative;z-index:1}.news-page-head h1{max-width:760px;margin:9px 0 10px;font-size:clamp(54px,8vw,92px);line-height:.82;letter-spacing:-.025em;text-transform:uppercase;text-wrap:balance}.news-page-head p{max-width:650px;margin:0;color:#cbd9d0;font-size:13px;line-height:1.6}.news-head-actions{display:flex;align-items:center;gap:13px;margin-top:21px}.news-live{display:inline-flex;align-items:center;gap:8px;color:#b8c8bd;font-size:8px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}.news-live i{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 5px rgba(79,223,143,.11)}
+      .news-desk-stats{display:grid;gap:8px}.news-desk-stats article{display:grid;grid-template-columns:minmax(88px,auto) 1fr;align-items:center;gap:12px;min-height:78px;padding:13px 15px;border:1px solid rgba(255,255,255,.1);border-radius:17px;background:rgba(2,8,5,.34);backdrop-filter:blur(12px)}.news-desk-stats b{color:#f2f7f3;font:800 clamp(24px,3vw,38px)/1 "Barlow Condensed",sans-serif;text-transform:uppercase}.news-desk-stats span{color:#91a59a;font-size:8px;font-weight:800;letter-spacing:.09em;text-transform:uppercase}
+      .news-lead{overflow:hidden;display:grid;grid-template-columns:minmax(0,1.08fr) minmax(330px,.92fr);min-height:440px;border:1px solid var(--line);border-radius:28px;background:linear-gradient(145deg,rgba(17,34,24,.98),rgba(5,12,8,.99));box-shadow:0 18px 55px rgba(0,0,0,.28)}.news-lead-media{position:relative;overflow:hidden;min-height:360px;padding:18px;background:radial-gradient(circle at 70% 25%,rgba(242,215,125,.28),transparent 27%),linear-gradient(145deg,#193b28,#08110c)}.news-lead-media>img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#020503}.news-lead-media:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(3,8,6,.04),rgba(3,8,6,.55))}.news-labels,.news-lead-mark{position:relative;z-index:1}.news-labels{display:flex;flex-wrap:wrap;gap:7px}.news-lead-mark{position:absolute;right:24px;bottom:14px;color:rgba(255,255,255,.14);font:900 clamp(72px,10vw,120px)/.7 "Barlow Condensed",sans-serif;text-align:center}.news-lead-mark small{display:block;font-size:.28em;letter-spacing:.22em}.news-lead-copy{display:grid;align-content:center;padding:clamp(24px,4vw,46px)}.news-lead-kicker{display:flex;align-items:center;gap:8px;color:var(--gold-soft);font-size:8px;font-weight:900;letter-spacing:.13em;text-transform:uppercase}.news-lead-kicker i{width:24px;height:2px;background:var(--gold)}.news-lead-copy time{display:block;margin-top:16px;color:var(--muted);font-size:9px}.news-lead h2{margin:10px 0 11px;font-size:clamp(39px,5vw,64px);line-height:.9;text-transform:uppercase;text-wrap:balance}.news-lead p{margin:0;color:#c7d4cc;font-size:12px;line-height:1.65}.news-lead footer{display:flex;align-items:center;justify-content:space-between;gap:13px;margin-top:24px;padding-top:16px;border-top:1px solid var(--line)}.news-lead footer>span{color:var(--muted);font-size:9px}.news-lead footer strong{color:var(--text)}.news-lead footer button b{margin-left:9px}
+      .news-category,.news-featured,.news-draft{display:inline-flex;align-items:center;min-height:27px;padding:0 10px;border-radius:999px;font-size:7px;font-weight:900;letter-spacing:.09em;text-transform:uppercase}.news-category{color:#171107;background:linear-gradient(135deg,var(--gold-soft),var(--gold))}.news-featured{color:#b7f4cd;background:rgba(79,223,143,.14);border:1px solid rgba(79,223,143,.28)}.news-draft{color:#ffd482;background:rgba(255,188,65,.14);border:1px solid rgba(255,188,65,.25)}
+      .news-discovery{margin:25px 0 12px}.news-discovery>header{display:flex;align-items:end;justify-content:space-between;gap:14px}.news-discovery h2{margin:5px 0 0;font-size:clamp(31px,4vw,45px);line-height:.95;text-transform:uppercase}.news-search{position:relative;display:block;width:min(350px,100%);font-size:0}.news-search>span{position:absolute;left:14px;top:50%;z-index:1;color:var(--muted);font-size:18px;transform:translateY(-50%)}.news-search input{height:47px;padding:0 14px 0 43px;border-color:rgba(126,183,255,.18);border-radius:15px;background:rgba(5,13,9,.82);font-size:9px;text-transform:none}
+      .news-filters{display:flex;gap:7px;overflow-x:auto;margin:14px 0 0;padding-bottom:5px;scrollbar-width:none}.news-filters::-webkit-scrollbar{display:none}.news-filters button{flex:0 0 auto;min-height:38px;padding:0 13px;border:1px solid var(--line);border-radius:999px;color:var(--muted);background:rgba(255,255,255,.035);font-size:8px;font-weight:900;text-transform:uppercase;transition:.18s ease}.news-filters button:hover{color:var(--text);border-color:rgba(126,183,255,.32);transform:translateY(-1px)}.news-filters button.active{color:#08110c;border-color:var(--gold);background:linear-gradient(135deg,var(--gold-soft),var(--gold))}
+      .news-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.news-card{overflow:hidden;display:grid;grid-template-rows:auto 1fr;min-height:100%;padding:0;cursor:pointer;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}.news-card:hover,.news-card:focus-visible{transform:translateY(-5px);border-color:rgba(126,183,255,.32);box-shadow:0 19px 45px rgba(0,0,0,.31)}.news-card:focus-visible{outline:2px solid var(--gold-soft);outline-offset:3px}.news-cover{position:relative;overflow:hidden;height:178px;padding:12px;background:radial-gradient(circle at 76% 25%,rgba(242,215,125,.30),transparent 25%),linear-gradient(145deg,#173923,#07100c)}.news-cover>img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#020503}.news-cover:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(3,8,6,.02),rgba(3,8,6,.66))}.news-cover-badges,.news-mark{position:relative;z-index:1}.news-cover-badges{display:flex;flex-wrap:wrap;gap:6px}.news-mark{position:absolute;right:13px;bottom:10px;color:rgba(255,255,255,.16);font:900 55px/.72 "Barlow Condensed",sans-serif;text-align:center}.news-mark small{display:block;font-size:14px;letter-spacing:.18em}.news-body{display:flex;flex-direction:column;padding:16px}.news-kicker{display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--muted);font-size:7px;font-weight:800;text-transform:uppercase}.news-kicker span{color:#91b7df}.news-card h3{margin:9px 0 8px;font-size:26px;line-height:.94;text-transform:uppercase;text-wrap:balance}.news-card p{display:-webkit-box;overflow:hidden;margin:0;color:#b9c7be;font-size:10px;line-height:1.55;-webkit-line-clamp:3;-webkit-box-orient:vertical}.news-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:auto;padding-top:15px;border-top:1px solid var(--line)}.news-byline{display:flex;align-items:center;gap:8px;min-width:0}.news-byline i{display:grid;place-items:center;width:28px;height:28px;border:1px solid rgba(126,183,255,.23);border-radius:50%;color:#bcd7f5;background:rgba(126,183,255,.08);font-style:normal;font-size:8px}.news-byline b{overflow:hidden;color:var(--muted);font-size:8px;text-overflow:ellipsis;white-space:nowrap}.news-card-arrow{display:grid;place-items:center;width:31px;height:31px;border:1px solid var(--line);border-radius:10px;color:var(--gold-soft);background:rgba(255,255,255,.03);font-size:13px}.news-admin{display:flex;gap:7px;margin-top:11px}.news-admin button{flex:1;min-height:35px;border:1px solid var(--line);border-radius:10px;color:var(--text);background:rgba(255,255,255,.045);font-size:8px;font-weight:900;text-transform:uppercase}.news-home{margin-top:27px}.news-home-track{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(250px,32%);gap:11px;overflow-x:auto;padding:3px 2px 11px}.news-card.compact .news-cover{height:126px}.news-card.compact h3{font-size:21px}.news-card.compact p{display:none}.news-empty{grid-column:1/-1}.news-empty b,.news-empty span{display:block}.news-empty span{margin-top:7px;font-size:9px}
+      #newsArticleModal,#newsEditorModal{z-index:92000;place-items:center}.news-article{position:relative;width:min(100%,860px);max-height:calc(100dvh - 24px);padding:0;overflow:auto;border-radius:26px}.news-close{width:43px;height:43px;padding:0;border:1px solid rgba(255,255,255,.16);border-radius:13px;color:#fff;background:rgba(3,8,6,.82);font-size:24px}.news-article>.news-close{position:absolute;right:13px;top:13px;z-index:3}.news-article>img{display:block;width:100%;height:auto;max-height:72vh;object-fit:contain;background:#020503}.news-article-copy{max-width:760px;margin:0 auto;padding:clamp(22px,4vw,44px)}.news-article-top{display:flex;justify-content:space-between;gap:10px}.news-article-top time{color:var(--muted);font-size:9px}.news-article h2{margin:15px 0 11px;font-size:clamp(42px,7vw,68px);line-height:.88;text-transform:uppercase;text-wrap:balance}.news-summary{color:#d8e1db;font-size:15px;line-height:1.65}.news-author{padding:3px 0 17px;border-bottom:1px solid var(--line);color:var(--muted);font-size:10px}.news-article-text{max-width:700px}.news-article-text p{margin:20px 0;color:#d8e1db;font-size:14px;line-height:1.82}.news-article-actions{display:flex;justify-content:flex-end;gap:8px;padding-top:18px;border-top:1px solid var(--line)}
+      .news-editor{width:min(100%,760px);max-height:calc(100dvh - 24px);overflow:auto}.news-editor-head{display:flex;justify-content:space-between;gap:13px;margin-bottom:16px}.news-editor-head h2{margin:4px 0 0;font-size:34px;text-transform:uppercase}.news-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.news-form-grid .wide{grid-column:1/-1}.news-form-grid textarea{min-height:82px}.news-form-grid .news-text{min-height:210px}.news-image-field{display:grid;gap:9px;padding:12px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.025)}.news-image-field>span{color:var(--muted);font-size:9px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.news-image-preview{overflow:hidden;display:grid;place-items:center;aspect-ratio:16/8;border:1px dashed var(--line-strong);border-radius:13px;background:#020704}.news-image-preview img{display:block;width:100%;height:100%;object-fit:contain;background:#020503}.news-image-preview div{text-align:center}.news-image-preview b,.news-image-preview small{display:block}.news-image-preview b{font-size:11px}.news-image-preview small,.news-image-field>small{margin-top:4px;color:var(--muted);font-size:8px;text-transform:none;letter-spacing:0}.news-image-actions{display:grid;grid-template-columns:1fr auto;gap:8px}.news-upload-button{display:grid;place-items:center;min-height:44px;cursor:pointer}.news-upload-button input{position:absolute;width:1px;height:1px;overflow:hidden;opacity:0}.news-image-actions button{min-height:44px}.news-image-actions button:disabled{opacity:.4}.news-image-url summary{padding:8px 0;color:var(--gold-soft);cursor:pointer;font-size:8px;font-weight:900;text-transform:uppercase}.news-image-url input{margin-top:5px}.news-check{display:flex;grid-template-columns:auto 1fr;align-items:center;gap:9px;min-height:45px;padding:10px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.03)}.news-check input{width:20px;height:20px;margin:0}.news-check span{color:var(--text);font-size:10px;text-transform:none}.news-editor-actions{position:sticky;bottom:-20px;display:flex;justify-content:flex-end;gap:8px;margin:16px -20px -20px;padding:13px 20px calc(13px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:rgba(16,29,22,.96)}
+      @media(max-width:900px){.news-page-head{grid-template-columns:1fr}.news-desk-stats{grid-template-columns:repeat(3,minmax(0,1fr))}.news-desk-stats article{grid-template-columns:1fr;gap:4px}.news-lead{grid-template-columns:1fr}.news-lead-media{min-height:330px}.news-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.news-home-track{grid-auto-columns:minmax(230px,60%)}}
+      @media(max-width:600px){:root{--nav-h:82px}.bottom-nav.has-news{width:calc(100% - 12px);bottom:6px;padding:6px;grid-template-columns:repeat(6,minmax(45px,1fr))}.bottom-nav.has-news .nav-btn{font-size:7px}.bottom-nav.has-news .nav-btn i{font-size:18px}.news-page-head{min-height:auto;padding:25px 19px;border-radius:24px}.news-page-head h1{font-size:58px}.news-head-actions{align-items:stretch;flex-direction:column}.news-head-actions button{width:100%}.news-desk-stats{grid-template-columns:1fr}.news-desk-stats article{grid-template-columns:92px 1fr;min-height:66px}.news-lead{border-radius:22px}.news-lead-media{min-height:235px}.news-lead-copy{padding:22px 18px}.news-lead h2{font-size:42px}.news-lead footer{align-items:stretch;flex-direction:column}.news-lead footer button{width:100%}.news-discovery>header{align-items:stretch;flex-direction:column}.news-search{width:100%}.news-grid{grid-template-columns:1fr}.news-cover{height:190px}.news-home-track{grid-auto-columns:minmax(255px,86%)}.news-form-grid{grid-template-columns:1fr}.news-form-grid .wide{grid-column:auto}.news-article-top{display:grid}.news-article-actions,.news-editor-actions{display:grid}.news-article-actions button,.news-editor-actions button{width:100%}}
+      @media(max-width:360px){.bottom-nav.has-news .nav-btn span{font-size:6px}.bottom-nav.has-news .nav-btn i{font-size:16px}.news-page-head h1{font-size:49px}}
+      @media(prefers-reduced-motion:reduce){.news-card,.news-filters button{transition:none}.news-card:hover,.news-card:focus-visible,.news-filters button:hover{transform:none}}
     `;
     document.head.append(style);
   }
