@@ -38,7 +38,7 @@
     ],
     news: [
       './noticias-bootstrap.js?v=20260727-1',
-      './noticias-bda.js?v=20260801-3',
+      './noticias-bda.js?v=20260805-4',
       './noticias-nav-fix.js?v=20260727-1'
     ],
     tournament: [
