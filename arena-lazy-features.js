@@ -25,7 +25,7 @@
       './copas-flash.js?v=20260803-2'
     ],
     community: [
-      './comunidade-social.js?v=20260803-2'
+      './comunidade-social.js?v=20260805-2'
     ],
     feedback: [
       './feedback-bda.js?v=20260803-1'
