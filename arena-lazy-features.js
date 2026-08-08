@@ -36,7 +36,7 @@
     news: [
       './noticias-bootstrap.js?v=20260727-1',
       './noticias-bda.js?v=20260801-3',
-      './noticias-nav-fix.js?v=20260808-1'
+      './noticias-nav-fix.js?v=20260808-2'
     ],
     tournament: [
       './confrontos-copa-grifo.js',
