@@ -1,7 +1,11 @@
 (() => {
   'use strict';
 
-  const ORDER = ['home', 'news', 'history', 'tournament', 'flash', 'season', 'registrations', 'champions', 'teams', 'community', 'feedback'];
+  const PRIMARY_PAGES = ['home', 'tournament', 'registrations', 'champions', 'teams', 'community'];
+  const SECONDARY_PAGES = ['news', 'history', 'flash', 'season', 'feedback'];
+  const MOBILE_PRIMARY_PAGES = ['home', 'tournament', 'registrations', 'champions'];
+  const MOBILE_SECONDARY_PAGES = ['news', 'history', 'flash', 'season', 'teams', 'community', 'feedback'];
+  const ORDER = [...PRIMARY_PAGES, ...SECONDARY_PAGES];
   const META = {
     home: ['⌂', 'Início', 'Visão geral da arena'],
     news: ['📰', 'Notícias', 'Comunicados e novidades'],
@@ -78,12 +82,42 @@
     const isOrdered = orderedButtons.length === currentButtons.length && orderedButtons.every((button, index) => button === currentButtons[index]);
     if (!isOrdered) orderedButtons.forEach(button => nav.append(button));
 
+    orderedButtons.forEach(button => {
+      button.classList.toggle('arena-side-secondary', SECONDARY_PAGES.includes(button.dataset.go));
+    });
+
+    let more = $('.arena-side-more-toggle', nav);
+    if (!more) {
+      more = document.createElement('button');
+      more.type = 'button';
+      more.className = 'nav-btn arena-nav-item arena-side-more-toggle';
+      more.innerHTML = '<i>⋯</i><span class="arena-nav-copy"><b>Mais</b><small>5 áreas</small></span>';
+      more.addEventListener('click', () => setSidebarMore(!nav.classList.contains('arena-side-more-open')));
+    }
+    more.setAttribute('aria-label', 'Mostrar mais áreas');
+    const firstSecondary = orderedButtons.find(button => button.classList.contains('arena-side-secondary'));
+    if (firstSecondary) firstSecondary.before(more);
+    const secondaryGroup = orderedButtons.filter(button => button.classList.contains('arena-side-secondary'));
+    secondaryGroup.forEach((button, index) => {
+      button.id = `arenaSecondaryNavigation${index + 1}`;
+    });
+    more.setAttribute('aria-controls', secondaryGroup.map(button => button.id).join(' '));
+
     if (!$('.arena-side-footer', nav)) {
       const footer = document.createElement('div');
       footer.className = 'arena-side-footer';
       footer.innerHTML = '<span>●</span><div><b>Arena online</b><small>arenabda.com.br</small></div>';
       nav.append(footer);
     }
+  }
+
+  function setSidebarMore(open) {
+    const nav = $('.arena-side-nav');
+    const more = $('.arena-side-more-toggle', nav || document);
+    if (!nav || !more) return;
+    nav.classList.toggle('arena-side-more-open', open);
+    more.setAttribute('aria-expanded', open ? 'true' : 'false');
+    more.setAttribute('aria-label', open ? 'Ocultar áreas adicionais' : 'Mostrar mais áreas');
   }
 
   function mobileItem(page) {
@@ -103,7 +137,7 @@
       mobileNav = document.createElement('nav');
       mobileNav.className = 'arena-mobile-nav';
       mobileNav.setAttribute('aria-label', 'Navegação móvel');
-      ['home', 'tournament', 'champions', 'news'].forEach(page => mobileNav.append(mobileItem(page)));
+      MOBILE_PRIMARY_PAGES.forEach(page => mobileNav.append(mobileItem(page)));
 
       const more = document.createElement('button');
       more.type = 'button';
@@ -127,7 +161,7 @@
           <footer><img src="${iconUrl()}" alt="Grifo"><span><b>Clã BDA</b><small>Todos os campeonatos em uma só arena.</small></span></footer>
         </section>`;
 
-      ['registrations', 'flash', 'season', 'history', 'teams', 'community', 'feedback'].forEach(page => {
+      MOBILE_SECONDARY_PAGES.forEach(page => {
         const [icon, label, description] = META[page];
         const button = document.createElement('button');
         button.type = 'button';
@@ -160,6 +194,8 @@
   function syncActive() {
     const page = currentPage();
 
+    setSidebarMore(SECONDARY_PAGES.includes(page));
+
     $$('.arena-side-nav .nav-btn[data-go]').forEach(button => {
       const active = button.dataset.go === page;
       button.classList.toggle('active', active);
@@ -174,9 +210,16 @@
 
     const more = $('.arena-mobile-item[data-mobile-more]');
     if (more) {
-      const active = ['flash', 'season', 'news', 'history', 'champions', 'teams', 'community', 'feedback'].includes(page);
+      const active = MOBILE_SECONDARY_PAGES.includes(page);
       more.classList.toggle('active', active);
       active ? more.setAttribute('aria-current', 'page') : more.removeAttribute('aria-current');
+    }
+
+    const sideMore = $('.arena-side-more-toggle');
+    if (sideMore) {
+      const active = SECONDARY_PAGES.includes(page);
+      sideMore.classList.toggle('active', active);
+      active ? sideMore.setAttribute('aria-current', 'page') : sideMore.removeAttribute('aria-current');
     }
   }
 
@@ -221,6 +264,7 @@
       .arena-side-brand b,.arena-side-brand small{display:block}.arena-side-brand b{font:800 21px/1 "Barlow Condensed",sans-serif;letter-spacing:.05em;text-transform:uppercase}.arena-side-brand small{margin-top:5px;color:var(--gold-soft);font-size:8px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
       .arena-side-heading{display:block;padding:8px 10px 3px;color:var(--muted);font-size:7px;font-weight:900;letter-spacing:.17em;text-transform:uppercase}
       .arena-side-nav .nav-btn{position:relative;display:grid!important;grid-template-columns:40px 1fr!important;align-items:center!important;justify-items:stretch!important;gap:10px!important;width:100%!important;min-height:54px!important;padding:7px 9px!important;border:1px solid transparent!important;border-radius:15px!important;color:var(--muted)!important;background:transparent!important;text-align:left!important;transition:transform .16s ease,border-color .16s ease,background .16s ease,color .16s ease!important}
+      .arena-side-nav .arena-side-secondary{display:none!important}.arena-side-nav.arena-side-more-open .arena-side-secondary{display:grid!important}
       .arena-side-nav .nav-btn:hover{transform:translateX(3px);color:var(--text)!important;border-color:var(--line)!important;background:rgba(255,255,255,.045)!important}
       .arena-side-nav .nav-btn i{display:grid!important;place-items:center!important;width:40px!important;height:40px!important;border:1px solid var(--line)!important;border-radius:12px!important;background:rgba(255,255,255,.04)!important;font-size:19px!important;line-height:1!important}
       .arena-nav-copy{display:block!important;min-width:0!important}.arena-nav-copy b,.arena-nav-copy small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.arena-nav-copy b{font-size:10px}.arena-nav-copy small{margin-top:4px;color:var(--muted);font-size:7px;font-weight:500}
@@ -252,7 +296,11 @@
   document.addEventListener('click', event => {
     if (event.target.closest('[data-go], [data-mobile-go], [data-sheet-go]')) setTimeout(syncActive, 20);
   });
-  document.addEventListener('keydown', event => event.key === 'Escape' && closeSheet());
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape') return;
+    closeSheet();
+    setSidebarMore(false);
+  });
   window.visualViewport?.addEventListener('resize', scheduleViewportSync, { passive: true });
   window.visualViewport?.addEventListener('scroll', scheduleViewportSync, { passive: true });
   window.addEventListener('resize', scheduleViewportSync, { passive: true });
