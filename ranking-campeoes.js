@@ -223,7 +223,6 @@
     styles.id = 'championRankingStyles';
     styles.textContent = `
       .champion-ranking{position:relative;overflow:hidden;margin:10px 0 28px;padding:clamp(17px,4vw,28px);border:1px solid var(--line-strong);border-radius:28px;background:radial-gradient(circle at 88% 5%,rgba(242,215,125,.15),transparent 27%),linear-gradient(145deg,rgba(19,43,29,.96),rgba(5,12,8,.96));box-shadow:var(--shadow)}
-      .champion-ranking-legacy-hidden{display:none!important}
       .champion-ranking:after{content:'★';position:absolute;right:-15px;top:-62px;color:var(--gold-soft);font-size:190px;opacity:.04;transform:rotate(11deg);pointer-events:none}
       .champion-ranking-header,.champion-ranking-list{position:relative;z-index:1}
       .champion-ranking-header{display:flex;align-items:end;justify-content:space-between;gap:20px;margin-bottom:20px;padding-bottom:17px;border-bottom:1px solid var(--line)}
@@ -245,6 +244,7 @@
       .champion-club-titles strong{color:var(--gold-soft);font:900 21px/1 'Barlow Condensed',sans-serif}
       .champion-club-titles span{color:#d7e0da;font-size:7px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
       .champion-club-editions{margin-top:10px}.champion-club-editions>span{display:block;color:var(--muted);font-size:6.5px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}.champion-club-editions p{margin:4px 0 0;color:#e1e7e3;font-size:8px;line-height:1.45}
+      .champion-banner-section-head{margin-top:32px;padding:0 4px}.champion-banner-section-head h2{font-size:clamp(25px,4vw,34px)}
       @keyframes championCardReveal{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
       @keyframes championShieldFloat{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-5px) rotate(1deg)}}
       @keyframes championShieldShine{0%,58%{transform:translateX(-48%) rotate(7deg)}78%,100%{transform:translateX(48%) rotate(7deg)}}
@@ -444,14 +444,6 @@
 
     installStyles();
 
-    const legacyHeader = page.querySelector(':scope > .section-head');
-    if (legacyHeader) {
-      legacyHeader.hidden = true;
-      legacyHeader.classList.add('champion-ranking-legacy-hidden');
-    }
-    championGrid.hidden = true;
-    championGrid.classList.add('champion-ranking-legacy-hidden');
-
     let ranking = document.getElementById('championRanking');
     if (!ranking) {
       ranking = document.createElement('section');
@@ -460,6 +452,25 @@
       ranking.setAttribute('aria-labelledby', 'championRankingTitle');
       page.insertBefore(ranking, championGrid);
     }
+
+    const bannerHeader = document.getElementById('addChampionBtn')?.closest('.section-head');
+    if (bannerHeader) {
+      bannerHeader.hidden = false;
+      bannerHeader.classList.remove('champion-ranking-legacy-hidden');
+      bannerHeader.classList.add('champion-banner-section-head');
+      const eyebrow = bannerHeader.querySelector('.eyebrow');
+      const heading = bannerHeader.querySelector('h2');
+      const description = bannerHeader.querySelector('p');
+      const addButton = bannerHeader.querySelector('#addChampionBtn');
+      if (eyebrow) eyebrow.textContent = 'Memória visual BDA';
+      if (heading) heading.textContent = 'Banners dos campeões';
+      if (description) description.textContent = 'Artes oficiais dos títulos conquistados na Arena BDA.';
+      if (addButton) addButton.textContent = 'Adicionar banner';
+      page.insertBefore(bannerHeader, championGrid);
+    }
+    championGrid.hidden = false;
+    championGrid.classList.remove('champion-ranking-legacy-hidden');
+    championGrid.setAttribute('aria-label', 'Banners dos campeões');
 
     ranking.innerHTML = `
       <header class="champion-ranking-header">
