@@ -3,6 +3,9 @@
 
   const TABLE_EXPORT_SRC = './exportar-tabela-copa-facil.js?v=20260726-2';
   const BUNDLES = Object.freeze({
+    home: [
+      './home-campeonato-atual-v2.js?v=20260803-1'
+    ],
     champions: [
       './champion-banners.js?v=20260808-2',
       './ranking-campeoes.js?v=20260808-5'
@@ -35,10 +38,10 @@
     ],
     news: [
       './noticias-bootstrap.js?v=20260727-1',
-      './noticias-bda.js?v=20260801-3',
-      './noticias-nav-fix.js?v=20260808-2'
+      './noticias-bda.js?v=20260801-3'
     ],
     tournament: [
+      './cores-automaticas-campeonatos.js?v=20260802-2',
       './confrontos-copa-grifo.js',
       './gestor-inteligente.js?v=20260803-3',
       './sorteio-campeonatos.js?v=20260730-1',
@@ -46,7 +49,6 @@
       './classificacao-automatica.js?v=20260730-1',
       './gerador-grupos-ligas.js',
       './logo-liga.js',
-      './cores-automaticas-campeonatos.js?v=20260802-2',
       './midia-campeonato-refresh.js?v=20260726-1',
       './copa-francos-design-lite.js?v=20260726-2',
       './confronto-editor-v2.js?v=20260802-2',
@@ -58,6 +60,7 @@
     ]
   });
   const PAGE_BUNDLE = Object.freeze({
+    home: 'home',
     champions: 'champions',
     history: 'history',
     season: 'season',
