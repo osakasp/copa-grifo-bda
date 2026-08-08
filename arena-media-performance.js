@@ -95,7 +95,8 @@
       html.arena-performance-lite .topbar,html.arena-performance-lite .arena-side-nav,html.arena-performance-lite .arena-mobile-nav,html.arena-performance-lite .arena-detail-nav,html.arena-performance-lite #giManager>nav,html.arena-performance-lite .pro-admin-bar{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
       html.arena-performance-lite .topbar{background:linear-gradient(180deg,#0a1810,#030906)!important}
       html.arena-performance-lite .arena-detail-nav,html.arena-performance-lite #giManager>nav,html.arena-performance-lite .pro-admin-bar{background:#040b07!important}
-      html.arena-performance-lite .hero::before,html.arena-performance-lite .app::before,html.arena-performance-lite .app::after{filter:none!important;animation:none!important}
+      html.arena-performance-lite .hero::before,html.arena-performance-lite .app::before,html.arena-performance-lite .app::after{filter:none!important}
+      html.arena-performance-lite .app::before,html.arena-performance-lite .app::after{animation:none!important}
       html.arena-performance-lite .arena-button-ripple{display:none!important}
       html.arena-performance-lite .page.active{animation-duration:.18s!important;animation-timing-function:ease-out!important}
       html.arena-performance-lite .arena-notification-button.has-unread>span,html.arena-performance-lite .mc-live-pill.active i{animation:none!important}
