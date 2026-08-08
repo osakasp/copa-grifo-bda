@@ -11,9 +11,9 @@
       points: 60,
       achievements: [
         ['Liga A', '1ª Ed'],
-        ['Imagem 2', '3ª e 6ª Ed'],
-        ['Imagem 3', '1ª e 3ª Ed'],
-        ['Imagem 4', '4ª Ed']
+        ['', '3ª e 6ª Ed'],
+        ['', '1ª e 3ª Ed'],
+        ['', '4ª Ed']
       ]
     },
     {
@@ -24,9 +24,9 @@
       points: 50,
       achievements: [
         ['Liga A', '2ª Ed'],
-        ['Imagem 2', '5ª Ed'],
-        ['Imagem 3', '4ª Ed'],
-        ['Imagem 4', '1ª e 3ª Ed']
+        ['', '5ª Ed'],
+        ['', '4ª Ed'],
+        ['', '1ª e 3ª Ed']
       ]
     },
     {
@@ -36,8 +36,8 @@
       titles: 2,
       points: 20,
       achievements: [
-        ['Imagem 2', '8ª Ed'],
-        ['Imagem 3', '5ª Ed']
+        ['', '8ª Ed'],
+        ['', '5ª Ed']
       ]
     },
     {
@@ -46,7 +46,7 @@
       aliases: [],
       titles: 1,
       points: 10,
-      achievements: [['Imagem 2', '1ª Ed']]
+      achievements: [['', '1ª Ed']]
     },
     {
       position: 4,
@@ -54,7 +54,7 @@
       aliases: [],
       titles: 1,
       points: 10,
-      achievements: [['Imagem 2', '2ª Ed']]
+      achievements: [['', '2ª Ed']]
     },
     {
       position: 4,
@@ -62,7 +62,7 @@
       aliases: [],
       titles: 1,
       points: 10,
-      achievements: [['Imagem 2', '4ª Ed']]
+      achievements: [['', '4ª Ed']]
     },
     {
       position: 4,
@@ -70,7 +70,7 @@
       aliases: [],
       titles: 1,
       points: 10,
-      achievements: [['Imagem 2', '7ª Ed']]
+      achievements: [['', '7ª Ed']]
     },
     {
       position: 4,
@@ -78,7 +78,7 @@
       aliases: [],
       titles: 1,
       points: 10,
-      achievements: [['Imagem 3', '2ª Ed']]
+      achievements: [['', '2ª Ed']]
     },
     {
       position: 4,
@@ -86,7 +86,7 @@
       aliases: [],
       titles: 1,
       points: 10,
-      achievements: [['Imagem 4', '2ª Ed']]
+      achievements: [['', '2ª Ed']]
     },
     {
       position: 4,
@@ -94,7 +94,7 @@
       aliases: [],
       titles: 1,
       points: 10,
-      achievements: [['Imagem 4', '5ª Ed']]
+      achievements: [['', '5ª Ed']]
     }
   ]);
   let rankingEntries;
@@ -109,6 +109,11 @@
 
   const clone = value => JSON.parse(JSON.stringify(value));
 
+  function normalizeCompetition(value) {
+    const competition = String(value || '').trim();
+    return /^Imagem\s+[234]$/i.test(competition) ? '' : competition;
+  }
+
   function normalizeEntry(entry, index = 0) {
     const titles = Math.max(0, Number(entry?.titles) || 0);
     const rawPoints = Number(entry?.points);
@@ -120,7 +125,9 @@
       titles,
       points: Number.isFinite(rawPoints) && rawPoints >= 0 ? rawPoints : titles * 10,
       achievements: Array.isArray(entry?.achievements)
-        ? entry.achievements.map(item => [String(item?.[0] || '').trim(), String(item?.[1] || '').trim()]).filter(item => item[0])
+        ? entry.achievements
+          .map(item => [normalizeCompetition(item?.[0]), String(item?.[1] || '').trim()])
+          .filter(item => item[0] || item[1])
         : []
     };
   }
@@ -159,7 +166,11 @@
   }
 
   function achievementText(achievements) {
-    return achievements.map(([competition, editions]) => editions ? `${competition} (${editions})` : competition).join(', ');
+    return achievements.map(([competition, editions]) => {
+      if (competition && editions) return `${competition} (${editions})`;
+      if (editions) return `(${editions})`;
+      return competition;
+    }).filter(Boolean).join(', ');
   }
 
   function podiumCard(champion, placeClass) {
@@ -312,7 +323,7 @@
             <label style="grid-column:1/-1">Nomes alternativos<input id="rankingAliases" maxlength="240" placeholder="Nome BDA, nome FC, outro nome"><small class="champion-ranking-editor-help">Separe os nomes por vírgula.</small></label>
             <label>Títulos<input id="rankingTitles" type="number" min="0" max="999" required></label>
             <label>Pontos<input id="rankingPoints" type="number" min="0" max="99999" required></label>
-            <label style="grid-column:1/-1">Conquistas<textarea id="rankingAchievements" required placeholder="Liga A | 1ª Ed\nCopa Grifo | 3ª e 6ª Ed"></textarea><small class="champion-ranking-editor-help">Use uma linha por conquista no formato competição | edição.</small></label>
+            <label style="grid-column:1/-1">Conquistas<textarea id="rankingAchievements" required placeholder="Liga A | 1ª Ed\n| 3ª e 6ª Ed"></textarea><small class="champion-ranking-editor-help">Use competição | edição. Se o nome da competição não estiver informado, use apenas | edição.</small></label>
           </div>
           <div class="champion-ranking-editor-actions">
             <button class="danger" id="championRankingDeleteBtn" type="button">Excluir do ranking</button>
@@ -334,7 +345,10 @@
   }
 
   function achievementLines(achievements) {
-    return achievements.map(([competition, editions]) => `${competition}${editions ? ` | ${editions}` : ''}`).join('\n');
+    return achievements.map(([competition, editions]) => {
+      if (competition) return `${competition}${editions ? ` | ${editions}` : ''}`;
+      return editions ? `| ${editions}` : '';
+    }).filter(Boolean).join('\n');
   }
 
   function parseAliases(value) {
@@ -342,10 +356,13 @@
   }
 
   function parseAchievements(value) {
-    return String(value || '').split('\n').map(line => {
+    return String(value || '').split('\n').map(rawLine => {
+      const line = rawLine.trim();
+      const editionOnly = line.match(/^\((.+)\)$/);
+      if (editionOnly) return ['', editionOnly[1].trim()];
       const [competition, ...editionParts] = line.split('|');
-      return [competition.trim(), editionParts.join('|').trim()];
-    }).filter(item => item[0]);
+      return [normalizeCompetition(competition), editionParts.join('|').trim()];
+    }).filter(item => item[0] || item[1]);
   }
 
   function renderEditorList() {

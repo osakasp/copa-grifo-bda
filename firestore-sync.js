@@ -67,6 +67,31 @@
   const stableStringify = value => JSON.stringify(stable(value));
   const documentId = (prefix, index) => `${prefix}-${String(index).padStart(4, '0')}`;
 
+  function encodeRemoteValue(name, value) {
+    if (name !== 'championRanking' || !value || typeof value !== 'object') return value;
+    return {
+      ...value,
+      achievements: Array.isArray(value.achievements)
+        ? value.achievements.map(item => ({
+          competition: String(Array.isArray(item) ? item[0] || '' : item?.competition || ''),
+          editions: String(Array.isArray(item) ? item[1] || '' : item?.editions || '')
+        }))
+        : []
+    };
+  }
+
+  function decodeRemoteValue(name, value) {
+    if (name !== 'championRanking' || !value || typeof value !== 'object') return value;
+    return {
+      ...value,
+      achievements: Array.isArray(value.achievements)
+        ? value.achievements.map(item => Array.isArray(item)
+          ? [String(item[0] || ''), String(item[1] || '')]
+          : [String(item?.competition || ''), String(item?.editions || '')])
+        : []
+    };
+  }
+
   function itemBytes(value) {
     return new Blob([JSON.stringify(value)]).size;
   }
@@ -179,7 +204,7 @@
     const operations = values.map((value, index) => ({
       type: 'set',
       ref: root.doc(documentId(config.prefix, index)),
-      data: { dataset: name, position: index, revision, value }
+      data: { dataset: name, position: index, revision, value: encodeRemoteValue(name, value) }
     }));
 
     for (let index = values.length; index < previousCount; index += 1) {
@@ -200,7 +225,7 @@
     return snapshots
       .filter(snapshot => snapshot.exists)
       .sort((a, b) => Number(a.data().position) - Number(b.data().position))
-      .map(snapshot => snapshot.data().value);
+      .map(snapshot => decodeRemoteValue(name, snapshot.data().value));
   }
 
   function applyRemoteDatasets(remote) {
@@ -222,11 +247,13 @@
 
   function errorMessage(error) {
     const code = String(error?.code || '');
+    const message = String(error?.message || '');
     if (code.includes('permission-denied')) return 'As regras do Firestore não liberaram esta conta';
     if (code.includes('unavailable')) return 'Sem conexão com a nuvem no momento';
     if (code.includes('resource-exhausted')) return 'O limite temporário do Firestore foi atingido';
+    if (message.includes('Nested arrays are not supported')) return 'O formato do ranking não é compatível com a nuvem';
     if (code.includes('invalid-argument')) return 'Uma imagem está grande demais para a nuvem';
-    return error?.message || 'Falha ao sincronizar com o Firestore';
+    return message || 'Falha ao sincronizar com o Firestore';
   }
 
   async function prepareTeams() {
