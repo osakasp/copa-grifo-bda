@@ -5,7 +5,7 @@
   const BUNDLES = Object.freeze({
     champions: [
       './champion-banners.js?v=20260808-2',
-      './ranking-campeoes.js?v=20260808-1'
+      './ranking-campeoes.js?v=20260808-3'
     ],
     registrations: [
       './central-inscricoes.js'

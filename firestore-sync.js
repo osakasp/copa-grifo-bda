@@ -17,6 +17,7 @@
   const DATASETS = {
     teams: { key: 'bda-v2-teams', prefix: 'team' },
     champions: { key: 'bda-v2-champions', prefix: 'champion' },
+    championRanking: { key: 'bda-champion-ranking', prefix: 'champion-ranking' },
     tournaments: { key: 'bda-v3-tournaments', prefix: 'tournament' }
   };
 
@@ -91,6 +92,9 @@
   function readLocal(name) {
     if (name === 'teams' && Array.isArray(window.teams)) return clone(window.teams);
     if (name === 'champions' && Array.isArray(window.champions)) return clone(window.champions);
+    if (name === 'championRanking' && Array.isArray(window.ArenaBDAChampionRanking?.champions)) {
+      return clone(window.ArenaBDAChampionRanking.champions);
+    }
     const config = DATASETS[name];
     if (name === 'tournaments') return readStored(config.key, clone(DEFAULT_TOURNAMENTS));
     return readStored(config.key, []);
@@ -332,6 +336,12 @@
       const meta = metaSnapshot.data();
       const remote = {};
       for (const name of Object.keys(DATASETS)) {
+        const hasRemoteDataset = Object.prototype.hasOwnProperty.call(meta.counts || {}, name)
+          || Object.prototype.hasOwnProperty.call(meta.revisions || {}, name);
+        if (!hasRemoteDataset) {
+          knownCounts[name] = 0;
+          continue;
+        }
         remote[name] = await readRemoteDataset(name, Number(meta.counts?.[name] || 0));
         seenRevisions[name] = meta.revisions?.[name] || '';
         knownCounts[name] = Number(meta.counts?.[name] || 0);
