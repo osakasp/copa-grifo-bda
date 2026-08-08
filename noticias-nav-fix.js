@@ -49,31 +49,10 @@
       button.innerHTML = '<i>📰</i><span class="arena-nav-copy"><b>Notícias</b><small>Comunicados e novidades</small></span>';
     }
 
-    const tournament = nav.querySelector('.nav-btn[data-go="tournament"]');
+    const more = nav.querySelector('.arena-side-more-toggle');
     const footer = nav.querySelector('.arena-side-footer');
-    if (tournament && tournament.nextElementSibling !== button) tournament.after(button);
+    if (more && more.nextElementSibling !== button) more.after(button);
     else if (!button.isConnected) footer ? nav.insertBefore(button, footer) : nav.append(button);
-  }
-
-  function makeMobileNewsButton() {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'arena-mobile-item news-mobile-item';
-    button.dataset.mobileGo = 'news';
-    button.innerHTML = '<i>📰</i><span>Notícias</span>';
-    button.setAttribute('aria-label', 'Notícias');
-    button.addEventListener('click', () => go('news'));
-    return button;
-  }
-
-  function ensureMobileNavigation() {
-    const mobile = $('.arena-mobile-nav');
-    if (mobile && !mobile.querySelector('[data-mobile-go="news"]')) {
-      const newsButton = makeMobileNewsButton();
-      const more = mobile.querySelector('[data-mobile-more]');
-      more ? mobile.insertBefore(newsButton, more) : mobile.append(newsButton);
-    }
-
   }
 
   function syncActive() {
@@ -93,7 +72,7 @@
 
     const more = $('.arena-mobile-item[data-mobile-more]');
     if (more) {
-      const active = ['history', 'teams', 'community'].includes(page);
+      const active = ['news', 'history', 'flash', 'season', 'teams', 'community', 'feedback'].includes(page);
       more.classList.toggle('active', active);
       active ? more.setAttribute('aria-current', 'page') : more.removeAttribute('aria-current');
     }
@@ -106,7 +85,6 @@
     refreshTimer = window.setTimeout(() => {
       ensureTopShortcut();
       ensureDesktopButton();
-      ensureMobileNavigation();
       syncActive();
     }, 0);
   }
