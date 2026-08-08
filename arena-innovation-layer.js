@@ -1,144 +1,259 @@
 (() => {
   'use strict';
 
-  const VERSION = '2026.08';
+  const VERSION = '2026.08-minimal';
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
-  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-  const finePointer = matchMedia('(hover: hover) and (pointer: fine)');
 
   const PAGES = Object.freeze({
-    home: { icon: '⌂', label: 'Início', description: 'Visão geral da Arena', color: '#f4d778', rgb: '244,215,120' },
-    news: { icon: '📰', label: 'Notícias', description: 'Comunicados oficiais', color: '#7dccff', rgb: '125,204,255' },
-    history: { icon: '📜', label: 'História', description: 'Memória do Clã BDA', color: '#efb36d', rgb: '239,179,109' },
-    tournament: { icon: '🏆', label: 'Campeonatos', description: 'Copas, ligas e confrontos', color: '#f4d778', rgb: '244,215,120' },
-    flash: { icon: '⚡', label: 'Copas Flash', description: 'Edições rápidas', color: '#c898ff', rgb: '200,152,255' },
-    season: { icon: '🗓️', label: 'Temporada', description: 'Calendário e classificação', color: '#75bfff', rgb: '117,191,255' },
-    registrations: { icon: '✍️', label: 'Inscrições', description: 'Vagas e aprovações', color: '#68e6a4', rgb: '104,230,164' },
-    ranking: { icon: '📊', label: 'Ranking', description: 'Classificação geral', color: '#ffc96f', rgb: '255,201,111' },
-    champions: { icon: '★', label: 'Campeões', description: 'Sala de Troféus', color: '#ffe08a', rgb: '255,224,138' },
-    teams: { icon: '🛡', label: 'Times', description: 'Clubes cadastrados', color: '#72dfcf', rgb: '114,223,207' },
-    community: { icon: '💬', label: 'Comunidade', description: 'Arquibancada do clã', color: '#ba9cff', rgb: '186,156,255' },
-    feedback: { icon: '◆', label: 'Feedback', description: 'Ajude a melhorar a Arena', color: '#76d9ed', rgb: '118,217,237' }
+    home: { icon: '01', label: 'Início', description: 'Visão geral da Arena', color: '#e3c45f', rgb: '227,196,95' },
+    news: { icon: '02', label: 'Notícias', description: 'Comunicados oficiais', color: '#8eb8cc', rgb: '142,184,204' },
+    history: { icon: '03', label: 'História', description: 'Memória do Clã BDA', color: '#c69c6b', rgb: '198,156,107' },
+    tournament: { icon: '04', label: 'Campeonatos', description: 'Copas, ligas e confrontos', color: '#e3c45f', rgb: '227,196,95' },
+    flash: { icon: '05', label: 'Copas Flash', description: 'Edições rápidas', color: '#a998c2', rgb: '169,152,194' },
+    season: { icon: '06', label: 'Temporada', description: 'Calendário e classificação', color: '#8aaec7', rgb: '138,174,199' },
+    registrations: { icon: '07', label: 'Inscrições', description: 'Vagas e aprovações', color: '#83b99b', rgb: '131,185,155' },
+    ranking: { icon: '08', label: 'Ranking', description: 'Classificação geral', color: '#d8b66a', rgb: '216,182,106' },
+    champions: { icon: '09', label: 'Campeões', description: 'Sala de Troféus', color: '#e3c45f', rgb: '227,196,95' },
+    teams: { icon: '10', label: 'Times', description: 'Clubes cadastrados', color: '#7fb5aa', rgb: '127,181,170' },
+    community: { icon: '11', label: 'Comunidade', description: 'Arquibancada do clã', color: '#a69abf', rgb: '166,154,191' },
+    feedback: { icon: '12', label: 'Feedback', description: 'Ajude a melhorar a Arena', color: '#85b5bf', rgb: '133,181,191' }
   });
 
-  const CARD_SELECTOR = [
-    '.card', '.arena-card', '.champion-card', '.team-card', '.stat', '.arena-stat',
-    '.champion-ranking-row', '.champion-ranking-podium-card', '.history-gallery-card',
-    '.registration-card', '.auto-standing-card', '.gi-game', '.league-groups-preview article'
-  ].join(',');
-
-  const REVEAL_SELECTOR = [
-    '.hero', '.home-command', '.home-tournaments', '.home-grid', '.arena-page-hero',
-    '.champion-ranking', '.arena-card', '.champion-card', '.team-card',
-    '.history-gallery-card', '.registration-card', '.rank-hero', '.history-hero'
-  ].join(',');
-
   document.documentElement.dataset.arenaInnovation = VERSION;
-  document.body.classList.add('arena-innovation-2026');
-  if (navigator.connection?.saveData || document.documentElement.classList.contains('arena-performance-lite')) {
-    document.body.classList.add('arena-innovation-lite');
-  }
+  document.body.classList.add('arena-innovation-2026', 'arena-minimal-2026');
 
   const style = document.createElement('style');
   style.id = 'arenaInnovationStyles';
   style.textContent = `
-    body.arena-innovation-2026{
-      --innovation-accent:#f4d778;
-      --innovation-accent-rgb:244,215,120;
-      --innovation-pointer-x:72%;
-      --innovation-pointer-y:12%;
-      --innovation-glow-opacity:.18;
+    body.arena-minimal-2026{
+      --innovation-accent:#e3c45f;
+      --innovation-accent-rgb:227,196,95;
+      --bg:#050a07;
+      --bg-soft:#07100b;
+      --surface:#0b1710;
+      --surface-2:#0f1d15;
+      --surface-3:#13241a;
+      --line:rgba(226,236,229,.10);
+      --line-strong:rgba(var(--innovation-accent-rgb),.28);
+      --shadow:none;
+      --shadow-soft:none;
+      --radius:16px;
+      --radius-small:11px;
+      background:#050a07!important;
     }
 
-    .arena-ambient-field{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;opacity:.82;contain:strict}
-    .arena-ambient-field:before{content:"";position:absolute;inset:-20%;background:radial-gradient(circle at var(--innovation-pointer-x) var(--innovation-pointer-y),rgba(var(--innovation-accent-rgb),.13),transparent 24%);transition:background .35s ease}
-    .arena-ambient-orb{position:absolute;border-radius:50%;filter:blur(3px);opacity:.55;will-change:transform}
-    .arena-ambient-orb.one{right:-12vw;top:8vh;width:34vw;min-width:320px;aspect-ratio:1;border:1px solid rgba(var(--innovation-accent-rgb),.12);background:radial-gradient(circle,rgba(var(--innovation-accent-rgb),.08),transparent 68%);animation:arenaAmbientOne 18s ease-in-out infinite alternate}
-    .arena-ambient-orb.two{left:9vw;bottom:-24vh;width:28vw;min-width:280px;aspect-ratio:1;border:1px solid rgba(88,229,154,.08);background:radial-gradient(circle,rgba(88,229,154,.055),transparent 70%);animation:arenaAmbientTwo 22s ease-in-out infinite alternate}
-    .arena-ambient-grid{position:absolute;inset:0;opacity:.24;background-image:linear-gradient(rgba(var(--innovation-accent-rgb),.025) 1px,transparent 1px),linear-gradient(90deg,rgba(var(--innovation-accent-rgb),.025) 1px,transparent 1px);background-size:72px 72px;mask-image:radial-gradient(circle at 75% 12%,black,transparent 68%)}
-    @keyframes arenaAmbientOne{to{transform:translate3d(-7vw,8vh,0) scale(1.08)}}
-    @keyframes arenaAmbientTwo{to{transform:translate3d(5vw,-6vh,0) scale(.92)}}
-    body.arena-innovation-2026>.app-shell{position:relative;z-index:1}
+    body.arena-design-pro.arena-minimal-2026:before,
+    body.arena-design-pro.arena-minimal-2026:after{display:none!important}
+    body.arena-minimal-2026>.app-shell{position:relative;z-index:1}
+    body.arena-minimal-2026 .page.active{animation:none!important}
 
-    .arena-live-ribbon{position:relative;z-index:3;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:16px;min-height:54px;margin:10px 1px 0;padding:8px 10px 8px 14px;border:1px solid rgba(var(--innovation-accent-rgb),.16);border-radius:16px;background:linear-gradient(90deg,rgba(var(--innovation-accent-rgb),.07),rgba(5,14,9,.74) 36%,rgba(255,255,255,.018));box-shadow:0 13px 34px rgba(0,0,0,.18);backdrop-filter:blur(16px)}
-    .arena-live-ribbon>strong{display:flex;align-items:center;gap:9px;color:var(--innovation-accent);font-size:8px;letter-spacing:.15em;text-transform:uppercase;white-space:nowrap}
-    .arena-live-ribbon>strong i{width:8px;height:8px;border-radius:50%;background:#61e9a1;box-shadow:0 0 0 5px rgba(97,233,161,.09),0 0 16px rgba(97,233,161,.48);animation:arenaSignalPulse 1.9s ease-in-out infinite}
-    .arena-ribbon-track{display:flex;align-items:center;justify-content:center;gap:12px;min-width:0;overflow:hidden;color:#b7c8bd;font-size:8px;font-weight:800;letter-spacing:.075em;text-transform:uppercase;white-space:nowrap}
-    .arena-ribbon-track i{width:3px;height:3px;flex:0 0 auto;border-radius:50%;background:rgba(var(--innovation-accent-rgb),.78);box-shadow:0 0 10px rgba(var(--innovation-accent-rgb),.45)}
-    .arena-live-ribbon button{min-height:36px;padding:0 12px;border:1px solid rgba(var(--innovation-accent-rgb),.20);border-radius:10px;color:var(--innovation-accent);background:rgba(var(--innovation-accent-rgb),.055);font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}
-    .arena-live-ribbon button:hover{border-color:rgba(var(--innovation-accent-rgb),.42);background:rgba(var(--innovation-accent-rgb),.10)}
-    @keyframes arenaSignalPulse{50%{opacity:.46;transform:scale(.82)}}
+    body.arena-minimal-2026 .topbar{
+      min-height:68px!important;
+      border-color:var(--line)!important;
+      border-radius:14px!important;
+      background:#09140d!important;
+      box-shadow:none!important;
+      backdrop-filter:none!important;
+    }
+    body.arena-minimal-2026 .topbar:after{display:none!important}
+    body.arena-minimal-2026 .brand-mark{
+      border-color:rgba(var(--innovation-accent-rgb),.25)!important;
+      border-radius:11px!important;
+      background:#07100b!important;
+      box-shadow:none!important;
+    }
+    body.arena-minimal-2026 .brand-copy strong{font-size:21px!important;letter-spacing:.045em!important}
+    body.arena-minimal-2026 .arena-top-status{
+      min-height:36px;
+      border-radius:10px;
+      background:transparent;
+    }
+    body.arena-minimal-2026 .arena-top-status i{box-shadow:none}
+    body.arena-minimal-2026 .icon-btn,
+    body.arena-minimal-2026 .admin-btn{
+      border-color:var(--line)!important;
+      border-radius:10px!important;
+      background:#0d1a12!important;
+      box-shadow:none!important;
+    }
+    body.arena-minimal-2026 .icon-btn:hover,
+    body.arena-minimal-2026 .admin-btn:hover{border-color:var(--line-strong)!important;transform:none!important}
+    body.arena-minimal-2026 .admin-btn.active{background:var(--innovation-accent)!important}
 
-    .arena-spotlight-card{--arena-card-x:50%;--arena-card-y:20%;position:relative!important;isolation:isolate}
-    .arena-spotlight-card>.arena-card-glow{position:absolute!important;inset:0!important;z-index:0!important;border-radius:inherit!important;pointer-events:none!important;opacity:0;background:radial-gradient(300px circle at var(--arena-card-x) var(--arena-card-y),rgba(var(--innovation-accent-rgb),.115),transparent 58%);transition:opacity .2s ease!important}
-    .arena-spotlight-card:hover>.arena-card-glow{opacity:1}
-    .arena-spotlight-card>*:not(.arena-card-glow){position:relative;z-index:1}
-    .arena-spotlight-card:after{transition:opacity .2s ease,transform .2s ease!important}
+    body.arena-minimal-2026 main{padding-top:16px!important}
+    body.arena-minimal-2026 :is(.hero,.arena-hero,.rank-hero,.history-hero,.league-generator-head){
+      border-color:var(--line)!important;
+      border-radius:18px!important;
+      box-shadow:none!important;
+    }
+    body.arena-minimal-2026 .hero{
+      min-height:286px!important;
+      padding:clamp(22px,4vw,32px)!important;
+      background:linear-gradient(115deg,#10261a 0,#08110c 64%)!important;
+    }
+    body.arena-minimal-2026 .hero:before{opacity:.10!important;filter:grayscale(.35) contrast(1.05)!important}
+    body.arena-minimal-2026 .hero:after{display:none!important}
+    body.arena-minimal-2026 .hero h1{
+      max-width:760px;
+      margin-top:8px!important;
+      font-size:clamp(40px,7vw,62px)!important;
+      letter-spacing:-.02em!important;
+    }
+    body.arena-minimal-2026 .hero p{font-size:11px!important;line-height:1.6!important}
+    body.arena-minimal-2026 .eyebrow{gap:7px;color:var(--innovation-accent)!important;letter-spacing:.13em!important}
+    body.arena-minimal-2026 .eyebrow:before{width:14px;height:1px;background:var(--innovation-accent)}
 
-    .arena-hero-v4{--arena-hero-x:70%;--arena-hero-y:18%;perspective:1100px}
-    .arena-hero-v4>.arena-hero-aura{position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(420px circle at var(--arena-hero-x) var(--arena-hero-y),rgba(var(--innovation-accent-rgb),.15),transparent 64%);mix-blend-mode:screen;opacity:.72;transition:opacity .22s ease}
-    .arena-hero-v4 .arena-hero-console{transform:perspective(900px) rotateX(var(--arena-tilt-y,0deg)) rotateY(var(--arena-tilt-x,0deg)) translate3d(0,0,0);transform-style:preserve-3d;transition:transform .18s ease-out,border-color .2s ease,box-shadow .2s ease}
-    .arena-hero-v4.arena-hero-engaged .arena-hero-console{border-color:rgba(var(--innovation-accent-rgb),.24);box-shadow:inset 0 1px 0 rgba(255,255,255,.045),0 24px 64px rgba(0,0,0,.28),0 0 42px rgba(var(--innovation-accent-rgb),.055)}
+    body.arena-minimal-2026 :is(.primary,.secondary,.ghost,.danger){
+      min-height:41px!important;
+      border-radius:10px!important;
+      box-shadow:none!important;
+      transition:border-color .15s ease,background .15s ease,color .15s ease!important;
+    }
+    body.arena-minimal-2026 .primary{background:var(--innovation-accent)!important}
+    body.arena-minimal-2026 .secondary{background:#102018!important}
+    body.arena-minimal-2026 .ghost{background:transparent!important}
+    body.arena-minimal-2026 .danger{background:rgba(255,114,128,.08)!important}
+    body.arena-minimal-2026 :is(.primary,.secondary,.ghost,.danger):hover{transform:none!important;filter:none!important}
 
-    .arena-section-accent{position:relative}
-    .arena-section-accent:after{content:"";position:absolute;left:0;bottom:-7px;width:clamp(42px,8vw,92px);height:2px;border-radius:999px;background:linear-gradient(90deg,var(--innovation-accent),transparent);box-shadow:0 0 13px rgba(var(--innovation-accent-rgb),.28)}
-    #arenaScrollProgress i{background:linear-gradient(90deg,#5ce49b,var(--innovation-accent),var(--gold-soft))!important}
-    .page.active .eyebrow{color:var(--innovation-accent)!important}
-    .page.active :is(.primary,.nav-btn.active){--innovation-button-accent:var(--innovation-accent)}
+    body.arena-minimal-2026 .section-head{
+      margin-top:26px!important;
+      margin-bottom:12px!important;
+      padding-left:0!important;
+    }
+    body.arena-minimal-2026 .section-head:before{display:none!important}
+    body.arena-minimal-2026 .section-head h2{font-size:clamp(22px,4vw,28px)!important;letter-spacing:0!important}
+    body.arena-minimal-2026 .arena-section-accent:after{
+      content:"";
+      display:block;
+      width:28px;
+      height:1px;
+      margin-top:8px;
+      background:var(--innovation-accent);
+    }
 
-    #arenaCommandTrigger{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:38px;padding:0 10px;border:1px solid rgba(var(--innovation-accent-rgb),.20);border-radius:12px;color:#d9e4dd;background:linear-gradient(145deg,rgba(var(--innovation-accent-rgb),.075),rgba(255,255,255,.025));font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.07em;white-space:nowrap}
-    #arenaCommandTrigger i{color:var(--innovation-accent);font-size:14px;font-style:normal}
-    #arenaCommandTrigger kbd{padding:3px 5px;border:1px solid rgba(255,255,255,.10);border-radius:6px;color:#aebfb4;background:rgba(0,0,0,.18);font:700 7px/1 Inter,sans-serif}
-    #arenaCommandTrigger:hover{border-color:rgba(var(--innovation-accent-rgb),.42);transform:translateY(-1px)}
+    body.arena-minimal-2026 :where(.card,.arena-card,.champion-card,.team-card,.stat,.arena-stat,.gi-game,.rank-podium-card,.rank-hall article,.rank-rules article,.league-groups-preview article,.history-values article,.history-timeline article,.history-gallery-card,.registration-card,.registration-admin-card,.auto-standing-card,.champion-ranking-row,.champion-ranking-podium-card){
+      border-color:var(--line)!important;
+      border-radius:13px!important;
+      background:#0b1710!important;
+      box-shadow:none!important;
+      transition:border-color .15s ease!important;
+    }
+    body.arena-minimal-2026 :where(.card,.arena-card,.champion-card,.team-card,.stat,.arena-stat,.gi-game,.rank-podium-card,.league-groups-preview article,.history-values article,.history-gallery-card):hover{
+      border-color:rgba(var(--innovation-accent-rgb),.24)!important;
+      box-shadow:none!important;
+      transform:none!important;
+    }
+    body.arena-minimal-2026 .stat{min-height:82px;border-radius:12px!important}
+    body.arena-minimal-2026 .stat:after{display:none!important}
+    body.arena-minimal-2026 :is(.live-card,.match-list,.rank-table-wrap){border-radius:13px!important}
+    body.arena-minimal-2026 :is(.arena-cover,.champion-banner-frame,.history-gallery-media){background:#050a07!important}
 
-    .arena-command-backdrop{position:fixed;inset:0;z-index:190;display:grid;place-items:start center;padding:clamp(72px,12vh,130px) 14px 20px;background:rgba(0,0,0,.74);opacity:0;visibility:hidden;backdrop-filter:blur(18px) saturate(.8);transition:opacity .18s ease,visibility .18s ease}
+    body.arena-minimal-2026 #arenaScrollProgress{height:1px;background:transparent}
+    body.arena-minimal-2026 #arenaScrollProgress i{background:var(--innovation-accent)!important;box-shadow:none!important}
+    body.arena-minimal-2026 #arenaBackToTop{
+      width:40px;
+      height:40px;
+      border-color:var(--line)!important;
+      border-radius:10px;
+      color:var(--innovation-accent);
+      background:#0b1710;
+      box-shadow:none;
+    }
+    body.arena-minimal-2026 #arenaBackToTop:hover{transform:none}
+
+    #arenaCommandTrigger{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:7px;
+      min-height:36px;
+      padding:0 10px;
+      border:1px solid var(--line);
+      border-radius:10px;
+      color:#d4ded7;
+      background:transparent;
+      font-size:8px;
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+      white-space:nowrap;
+    }
+    #arenaCommandTrigger i{color:var(--innovation-accent);font-size:13px;font-style:normal}
+    #arenaCommandTrigger kbd{padding:2px 4px;border:1px solid var(--line);border-radius:4px;color:#8fa096;background:transparent;font:700 7px/1 Inter,sans-serif}
+    #arenaCommandTrigger:hover{border-color:var(--line-strong)}
+
+    .arena-command-backdrop{
+      position:fixed;
+      inset:0;
+      z-index:190;
+      display:grid;
+      place-items:start center;
+      padding:clamp(72px,12vh,120px) 14px 20px;
+      background:rgba(0,0,0,.72);
+      opacity:0;
+      visibility:hidden;
+      transition:opacity .14s ease,visibility .14s ease;
+    }
     .arena-command-backdrop.show{opacity:1;visibility:visible}
-    .arena-command-panel{width:min(100%,660px);max-height:min(720px,calc(100dvh - 110px));overflow:hidden;border:1px solid rgba(var(--innovation-accent-rgb),.28);border-radius:24px;background:radial-gradient(circle at 86% 0,rgba(var(--innovation-accent-rgb),.12),transparent 28%),linear-gradient(150deg,#10251a,#040b07 72%);box-shadow:0 36px 120px rgba(0,0,0,.72),inset 0 1px 0 rgba(255,255,255,.045);transform:translateY(-12px) scale(.985);transition:transform .2s cubic-bezier(.2,.8,.2,1)}
-    .arena-command-backdrop.show .arena-command-panel{transform:none}
-    .arena-command-head{display:flex;align-items:center;gap:10px;padding:13px;border-bottom:1px solid rgba(255,255,255,.08)}
+    .arena-command-panel{
+      width:min(100%,600px);
+      max-height:min(680px,calc(100dvh - 110px));
+      overflow:hidden;
+      border:1px solid rgba(226,236,229,.14);
+      border-radius:14px;
+      background:#09140d;
+      box-shadow:0 24px 70px rgba(0,0,0,.48);
+    }
+    .arena-command-head{display:flex;align-items:center;gap:9px;padding:10px;border-bottom:1px solid var(--line)}
     .arena-command-search{position:relative;flex:1}
-    .arena-command-search i{position:absolute;left:13px;top:50%;z-index:2;transform:translateY(-50%);color:var(--innovation-accent);font-style:normal}
-    .arena-command-search input{min-height:48px!important;padding:0 14px 0 40px!important;border-color:rgba(var(--innovation-accent-rgb),.20)!important;background:rgba(0,0,0,.23)!important;font-size:12px!important;text-transform:none!important;letter-spacing:0!important}
-    .arena-command-close{width:46px;height:46px;border:1px solid rgba(255,255,255,.09);border-radius:13px;color:#d9e5dc;background:rgba(255,255,255,.035);font-size:21px}
-    .arena-command-caption{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 15px 7px;color:#8fa195;font-size:7px;font-weight:900;letter-spacing:.13em;text-transform:uppercase}
+    .arena-command-search i{position:absolute;left:12px;top:50%;z-index:2;transform:translateY(-50%);color:var(--innovation-accent);font-style:normal}
+    .arena-command-search input{
+      min-height:44px!important;
+      padding:0 12px 0 36px!important;
+      border-color:var(--line)!important;
+      border-radius:9px!important;
+      background:#06100a!important;
+      font-size:11px!important;
+      text-transform:none!important;
+      letter-spacing:0!important;
+    }
+    .arena-command-close{width:42px;height:42px;border:1px solid var(--line);border-radius:9px;color:#d7e0da;background:transparent;font-size:20px}
+    .arena-command-caption{display:flex;justify-content:space-between;gap:12px;padding:11px 13px 6px;color:#82938a;font-size:7px;font-weight:800;letter-spacing:.10em;text-transform:uppercase}
     .arena-command-caption span:last-child{color:var(--innovation-accent)}
-    .arena-command-results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;max-height:min(520px,calc(100dvh - 245px));overflow:auto;padding:7px 12px 14px}
-    .arena-command-item{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:10px;min-height:64px;padding:9px 10px;border:1px solid rgba(255,255,255,.075);border-radius:15px;color:#eef4ef;background:rgba(255,255,255,.025);text-align:left;transition:transform .15s ease,border-color .15s ease,background .15s ease}
-    .arena-command-item:hover,.arena-command-item:focus-visible{border-color:rgba(var(--innovation-accent-rgb),.30);background:rgba(var(--innovation-accent-rgb),.065);transform:translateY(-1px)}
-    .arena-command-item>i{display:grid;place-items:center;width:42px;height:42px;border:1px solid rgba(var(--innovation-accent-rgb),.17);border-radius:12px;background:rgba(var(--innovation-accent-rgb),.06);font-size:19px;font-style:normal}
-    .arena-command-item b,.arena-command-item small{display:block}.arena-command-item b{font-size:10px}.arena-command-item small{margin-top:4px;color:#8fa195;font-size:7px}.arena-command-item em{color:var(--innovation-accent);font-size:20px;font-style:normal}
-    .arena-command-empty{grid-column:1/-1;padding:34px;color:#93a499;text-align:center;font-size:10px}
+    .arena-command-results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;max-height:min(500px,calc(100dvh - 230px));overflow:auto;padding:7px 10px 11px}
+    .arena-command-item{
+      display:grid;
+      grid-template-columns:34px minmax(0,1fr) auto;
+      align-items:center;
+      gap:9px;
+      min-height:56px;
+      padding:8px 9px;
+      border:1px solid transparent;
+      border-radius:9px;
+      color:#edf2ee;
+      background:transparent;
+      text-align:left;
+    }
+    .arena-command-item:hover,.arena-command-item:focus-visible{border-color:var(--line);background:#0e1d14}
+    .arena-command-item>i{display:grid;place-items:center;width:32px;height:32px;border:1px solid var(--line);border-radius:8px;color:var(--innovation-accent);font:800 7px/1 Inter,sans-serif;font-style:normal}
+    .arena-command-item b,.arena-command-item small{display:block}
+    .arena-command-item b{font-size:10px}
+    .arena-command-item small{margin-top:3px;color:#82938a;font-size:7px}
+    .arena-command-item em{color:#75877d;font-size:17px;font-style:normal}
+    .arena-command-empty{grid-column:1/-1;padding:28px;color:#82938a;text-align:center;font-size:10px}
     body.arena-command-open{overflow:hidden}
-
-    .arena-reveal{transition:opacity .46s ease,transform .46s cubic-bezier(.2,.75,.2,1),filter .46s ease;transition-delay:var(--arena-reveal-delay,0ms)}
-    .arena-motion-ready .arena-reveal:not(.is-visible){opacity:0;filter:saturate(.72);transform:translateY(18px) scale(.992)}
-    .arena-reveal.is-visible{opacity:1;filter:none;transform:none}
 
     @media(max-width:1180px){#arenaCommandTrigger span{display:none}}
     @media(max-width:720px){
       #arenaCommandTrigger{display:none!important}
-      .arena-live-ribbon{grid-template-columns:auto minmax(0,1fr);gap:10px;min-height:49px;margin-top:8px;padding:7px 10px;border-radius:14px}
-      .arena-live-ribbon button{display:none}
-      .arena-ribbon-track{justify-content:flex-start;overflow-x:auto;scrollbar-width:none}
-      .arena-ribbon-track::-webkit-scrollbar{display:none}
       .arena-command-backdrop{align-items:end;padding:10px 10px max(10px,env(safe-area-inset-bottom))}
-      .arena-command-panel{max-height:calc(100dvh - 20px);border-radius:22px}
-      .arena-command-results{grid-template-columns:1fr;max-height:calc(100dvh - 180px)}
+      .arena-command-panel{max-height:calc(100dvh - 20px);border-radius:13px}
+      .arena-command-results{grid-template-columns:1fr;max-height:calc(100dvh - 168px)}
       .arena-command-caption span:first-child{display:none}
+      body.arena-minimal-2026 .hero{min-height:260px!important;border-radius:15px!important}
     }
-    @media(max-width:420px){
-      .arena-live-ribbon>strong{font-size:7px}.arena-ribbon-track{gap:9px;font-size:7px}
-      .arena-command-panel{border-radius:19px}.arena-command-head{padding:10px}.arena-command-results{padding-inline:10px}
-    }
-    @media(prefers-reduced-motion:reduce){
-      .arena-ambient-orb,.arena-live-ribbon>strong i{animation:none!important}
-      .arena-reveal,.arena-motion-ready .arena-reveal:not(.is-visible){opacity:1!important;filter:none!important;transform:none!important;transition:none!important}
-      .arena-hero-v4 .arena-hero-console{transform:none!important;transition:none!important}
-    }
-    body.arena-innovation-lite .arena-ambient-field{display:none}
-    body.arena-innovation-lite .arena-spotlight-card>.arena-card-glow{display:none}
-    body.arena-innovation-lite .arena-hero-v4 .arena-hero-console{transform:none!important}
+    @media(prefers-reduced-motion:reduce){.arena-command-backdrop{transition:none}}
   `;
   document.head.append(style);
 
@@ -157,49 +272,10 @@
     return $('.page.active')?.dataset.page || 'home';
   }
 
-  function installAmbientField() {
-    if ($('#arenaAmbientField')) return;
-    const field = document.createElement('div');
-    field.id = 'arenaAmbientField';
-    field.className = 'arena-ambient-field';
-    field.setAttribute('aria-hidden', 'true');
-    field.innerHTML = '<i class="arena-ambient-orb one"></i><i class="arena-ambient-orb two"></i><i class="arena-ambient-grid"></i>';
-    document.body.prepend(field);
-  }
-
-  function installLiveRibbon() {
-    const home = $('[data-page="home"]');
-    const hero = $('.hero', home);
-    if (!home || !hero || $('#arenaLiveRibbon', home)) return;
-    const ribbon = document.createElement('section');
-    ribbon.id = 'arenaLiveRibbon';
-    ribbon.className = 'arena-live-ribbon';
-    ribbon.setAttribute('aria-label', 'Status da Arena BDA');
-    ribbon.innerHTML = `
-      <strong><i aria-hidden="true"></i><span data-arena-signal>Arena online</span></strong>
-      <div class="arena-ribbon-track" aria-label="Recursos conectados">
-        <span>Campeonatos</span><i></i><span>Ranking atualizado</span><i></i><span>Comunidade BDA</span><i></i><span>Temporada 2026</span>
-      </div>
-      <button type="button">Explorar arena →</button>`;
-    ribbon.querySelector('button').addEventListener('click', () => go('tournament'));
-    hero.after(ribbon);
-
-    const cloudStatus = $('.cloud-status');
-    const signal = $('[data-arena-signal]', ribbon);
-    const syncSignal = () => {
-      const text = cloudStatus?.textContent?.trim();
-      signal.textContent = /sincronizado/i.test(text || '') ? 'Dados sincronizados' : 'Arena online';
-    };
-    syncSignal();
-    if (cloudStatus) new MutationObserver(syncSignal).observe(cloudStatus, { childList: true, subtree: true });
-  }
-
   function renderCommandResults(container, query = '') {
-    const normalized = query.trim().toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const entries = Object.entries(PAGES).filter(([, meta]) => {
-      const haystack = `${meta.label} ${meta.description}`.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      return !normalized || haystack.includes(normalized);
-    });
+    const normalize = value => value.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const normalized = normalize(query.trim());
+    const entries = Object.entries(PAGES).filter(([, meta]) => !normalized || normalize(`${meta.label} ${meta.description}`).includes(normalized));
     container.innerHTML = entries.length ? entries.map(([page, meta]) => `
       <button class="arena-command-item" type="button" data-command-page="${page}">
         <i aria-hidden="true">${meta.icon}</i>
@@ -215,8 +291,8 @@
     trigger.id = 'arenaCommandTrigger';
     trigger.type = 'button';
     trigger.setAttribute('aria-label', 'Abrir acesso rápido');
-    trigger.innerHTML = '<i aria-hidden="true">⌕</i><span>Acesso rápido</span><kbd>Ctrl K</kbd>';
-    if (topActions) topActions.prepend(trigger);
+    trigger.innerHTML = '<i aria-hidden="true">⌕</i><span>Buscar</span><kbd>Ctrl K</kbd>';
+    topActions?.prepend(trigger);
 
     const backdrop = document.createElement('div');
     backdrop.id = 'arenaCommandPalette';
@@ -225,17 +301,16 @@
     backdrop.innerHTML = `
       <section class="arena-command-panel" role="dialog" aria-modal="true" aria-labelledby="arenaCommandTitle">
         <header class="arena-command-head">
-          <div class="arena-command-search"><i aria-hidden="true">⌕</i><input id="arenaCommandInput" type="search" autocomplete="off" placeholder="Buscar área da Arena BDA" aria-label="Buscar área da Arena BDA"></div>
+          <div class="arena-command-search"><i aria-hidden="true">⌕</i><input id="arenaCommandInput" type="search" autocomplete="off" placeholder="Buscar área" aria-label="Buscar área da Arena BDA"></div>
           <button class="arena-command-close" type="button" aria-label="Fechar">×</button>
         </header>
-        <div class="arena-command-caption"><span id="arenaCommandTitle">Navegação inteligente</span><span>12 áreas disponíveis</span></div>
+        <div class="arena-command-caption"><span id="arenaCommandTitle">Navegação</span><span>12 áreas</span></div>
         <div class="arena-command-results"></div>
       </section>`;
     document.body.append(backdrop);
 
     const input = $('#arenaCommandInput', backdrop);
     const results = $('.arena-command-results', backdrop);
-    const closeButton = $('.arena-command-close', backdrop);
     let previousFocus = null;
 
     const open = () => {
@@ -245,7 +320,7 @@
       backdrop.classList.add('show');
       backdrop.setAttribute('aria-hidden', 'false');
       document.body.classList.add('arena-command-open');
-      setTimeout(() => input.focus(), 40);
+      setTimeout(() => input.focus(), 30);
     };
     const close = () => {
       backdrop.classList.remove('show');
@@ -255,7 +330,7 @@
     };
 
     trigger.addEventListener('click', open);
-    closeButton.addEventListener('click', close);
+    $('.arena-command-close', backdrop).addEventListener('click', close);
     input.addEventListener('input', () => renderCommandResults(results, input.value));
     results.addEventListener('click', event => {
       const button = event.target.closest('[data-command-page]');
@@ -281,7 +356,7 @@
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'arena-sheet-item arena-command-sheet';
-    button.innerHTML = '<i aria-hidden="true">⌕</i><span><b>Acesso rápido</b><small>Buscar qualquer área da Arena</small></span><em>›</em>';
+    button.innerHTML = '<i aria-hidden="true">⌕</i><span><b>Buscar</b><small>Acessar qualquer área</small></span><em>›</em>';
     button.addEventListener('click', () => {
       $('.arena-nav-sheet-backdrop')?.classList.remove('show');
       document.body.classList.remove('arena-sheet-open');
@@ -290,69 +365,8 @@
     grid.prepend(button);
   }
 
-  function enhanceCard(card, index = 0) {
-    if (!(card instanceof HTMLElement) || card.classList.contains('arena-spotlight-card')) return;
-    card.classList.add('arena-spotlight-card');
-    card.style.setProperty('--arena-reveal-delay', `${Math.min(index % 5, 4) * 35}ms`);
-    const glow = document.createElement('span');
-    glow.className = 'arena-card-glow';
-    glow.setAttribute('aria-hidden', 'true');
-    card.prepend(glow);
-  }
-
-  function enhanceHero(hero) {
-    if (!(hero instanceof HTMLElement) || hero.dataset.innovationHero === 'true') return;
-    hero.dataset.innovationHero = 'true';
-    const aura = document.createElement('span');
-    aura.className = 'arena-hero-aura';
-    aura.setAttribute('aria-hidden', 'true');
-    hero.prepend(aura);
-    hero.addEventListener('pointerleave', () => {
-      hero.classList.remove('arena-hero-engaged');
-      hero.style.setProperty('--arena-tilt-x', '0deg');
-      hero.style.setProperty('--arena-tilt-y', '0deg');
-    });
-  }
-
-  let revealObserver = null;
-  function ensureRevealObserver() {
-    if (revealObserver || reducedMotion.matches || !('IntersectionObserver' in window)) return;
-    revealObserver = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        if (!entry.isIntersecting) return;
-        entry.target.classList.add('is-visible');
-        revealObserver.unobserve(entry.target);
-      });
-    }, { threshold: .08, rootMargin: '0px 0px -5% 0px' });
-  }
-
-  function enhanceReveal(element, index = 0) {
-    if (!(element instanceof HTMLElement) || element.classList.contains('arena-reveal')) return;
-    element.classList.add('arena-reveal');
-    element.style.setProperty('--arena-reveal-delay', `${Math.min(index % 6, 5) * 38}ms`);
-    const rect = element.getBoundingClientRect();
-    if (reducedMotion.matches || rect.top < innerHeight * .94) element.classList.add('is-visible');
-    else revealObserver?.observe(element);
-  }
-
   function enhanceSectionHeads(root = document) {
     $$('.section-head h2', root).forEach(heading => heading.classList.add('arena-section-accent'));
-  }
-
-  function scan(root = document) {
-    ensureRevealObserver();
-    const cards = [
-      ...(root.matches?.(CARD_SELECTOR) ? [root] : []),
-      ...$$(CARD_SELECTOR, root)
-    ];
-    cards.forEach(enhanceCard);
-    const revealItems = [
-      ...(root.matches?.(REVEAL_SELECTOR) ? [root] : []),
-      ...$$(REVEAL_SELECTOR, root)
-    ];
-    revealItems.forEach(enhanceReveal);
-    $$('.arena-hero-v4', root).forEach(enhanceHero);
-    enhanceSectionHeads(root);
   }
 
   function syncPage() {
@@ -361,67 +375,25 @@
     document.body.dataset.innovationPage = page;
     document.body.style.setProperty('--innovation-accent', meta.color);
     document.body.style.setProperty('--innovation-accent-rgb', meta.rgb);
-    const activePage = $(`.page[data-page="${page}"]`);
-    if (activePage) requestAnimationFrame(() => scan(activePage));
+    enhanceSectionHeads($(`.page[data-page="${page}"]`) || document);
   }
 
-  let pointerFrame = 0;
-  let pointerEvent = null;
-  function handlePointer() {
-    pointerFrame = 0;
-    if (!pointerEvent || !finePointer.matches || reducedMotion.matches || document.body.classList.contains('arena-innovation-lite')) return;
-    const event = pointerEvent;
-    document.body.style.setProperty('--innovation-pointer-x', `${event.clientX}px`);
-    document.body.style.setProperty('--innovation-pointer-y', `${event.clientY}px`);
-
-    const card = event.target.closest?.('.arena-spotlight-card');
-    if (card) {
-      const rect = card.getBoundingClientRect();
-      card.style.setProperty('--arena-card-x', `${event.clientX - rect.left}px`);
-      card.style.setProperty('--arena-card-y', `${event.clientY - rect.top}px`);
-    }
-
-    const hero = event.target.closest?.('.arena-hero-v4');
-    if (hero) {
-      const rect = hero.getBoundingClientRect();
-      const x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-      const y = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
-      hero.classList.add('arena-hero-engaged');
-      hero.style.setProperty('--arena-hero-x', `${x * 100}%`);
-      hero.style.setProperty('--arena-hero-y', `${y * 100}%`);
-      hero.style.setProperty('--arena-tilt-x', `${(x - .5) * 3.2}deg`);
-      hero.style.setProperty('--arena-tilt-y', `${(.5 - y) * 2.4}deg`);
-    }
-  }
-
-  document.addEventListener('pointermove', event => {
-    pointerEvent = event;
-    if (!pointerFrame) pointerFrame = requestAnimationFrame(handlePointer);
-  }, { passive: true });
-
-  function refresh(root = document) {
-    installAmbientField();
-    installLiveRibbon();
+  function refresh() {
     installCommandPalette();
     installMobileCommandShortcut();
-    scan(root);
+    enhanceSectionHeads();
     syncPage();
-    requestAnimationFrame(() => document.body.classList.add('arena-motion-ready'));
   }
 
   const pageObserver = new MutationObserver(mutations => {
-    const pageChanged = mutations.some(mutation => mutation.type === 'attributes' && mutation.target.classList.contains('page'));
-    const added = mutations.flatMap(mutation => [...mutation.addedNodes]).filter(node => node.nodeType === 1);
-    if (pageChanged) syncPage();
-    if (added.length) requestAnimationFrame(() => added.forEach(node => scan(node)));
+    if (mutations.some(mutation => mutation.type === 'attributes' && mutation.target.classList.contains('page'))) syncPage();
     installMobileCommandShortcut();
   });
   pageObserver.observe($('.app-shell') || document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
 
-  reducedMotion.addEventListener?.('change', () => location.reload());
   document.addEventListener('click', event => {
     if (event.target.closest('[data-go],[data-mobile-go],[data-sheet-go]')) setTimeout(syncPage, 30);
   });
 
-  [0, 280, 850, 1600].forEach(delay => setTimeout(() => refresh(), delay));
+  [0, 320, 900].forEach(delay => setTimeout(refresh, delay));
 })();
