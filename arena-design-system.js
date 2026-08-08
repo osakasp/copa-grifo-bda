@@ -491,7 +491,7 @@
   function improveNavigation() {
     $$('.bottom-nav .nav-btn').forEach(button => {
       if (!button.title) button.title = button.textContent.trim();
-      button.setAttribute('aria-label', button.textContent.trim());
+      if (!button.hasAttribute('aria-label')) button.setAttribute('aria-label', button.textContent.trim());
     });
   }
 
