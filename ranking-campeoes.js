@@ -4,11 +4,9 @@
   const STORAGE_KEY = 'bda-champion-ranking';
   const DEFAULT_RANKING = Object.freeze([
     {
-      position: 1,
       club: 'Flamestre',
       aliases: ['Flamestre BDA', 'Flamestre FC', 'Flamestre DF'],
       titles: 6,
-      points: 60,
       achievements: [
         ['Liga A', '1ª Ed'],
         ['', '3ª e 6ª Ed'],
@@ -17,11 +15,9 @@
       ]
     },
     {
-      position: 2,
       club: 'Internacional',
       aliases: ['Internacional BDA', 'Inter BDA', 'Inter Brasil BDA'],
       titles: 5,
-      points: 50,
       achievements: [
         ['Liga A', '2ª Ed'],
         ['', '5ª Ed'],
@@ -30,70 +26,54 @@
       ]
     },
     {
-      position: 3,
       club: 'Zombie FC BDA',
       aliases: [],
       titles: 2,
-      points: 20,
       achievements: [
         ['', '8ª Ed'],
         ['', '5ª Ed']
       ]
     },
     {
-      position: 4,
       club: 'Bahia City BDA',
       aliases: [],
       titles: 1,
-      points: 10,
       achievements: [['', '1ª Ed']]
     },
     {
-      position: 4,
       club: 'Leeds United BDA',
       aliases: [],
       titles: 1,
-      points: 10,
       achievements: [['', '2ª Ed']]
     },
     {
-      position: 4,
       club: 'Barcelona City BDA',
       aliases: [],
       titles: 1,
-      points: 10,
       achievements: [['', '4ª Ed']]
     },
     {
-      position: 4,
       club: 'Santos RB BDA',
       aliases: [],
       titles: 1,
-      points: 10,
       achievements: [['', '7ª Ed']]
     },
     {
-      position: 4,
       club: 'Vasco BDA',
       aliases: [],
       titles: 1,
-      points: 10,
       achievements: [['', '2ª Ed']]
     },
     {
-      position: 4,
       club: 'AC Milan BDA',
       aliases: [],
       titles: 1,
-      points: 10,
       achievements: [['', '2ª Ed']]
     },
     {
-      position: 4,
       club: 'Hellyeah BDA',
       aliases: [],
       titles: 1,
-      points: 10,
       achievements: [['', '5ª Ed']]
     }
   ]);
@@ -116,14 +96,11 @@
 
   function normalizeEntry(entry, index = 0) {
     const titles = Math.max(0, Number(entry?.titles) || 0);
-    const rawPoints = Number(entry?.points);
     return {
       id: String(entry?.id || `ranking-${index + 1}`),
-      position: Math.max(1, Number(entry?.position) || index + 1),
       club: String(entry?.club || '').trim(),
       aliases: Array.isArray(entry?.aliases) ? entry.aliases.map(String).filter(Boolean) : [],
       titles,
-      points: Number.isFinite(rawPoints) && rawPoints >= 0 ? rawPoints : titles * 10,
       achievements: Array.isArray(entry?.achievements)
         ? entry.achievements
           .map(item => [normalizeCompetition(item?.[0]), String(item?.[1] || '').trim()])
@@ -136,7 +113,7 @@
     return entries
       .map(normalizeEntry)
       .filter(entry => entry.club)
-      .sort((a, b) => a.position - b.position || b.points - a.points || a.club.localeCompare(b.club, 'pt-BR'));
+      .sort((a, b) => b.titles - a.titles || a.club.localeCompare(b.club, 'pt-BR'));
   }
 
   function loadRanking() {
@@ -165,47 +142,72 @@
     return `${amount} ${amount === 1 ? 'título' : 'títulos'}`;
   }
 
-  function achievementText(achievements) {
-    return achievements.map(([competition, editions]) => {
-      if (competition && editions) return `${competition} (${editions})`;
-      if (editions) return `(${editions})`;
-      return competition;
-    }).filter(Boolean).join(', ');
+  function editionText(achievements) {
+    return achievements.map(([, editions]) => editions).filter(Boolean).join(' · ');
   }
 
-  function podiumCard(champion, placeClass) {
-    return `
-      <article class="champion-ranking-podium-card ${placeClass}">
-        <span class="champion-ranking-medal" aria-hidden="true">${champion.position}º</span>
-        <div>
-          <small>${champion.position === 1 ? 'Maior campeão' : `${champion.position}º lugar`}</small>
-          <h3>${escapeHtml(champion.club)}</h3>
-          <p>${titleLabel(champion.titles)} · ${champion.points} pontos</p>
-        </div>
-      </article>
-    `;
+  function clubKey(value) {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
   }
 
-  function rankingRow(champion) {
-    const aliases = champion.aliases.length
-      ? `<small class="champion-ranking-aliases">Também: ${champion.aliases.map(escapeHtml).join(' · ')}</small>`
-      : '';
+  function clubTokens(value) {
+    return clubKey(value).split(' ').filter(token => token && !['bda', 'fc', 'df', 'da', 'de', 'do'].includes(token));
+  }
+
+  function sameClub(left, right) {
+    const leftTokens = clubTokens(left);
+    const rightTokens = clubTokens(right);
+    if (!leftTokens.length || !rightTokens.length) return false;
+    const leftSorted = [...leftTokens].sort().join(' ');
+    const rightSorted = [...rightTokens].sort().join(' ');
+    if (leftSorted === rightSorted) return true;
+    if (leftTokens.length === 1) return rightTokens.includes(leftTokens[0]);
+    if (rightTokens.length === 1) return leftTokens.includes(rightTokens[0]);
+    return false;
+  }
+
+  function findChampionTeam(champion) {
+    if (typeof teams === 'undefined' || !Array.isArray(teams)) return null;
+    const names = [champion.club, ...champion.aliases];
+    return teams.find(team => names.some(name => clubKey(name) === clubKey(team?.name)))
+      || teams.find(team => names.some(name => sameClub(name, team?.name)))
+      || null;
+  }
+
+  function initials(value, code = '') {
+    return String(code || value || 'BDA')
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 3)
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 4);
+  }
+
+  function shieldMarkup(champion) {
+    const team = findChampionTeam(champion);
+    const label = `Escudo de ${champion.club}`;
+    return team?.badge
+      ? `<span class="champion-club-shield has-image" role="img" aria-label="${escapeHtml(label)}"><img src="${escapeHtml(team.badge)}" alt=""></span>`
+      : `<span class="champion-club-shield" role="img" aria-label="${escapeHtml(label)}"><b>${escapeHtml(initials(champion.club, team?.code))}</b></span>`;
+  }
+
+  function rankingRow(champion, index) {
+    const editions = editionText(champion.achievements) || 'Edições não informadas';
 
     return `
-      <article class="champion-ranking-row" role="listitem">
-        <span class="champion-ranking-position" aria-label="${champion.position}º lugar">${champion.position}º</span>
+      <article class="champion-ranking-row champion-club-card" role="listitem" style="--champion-order:${index}" aria-label="${escapeHtml(`${champion.club}, ${titleLabel(champion.titles)}, ${editions}`)}">
+        ${shieldMarkup(champion)}
         <div class="champion-ranking-club">
           <h3>${escapeHtml(champion.club)}</h3>
-          ${aliases}
-          <p><strong>Títulos:</strong> ${escapeHtml(achievementText(champion.achievements))}.</p>
-        </div>
-        <div class="champion-ranking-score">
-          <strong>${champion.titles}</strong>
-          <span>${champion.titles === 1 ? 'título' : 'títulos'}</span>
-        </div>
-        <div class="champion-ranking-points">
-          <strong>${champion.points}</strong>
-          <span>pontos</span>
+          <div class="champion-club-titles"><strong>${champion.titles}</strong><span>${champion.titles === 1 ? 'título' : 'títulos'}</span></div>
+          <div class="champion-club-editions"><span>Edições conquistadas</span><p>${escapeHtml(editions)}</p></div>
         </div>
       </article>
     `;
@@ -217,52 +219,37 @@
     const styles = document.createElement('style');
     styles.id = 'championRankingStyles';
     styles.textContent = `
-      .champion-ranking{position:relative;overflow:hidden;margin:10px 0 28px;padding:clamp(17px,4vw,28px);border:1px solid var(--line-strong);border-radius:28px;background:radial-gradient(circle at 88% 5%,rgba(242,215,125,.18),transparent 27%),linear-gradient(145deg,rgba(19,43,29,.96),rgba(5,12,8,.96));box-shadow:var(--shadow)}
-      .champion-ranking:after{content:'🏆';position:absolute;right:-22px;top:-43px;font-size:150px;opacity:.055;transform:rotate(11deg);pointer-events:none}
-      .champion-ranking-header,.champion-ranking-podium,.champion-ranking-list{position:relative;z-index:1}
-      .champion-ranking-header{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:20px}
+      .champion-ranking{position:relative;overflow:hidden;margin:10px 0 28px;padding:clamp(17px,4vw,28px);border:1px solid var(--line-strong);border-radius:28px;background:radial-gradient(circle at 88% 5%,rgba(242,215,125,.15),transparent 27%),linear-gradient(145deg,rgba(19,43,29,.96),rgba(5,12,8,.96));box-shadow:var(--shadow)}
+      .champion-ranking:after{content:'★';position:absolute;right:-15px;top:-62px;color:var(--gold-soft);font-size:190px;opacity:.04;transform:rotate(11deg);pointer-events:none}
+      .champion-ranking-header,.champion-ranking-list{position:relative;z-index:1}
+      .champion-ranking-header{display:flex;align-items:end;justify-content:space-between;gap:20px;margin-bottom:20px;padding-bottom:17px;border-bottom:1px solid var(--line)}
       .champion-ranking-header h2{margin:5px 0 4px;font-size:clamp(31px,6vw,48px);line-height:.9;text-transform:uppercase}
-      .champion-ranking-header p{margin:0;color:#cad6ce;font-size:11px;line-height:1.5}
-      .champion-ranking-tools{display:grid;gap:8px}.champion-ranking-edit{justify-self:end;min-height:39px!important}
-      .champion-ranking-summary{display:grid;grid-template-columns:repeat(3,minmax(82px,1fr));gap:7px}
-      .champion-ranking-summary div{min-width:82px;padding:10px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.035)}
-      .champion-ranking-summary strong,.champion-ranking-summary span{display:block}
-      .champion-ranking-summary strong{color:var(--gold-soft);font:800 24px/1 'Barlow Condensed',sans-serif}
-      .champion-ranking-summary span{margin-top:4px;color:var(--muted);font-size:7px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
-      .champion-ranking-podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:end;gap:9px;margin:20px 0}
-      .champion-ranking-podium-card{display:flex;align-items:center;gap:11px;min-height:94px;padding:13px;border:1px solid var(--line);border-radius:18px;background:rgba(4,10,7,.6)}
-      .champion-ranking-podium-card.first{min-height:110px;border-color:rgba(242,215,125,.48);background:linear-gradient(145deg,rgba(216,178,72,.16),rgba(4,10,7,.76));box-shadow:0 12px 30px rgba(0,0,0,.24)}
-      .champion-ranking-medal{display:grid;place-items:center;flex:0 0 auto;width:48px;height:48px;border:1px solid rgba(242,215,125,.3);border-radius:50%;color:#171107;background:linear-gradient(145deg,#fff0aa,var(--gold) 58%,#89670e);font:900 23px/1 'Barlow Condensed',sans-serif;box-shadow:0 8px 20px rgba(216,178,72,.16)}
-      .champion-ranking-podium-card.second .champion-ranking-medal{background:linear-gradient(145deg,#f3f6f4,#a9b5ae)}
-      .champion-ranking-podium-card.second{order:-1}
-      .champion-ranking-podium-card.third .champion-ranking-medal{background:linear-gradient(145deg,#e9b381,#9a5a2a)}
-      .champion-ranking-podium-card small{color:var(--gold-soft);font-size:7px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
-      .champion-ranking-podium-card h3{margin:4px 0 2px;font-size:23px;line-height:.95;text-transform:uppercase}
-      .champion-ranking-podium-card p{margin:0;color:var(--muted);font-size:8px}
-      .champion-ranking-list{display:grid;gap:7px}
-      .champion-ranking-list-head,.champion-ranking-row{display:grid;grid-template-columns:48px minmax(0,1fr) 72px 72px;align-items:center;gap:10px}
-      .champion-ranking-list-head{padding:0 12px;color:var(--muted);font-size:7px;font-weight:900;letter-spacing:.1em;text-align:center;text-transform:uppercase}
-      .champion-ranking-list-head span:nth-child(2){text-align:left}
-      .champion-ranking-row{padding:12px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.027)}
-      .champion-ranking-row:hover{border-color:rgba(242,215,125,.3);background:rgba(242,215,125,.045)}
-      .champion-ranking-position{display:grid;place-items:center;width:40px;height:40px;border:1px solid var(--line);border-radius:12px;color:var(--gold-soft);background:rgba(216,178,72,.07);font:900 18px/1 'Barlow Condensed',sans-serif}
-      .champion-ranking-club{min-width:0}
-      .champion-ranking-club h3{margin:0;font-size:19px;line-height:1;text-transform:uppercase}
-      .champion-ranking-aliases{display:block;overflow:hidden;margin-top:4px;color:var(--muted);font-size:7px;line-height:1.4;text-overflow:ellipsis;white-space:nowrap}
-      .champion-ranking-club p{margin:7px 0 0;color:#c5d1c9;font-size:8px;line-height:1.45}
-      .champion-ranking-club p strong{color:var(--gold-soft)}
-      .champion-ranking-score,.champion-ranking-points{text-align:center}
-      .champion-ranking-score strong,.champion-ranking-score span,.champion-ranking-points strong,.champion-ranking-points span{display:block}
-      .champion-ranking-score strong,.champion-ranking-points strong{font:900 22px/1 'Barlow Condensed',sans-serif}
-      .champion-ranking-points strong{color:var(--gold-soft)}
-      .champion-ranking-score span,.champion-ranking-points span{margin-top:3px;color:var(--muted);font-size:7px;text-transform:uppercase}
-      .champion-ranking-note{position:relative;z-index:1;margin:10px 2px 0;color:var(--muted);font-size:7px;line-height:1.45}
+      .champion-ranking-header p{max-width:650px;margin:0;color:#cad6ce;font-size:11px;line-height:1.5}
+      .champion-ranking-edit{flex:0 0 auto;min-height:39px!important}
+      .champion-ranking-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px}
+      .champion-club-card{position:relative;overflow:hidden;display:grid;grid-template-columns:84px minmax(0,1fr);align-items:center;gap:14px;min-height:152px;padding:16px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.018));animation:championCardReveal .48s cubic-bezier(.2,.75,.25,1) both;animation-delay:calc(var(--champion-order)*45ms);transition:transform .22s ease,border-color .22s ease,background .22s ease}
+      .champion-club-card:after{content:'';position:absolute;inset:auto -30% -75% 35%;height:130px;background:radial-gradient(circle,rgba(216,178,72,.14),transparent 67%);pointer-events:none}
+      .champion-club-card:hover{transform:translateY(-3px);border-color:rgba(242,215,125,.38);background:linear-gradient(145deg,rgba(216,178,72,.075),rgba(255,255,255,.022))}
+      .champion-club-shield{position:relative;isolation:isolate;display:grid;place-items:center;width:76px;height:88px;color:#191306;background:linear-gradient(150deg,#fff0aa 0%,var(--gold) 58%,#73560d 100%);clip-path:polygon(50% 0,91% 13%,87% 68%,50% 100%,13% 68%,9% 13%);filter:drop-shadow(0 11px 12px rgba(0,0,0,.36));animation:championShieldFloat 4s ease-in-out infinite;animation-delay:calc(var(--champion-order)*-180ms)}
+      .champion-club-shield:before{content:'';position:absolute;z-index:1;inset:-35% -70%;background:linear-gradient(110deg,transparent 38%,rgba(255,255,255,.48) 49%,transparent 60%);transform:translateX(-48%) rotate(7deg);animation:championShieldShine 5.4s ease-in-out infinite}
+      .champion-club-shield:after{content:'';position:absolute;z-index:2;inset:5px;clip-path:inherit;border:1px solid rgba(255,255,255,.3)}
+      .champion-club-shield img{position:absolute;z-index:0;inset:0;width:100%;height:100%;object-fit:cover}
+      .champion-club-shield b{position:relative;z-index:3;font:900 19px/1 'Barlow Condensed',sans-serif;letter-spacing:.04em}
+      .champion-ranking-club{position:relative;z-index:1;min-width:0}
+      .champion-ranking-club h3{margin:0 0 9px;font-size:22px;line-height:1;text-transform:uppercase}
+      .champion-club-titles{display:inline-flex;align-items:baseline;gap:5px;padding:5px 9px;border:1px solid rgba(242,215,125,.23);border-radius:999px;background:rgba(216,178,72,.08)}
+      .champion-club-titles strong{color:var(--gold-soft);font:900 21px/1 'Barlow Condensed',sans-serif}
+      .champion-club-titles span{color:#d7e0da;font-size:7px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+      .champion-club-editions{margin-top:10px}.champion-club-editions>span{display:block;color:var(--muted);font-size:6.5px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}.champion-club-editions p{margin:4px 0 0;color:#e1e7e3;font-size:8px;line-height:1.45}
+      @keyframes championCardReveal{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
+      @keyframes championShieldFloat{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-5px) rotate(1deg)}}
+      @keyframes championShieldShine{0%,58%{transform:translateX(-48%) rotate(7deg)}78%,100%{transform:translateX(48%) rotate(7deg)}}
       .champion-ranking-editor-modal{width:min(100%,720px)}
       .champion-ranking-editor-head{display:flex;align-items:start;justify-content:space-between;gap:14px;margin-bottom:14px}
       .champion-ranking-editor-head h2{margin:0}.champion-ranking-editor-head p{margin:5px 0 0}
       .champion-ranking-editor-list{display:grid;gap:7px;max-height:48vh;overflow:auto;margin-top:12px;padding-right:3px}
       .champion-ranking-editor-item{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:9px;padding:10px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.03)}
-      .champion-ranking-editor-item>span{display:grid;place-items:center;width:39px;height:39px;border-radius:11px;color:var(--gold-soft);background:rgba(216,178,72,.08);font:900 17px 'Barlow Condensed',sans-serif}
+      .champion-ranking-editor-item .champion-club-shield{width:40px;height:46px;animation:none;filter:drop-shadow(0 5px 6px rgba(0,0,0,.25))}.champion-ranking-editor-item .champion-club-shield b{font-size:12px}
       .champion-ranking-editor-item b,.champion-ranking-editor-item small{display:block}.champion-ranking-editor-item b{font-size:10px;text-transform:uppercase}.champion-ranking-editor-item small{margin-top:3px;color:var(--muted);font-size:7px}
       .champion-ranking-editor-item button{min-height:35px;padding:0 10px;font-size:8px}
       .champion-ranking-editor-toolbar{display:flex;justify-content:space-between;gap:8px}
@@ -270,23 +257,18 @@
       .champion-ranking-editor-help{display:block;margin-top:5px;color:var(--muted);font-size:7px;line-height:1.45;text-transform:none;letter-spacing:0}
       .champion-ranking-editor-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.champion-ranking-editor-actions .primary{margin-left:auto}
       @media(max-width:760px){
-        .champion-ranking-header{grid-template-columns:1fr}
-        .champion-ranking-edit{justify-self:start}
-        .champion-ranking-summary{width:100%}
-        .champion-ranking-podium{grid-template-columns:1fr}
-        .champion-ranking-podium-card,.champion-ranking-podium-card.first{min-height:0}
-        .champion-ranking-podium-card.second{order:initial}
+        .champion-ranking-header{align-items:start}
+        .champion-ranking-list{grid-template-columns:1fr}
       }
       @media(max-width:520px){
         .champion-ranking{padding:15px;border-radius:22px}
-        .champion-ranking-summary div{min-width:0;padding:9px 7px}
-        .champion-ranking-list-head{display:none}
-        .champion-ranking-row{grid-template-columns:42px minmax(0,1fr) 45px 50px;padding:10px;gap:7px}
-        .champion-ranking-position{width:37px;height:37px}
-        .champion-ranking-club h3{font-size:17px}
-        .champion-ranking-aliases{white-space:normal}
-        .champion-ranking-score span,.champion-ranking-points span{font-size:6px}
+        .champion-ranking-header{display:grid;gap:12px}.champion-ranking-edit{justify-self:start}
+        .champion-club-card{grid-template-columns:69px minmax(0,1fr);min-height:137px;padding:13px;gap:11px}
+        .champion-club-shield{width:64px;height:74px}
+        .champion-ranking-club h3{font-size:18px}
+        .champion-club-editions p{font-size:7.5px}
       }
+      @media(prefers-reduced-motion:reduce){.champion-club-card,.champion-club-shield,.champion-club-shield:before{animation:none!important;transition:none!important}}
     `;
     document.head.appendChild(styles);
   }
@@ -305,25 +287,23 @@
         <header class="champion-ranking-editor-head">
           <div>
             <h2 id="championRankingEditorTitle">Editar campeões</h2>
-            <p>Gerencie posição, nomes, títulos, pontos e conquistas.</p>
+            <p>Gerencie clubes, quantidade de títulos e edições conquistadas.</p>
           </div>
           <button class="secondary" type="button" data-close="championRankingEditorModal" aria-label="Fechar">Fechar</button>
         </header>
         <section class="champion-ranking-editor-list-view" id="championRankingEditorListView">
           <div class="champion-ranking-editor-toolbar">
-            <span class="eyebrow">Clubes classificados</span>
+            <span class="eyebrow">Clubes campeões</span>
             <button class="primary" id="championRankingAddBtn" type="button">+ Adicionar clube</button>
           </div>
           <div class="champion-ranking-editor-list" id="championRankingEditorList"></div>
         </section>
         <form class="champion-ranking-editor-form" id="championRankingEditorForm" hidden>
           <div class="form-grid two">
-            <label>Posição<input id="rankingPosition" type="number" min="1" max="999" required></label>
             <label>Clube<input id="rankingClub" maxlength="60" required placeholder="Nome oficial"></label>
-            <label style="grid-column:1/-1">Nomes alternativos<input id="rankingAliases" maxlength="240" placeholder="Nome BDA, nome FC, outro nome"><small class="champion-ranking-editor-help">Separe os nomes por vírgula.</small></label>
             <label>Títulos<input id="rankingTitles" type="number" min="0" max="999" required></label>
-            <label>Pontos<input id="rankingPoints" type="number" min="0" max="99999" required></label>
-            <label style="grid-column:1/-1">Conquistas<textarea id="rankingAchievements" required placeholder="Liga A | 1ª Ed\n| 3ª e 6ª Ed"></textarea><small class="champion-ranking-editor-help">Use competição | edição. Se o nome da competição não estiver informado, use apenas | edição.</small></label>
+            <label style="grid-column:1/-1">Nomes alternativos<input id="rankingAliases" maxlength="240" placeholder="Nome BDA, nome FC, outro nome"><small class="champion-ranking-editor-help">Separe os nomes por vírgula.</small></label>
+            <label style="grid-column:1/-1">Edições conquistadas<textarea id="rankingAchievements" required placeholder="1ª Ed\n3ª e 6ª Ed"></textarea><small class="champion-ranking-editor-help">Informe uma edição ou grupo de edições por linha.</small></label>
           </div>
           <div class="champion-ranking-editor-actions">
             <button class="danger" id="championRankingDeleteBtn" type="button">Excluir da lista</button>
@@ -345,10 +325,7 @@
   }
 
   function achievementLines(achievements) {
-    return achievements.map(([competition, editions]) => {
-      if (competition) return `${competition}${editions ? ` | ${editions}` : ''}`;
-      return editions ? `| ${editions}` : '';
-    }).filter(Boolean).join('\n');
+    return achievements.map(([competition, editions]) => editions || competition).filter(Boolean).join('\n');
   }
 
   function parseAliases(value) {
@@ -360,6 +337,7 @@
       const line = rawLine.trim();
       const editionOnly = line.match(/^\((.+)\)$/);
       if (editionOnly) return ['', editionOnly[1].trim()];
+      if (!line.includes('|')) return ['', line];
       const [competition, ...editionParts] = line.split('|');
       return [normalizeCompetition(competition), editionParts.join('|').trim()];
     }).filter(item => item[0] || item[1]);
@@ -371,8 +349,8 @@
     list.innerHTML = rankingEntries.length
       ? rankingEntries.map((entry, index) => `
         <article class="champion-ranking-editor-item">
-          <span>${entry.position}º</span>
-          <div><b>${escapeHtml(entry.club)}</b><small>${titleLabel(entry.titles)} · ${entry.points} pontos</small></div>
+          ${shieldMarkup(entry)}
+          <div><b>${escapeHtml(entry.club)}</b><small>${titleLabel(entry.titles)} · ${escapeHtml(editionText(entry.achievements) || 'Edições não informadas')}</small></div>
           <button class="ghost" type="button" data-ranking-entry="${index}">Editar</button>
         </article>
       `).join('')
@@ -398,16 +376,14 @@
     const entry = Number.isInteger(index) ? rankingEntries[index] : null;
     editingEntryIndex = entry ? index : null;
     form.reset();
-    document.getElementById('rankingPosition').value = entry?.position || (rankingEntries.at(-1)?.position || 0) + 1;
     document.getElementById('rankingClub').value = entry?.club || '';
     document.getElementById('rankingAliases').value = entry?.aliases?.join(', ') || '';
     document.getElementById('rankingTitles').value = entry?.titles ?? 0;
-    document.getElementById('rankingPoints').value = entry?.points ?? 0;
     document.getElementById('rankingAchievements').value = achievementLines(entry?.achievements || []);
     document.getElementById('championRankingDeleteBtn').hidden = !entry;
     document.getElementById('championRankingEditorListView').hidden = true;
     form.hidden = false;
-    document.getElementById('rankingPosition').focus();
+    document.getElementById('rankingClub').focus();
   }
 
   function submitEntry(event) {
@@ -423,11 +399,9 @@
     const entry = normalizeEntry({
       ...(current || {}),
       id: current?.id || `ranking-${Date.now().toString(36)}`,
-      position: document.getElementById('rankingPosition').value,
       club,
       aliases: parseAliases(document.getElementById('rankingAliases').value),
       titles: document.getElementById('rankingTitles').value,
-      points: document.getElementById('rankingPoints').value,
       achievements
     });
 
@@ -466,6 +440,10 @@
 
     installStyles();
 
+    const legacyHeader = page.querySelector(':scope > .section-head');
+    if (legacyHeader) legacyHeader.hidden = true;
+    championGrid.hidden = true;
+
     let ranking = document.getElementById('championRanking');
     if (!ranking) {
       ranking = document.createElement('section');
@@ -475,36 +453,18 @@
       page.insertBefore(ranking, championGrid);
     }
 
-    const totalTitles = rankingEntries.reduce((total, champion) => total + champion.titles, 0);
-    const record = rankingEntries.reduce((highest, champion) => Math.max(highest, champion.titles), 0);
-    const podium = rankingEntries.filter(champion => champion.position <= 3).slice(0, 3);
-    const placeClass = position => ({ 1: 'first', 2: 'second', 3: 'third' }[position] || '');
     ranking.innerHTML = `
       <header class="champion-ranking-header">
         <div>
           <span class="eyebrow">Hall da fama BDA</span>
           <h2 id="championRankingTitle">Campeões e Títulos</h2>
-          <p>Classificação histórica com nomes, títulos e pontuação administráveis.</p>
+          <p>Clubes campeões, quantidade de títulos e edições conquistadas.</p>
         </div>
-        <div class="champion-ranking-tools">
-          <button class="primary champion-ranking-edit" id="editChampionRankingBtn" type="button" ${isAdmin ? '' : 'hidden'}>Editar campeões</button>
-          <div class="champion-ranking-summary" aria-label="Resumo dos campeões">
-            <div><strong>${totalTitles}</strong><span>Títulos</span></div>
-            <div><strong>${rankingEntries.length}</strong><span>Clubes</span></div>
-            <div><strong>${record}</strong><span>Recorde</span></div>
-          </div>
-        </div>
+        <button class="primary champion-ranking-edit" id="editChampionRankingBtn" type="button" ${isAdmin ? '' : 'hidden'}>Editar campeões</button>
       </header>
-      <div class="champion-ranking-podium" aria-label="Pódio dos campeões">
-        ${podium.length ? podium.map(champion => podiumCard(champion, placeClass(champion.position))).join('') : '<div class="empty">O pódio ainda não possui clubes.</div>'}
+      <div class="champion-ranking-list" role="list" aria-label="Clubes campeões e títulos">
+        ${rankingEntries.length ? rankingEntries.map((champion, index) => rankingRow(champion, index)).join('') : '<div class="empty">Nenhum campeão cadastrado.</div>'}
       </div>
-      <div class="champion-ranking-list" role="list" aria-label="Lista completa de campeões">
-        <div class="champion-ranking-list-head" aria-hidden="true">
-          <span>Pos.</span><span>Clube e conquistas</span><span>Títulos</span><span>Pontos</span>
-        </div>
-        ${rankingEntries.length ? rankingEntries.map(rankingRow).join('') : '<div class="empty">Nenhum campeão cadastrado.</div>'}
-      </div>
-      <p class="champion-ranking-note">Em caso de igualdade no número de títulos e pontos, os clubes compartilham a mesma posição.</p>
     `;
 
     return true;
@@ -530,10 +490,16 @@
   }
 
   window.addEventListener('storage', event => {
-    if (event.key !== STORAGE_KEY) return;
-    rankingEntries = loadRanking();
-    render();
+    if (event.key === STORAGE_KEY) rankingEntries = loadRanking();
+    const teamStorageKey = typeof STORAGE !== 'undefined' ? STORAGE.teams : 'bda-v2-teams';
+    if ([STORAGE_KEY, teamStorageKey].includes(event.key)) render();
   });
+
+  window.addEventListener('arena:team-profile-updated', render);
+  window.addEventListener('arena:cloud-ready', () => window.setTimeout(render, 250));
+
+  const teamGrid = document.getElementById('teamGrid');
+  if (teamGrid) new MutationObserver(render).observe(teamGrid, { childList: true, subtree: true });
 
   window.ArenaBDAChampionRanking = Object.freeze({
     get champions() { return clone(rankingEntries); },
