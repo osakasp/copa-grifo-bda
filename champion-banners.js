@@ -4,6 +4,7 @@
   const MAX_FILE_BYTES = 8 * 1024 * 1024;
   const MAX_BANNER_SIDE = 1000;
   let pendingChampionBanner = '';
+  let editingChampionIndex = null;
 
   const styles = document.createElement('style');
   styles.textContent = `
@@ -48,7 +49,7 @@
     } catch (error) {
       champions = previousValue;
       renderChampions();
-      toast('Não foi possível salvar o banner neste navegador');
+      toast('Não foi possível salvar o campeão neste navegador');
       return false;
     }
   }
@@ -104,6 +105,9 @@
 
     return `
       <div class="champion-banner-actions">
+        <button class="primary" type="button" data-edit-champion="${index}">
+          Editar dados
+        </button>
         <button class="ghost" type="button" data-change-champion-banner="${index}">
           ${champion.banner ? 'Trocar banner' : 'Adicionar banner'}
         </button>
@@ -171,13 +175,18 @@
     const preview = document.getElementById('championBannerPreview');
     if (!preview) return;
 
-    preview.innerHTML = pendingChampionBanner
+    const currentBanner = Number.isInteger(editingChampionIndex)
+      ? champions[editingChampionIndex]?.banner || ''
+      : '';
+    const banner = pendingChampionBanner || currentBanner;
+
+    preview.innerHTML = banner
       ? `
         <div class="champion-banner-preview-media">
-          <img src="${safeImageSource(pendingChampionBanner)}" alt="Prévia do banner de campeão">
+          <img src="${safeImageSource(banner)}" alt="Prévia do banner de campeão">
         </div>
         <span class="champion-banner-preview-copy">
-          O banner ocupará o quadro do campeão na galeria.
+          ${pendingChampionBanner ? 'Novo banner pronto para salvar.' : 'Banner atual do campeão.'}
         </span>
       `
       : `
@@ -197,6 +206,9 @@
 
     const submitButton = form.querySelector('button.primary');
     if (submitButton) submitButton.type = 'submit';
+
+    const modalTitle = document.querySelector('#championModal .modal > h2');
+    if (modalTitle) modalTitle.id = 'championModalTitle';
 
     const formGrid = form.querySelector('.form-grid');
     const bannerField = document.createElement('label');
@@ -236,6 +248,7 @@
       event.preventDefault();
 
       const champion = {
+        ...(Number.isInteger(editingChampionIndex) ? champions[editingChampionIndex] : {}),
         edition: document.getElementById('championEdition').value.trim(),
         name: document.getElementById('championName').value.trim(),
         master: document.getElementById('championMaster').value.trim(),
@@ -247,15 +260,20 @@
       if (pendingChampionBanner) champion.banner = pendingChampionBanner;
 
       const previousValue = cloneChampions();
-      champions.unshift(champion);
+      const isEditing = Number.isInteger(editingChampionIndex)
+        && Boolean(champions[editingChampionIndex]);
+
+      if (isEditing) champions[editingChampionIndex] = champion;
+      else champions.unshift(champion);
       if (!persistChampions(previousValue)) return;
 
       form.reset();
       pendingChampionBanner = '';
+      editingChampionIndex = null;
       updateBannerPreview();
       closeModal('championModal');
       renderChampions();
-      toast('Campeão adicionado à galeria');
+      toast(isEditing ? 'Dados do campeão atualizados' : 'Campeão adicionado à galeria');
     });
 
     form.addEventListener('reset', () => {
@@ -264,6 +282,47 @@
         updateBannerPreview();
       }, 0);
     });
+
+    document.getElementById('addChampionBtn')?.addEventListener('click', openChampionCreator);
+  }
+
+  function configureChampionModal(title, submitLabel) {
+    const form = document.getElementById('championForm');
+    const titleElement = document.getElementById('championModalTitle');
+    const submitButton = form?.querySelector('button.primary');
+    if (titleElement) titleElement.textContent = title;
+    if (submitButton) submitButton.textContent = submitLabel;
+  }
+
+  function openChampionCreator() {
+    const form = document.getElementById('championForm');
+    if (!form || !isAdmin) return;
+    editingChampionIndex = null;
+    pendingChampionBanner = '';
+    form.reset();
+    configureChampionModal('Adicionar campeão', 'Salvar campeão');
+    updateBannerPreview();
+    openModal('championModal');
+    document.getElementById('championEdition')?.focus();
+  }
+
+  function openChampionEditor(index) {
+    const champion = champions[index];
+    const form = document.getElementById('championForm');
+    if (!isAdmin || !champion || !form) return;
+
+    editingChampionIndex = index;
+    pendingChampionBanner = '';
+    form.reset();
+    document.getElementById('championEdition').value = champion.edition || '';
+    document.getElementById('championName').value = champion.name || '';
+    document.getElementById('championMaster').value = champion.master || '';
+    document.getElementById('championPlayer').value = champion.player || '';
+    document.getElementById('championQuote').value = champion.quote || '';
+    configureChampionModal('Editar campeão', 'Salvar alterações');
+    updateBannerPreview();
+    openModal('championModal');
+    document.getElementById('championEdition')?.focus();
   }
 
   function openBannerPicker(index) {
@@ -300,6 +359,12 @@
   }
 
   document.addEventListener('click', event => {
+    const editButton = event.target.closest('[data-edit-champion]');
+    if (editButton && isAdmin) {
+      openChampionEditor(Number(editButton.dataset.editChampion));
+      return;
+    }
+
     const changeButton = event.target.closest('[data-change-champion-banner]');
     if (changeButton && isAdmin) {
       openBannerPicker(Number(changeButton.dataset.changeChampionBanner));
