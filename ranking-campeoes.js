@@ -143,7 +143,10 @@
   }
 
   function editionText(achievements) {
-    return achievements.map(([, editions]) => editions).filter(Boolean).join(' · ');
+    return achievements.map(([competition, editions]) => {
+      const legacyEdition = /(?:\d|ed(?:i(?:ç|c)[aã]o)?)/i.test(competition) ? competition : '';
+      return String(editions || legacyEdition).replace(/^\((.+)\)$/, '$1').trim();
+    }).filter(Boolean).join(' · ');
   }
 
   function clubKey(value) {
@@ -220,6 +223,7 @@
     styles.id = 'championRankingStyles';
     styles.textContent = `
       .champion-ranking{position:relative;overflow:hidden;margin:10px 0 28px;padding:clamp(17px,4vw,28px);border:1px solid var(--line-strong);border-radius:28px;background:radial-gradient(circle at 88% 5%,rgba(242,215,125,.15),transparent 27%),linear-gradient(145deg,rgba(19,43,29,.96),rgba(5,12,8,.96));box-shadow:var(--shadow)}
+      .champion-ranking-legacy-hidden{display:none!important}
       .champion-ranking:after{content:'★';position:absolute;right:-15px;top:-62px;color:var(--gold-soft);font-size:190px;opacity:.04;transform:rotate(11deg);pointer-events:none}
       .champion-ranking-header,.champion-ranking-list{position:relative;z-index:1}
       .champion-ranking-header{display:flex;align-items:end;justify-content:space-between;gap:20px;margin-bottom:20px;padding-bottom:17px;border-bottom:1px solid var(--line)}
@@ -441,8 +445,12 @@
     installStyles();
 
     const legacyHeader = page.querySelector(':scope > .section-head');
-    if (legacyHeader) legacyHeader.hidden = true;
+    if (legacyHeader) {
+      legacyHeader.hidden = true;
+      legacyHeader.classList.add('champion-ranking-legacy-hidden');
+    }
     championGrid.hidden = true;
+    championGrid.classList.add('champion-ranking-legacy-hidden');
 
     let ranking = document.getElementById('championRanking');
     if (!ranking) {
