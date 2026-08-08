@@ -314,7 +314,7 @@
     const team = teamList()[index];
     if (!team) return;
     activeTeamIndex = index;
-    const { stats, rank, titles, competitions, winRate } = profileData(team, index);
+    const { stats, titles, competitions, winRate } = profileData(team, index);
     const modal = ensureProfileModal();
     const banner = team.profileBanner || '';
     const phrase = team.phrase || 'Representando o Clã BDA dentro e fora da arena.';
@@ -338,7 +338,7 @@
 
       <main class="club-profile-body">
         <section class="club-profile-overview">
-          <article><span>Ranking BDA</span><b>${rank ? `${rank}º` : '–'}</b><small>${stats.points} pontos</small></article>
+          <article><span>Competições</span><b>${stats.participations}</b><small>participações registradas</small></article>
           <article><span>Títulos</span><b>${stats.titles}</b><small>${stats.runnerUps} vice${stats.runnerUps === 1 ? '' : 's'}</small></article>
           <article><span>Jogos</span><b>${stats.played}</b><small>${stats.wins} vitórias</small></article>
           <article><span>Aproveitamento</span><b>${winRate}%</b><small>${stats.gf} gols marcados</small></article>
@@ -543,8 +543,8 @@
     if (activeTeamIndex < 0) return;
     const team = teamList()[activeTeamIndex];
     if (!team) return;
-    const { stats, rank } = profileData(team, activeTeamIndex);
-    const text = `${team.name} • Mestre ${team.master || 'BDA'} • ${rank || '–'}º no Ranking BDA • ${stats.titles} títulos • ${stats.wins} vitórias`;
+    const { stats } = profileData(team, activeTeamIndex);
+    const text = `${team.name} • Mestre ${team.master || 'BDA'} • ${stats.titles} títulos • ${stats.wins} vitórias`;
     if (navigator.share) navigator.share({ title: `Perfil ${team.name}`, text, url: location.href }).catch(error => { if (error?.name !== 'AbortError') notify('Não foi possível compartilhar'); });
     else navigator.clipboard?.writeText(`${text}\n${location.href}`).then(() => notify('Resumo do perfil copiado')).catch(() => notify('Não foi possível copiar o perfil'));
   }

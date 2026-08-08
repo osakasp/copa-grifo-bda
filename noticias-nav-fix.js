@@ -66,32 +66,14 @@
     return button;
   }
 
-  function makeSheetItem(page, icon, label, description) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'arena-sheet-item';
-    button.dataset.sheetGo = page;
-    button.innerHTML = `<i>${icon}</i><span><b>${label}</b><small>${description}</small></span><em>›</em>`;
-    button.addEventListener('click', () => go(page));
-    return button;
-  }
-
   function ensureMobileNavigation() {
     const mobile = $('.arena-mobile-nav');
     if (mobile && !mobile.querySelector('[data-mobile-go="news"]')) {
-      const ranking = mobile.querySelector('[data-mobile-go="ranking"]');
       const newsButton = makeMobileNewsButton();
-      if (ranking) ranking.replaceWith(newsButton);
-      else {
-        const more = mobile.querySelector('[data-mobile-more]');
-        more ? mobile.insertBefore(newsButton, more) : mobile.append(newsButton);
-      }
+      const more = mobile.querySelector('[data-mobile-more]');
+      more ? mobile.insertBefore(newsButton, more) : mobile.append(newsButton);
     }
 
-    const grid = $('.arena-nav-sheet-grid');
-    if (grid && !grid.querySelector('[data-sheet-go="ranking"]')) {
-      grid.prepend(makeSheetItem('ranking', '📊', 'Ranking', 'Classificação geral BDA'));
-    }
   }
 
   function syncActive() {
@@ -111,7 +93,7 @@
 
     const more = $('.arena-mobile-item[data-mobile-more]');
     if (more) {
-      const active = ['ranking', 'history', 'champions', 'teams', 'community'].includes(page);
+      const active = ['history', 'teams', 'community'].includes(page);
       more.classList.toggle('active', active);
       active ? more.setAttribute('aria-current', 'page') : more.removeAttribute('aria-current');
     }

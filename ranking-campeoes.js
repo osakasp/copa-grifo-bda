@@ -156,7 +156,7 @@
     } catch {
       rankingEntries = previousValue;
       render();
-      toast('Não foi possível salvar o ranking neste navegador');
+      toast('Não foi possível salvar a lista de campeões neste navegador');
       return false;
     }
   }
@@ -304,7 +304,7 @@
       <div class="modal champion-ranking-editor-modal">
         <header class="champion-ranking-editor-head">
           <div>
-            <h2 id="championRankingEditorTitle">Editar ranking</h2>
+            <h2 id="championRankingEditorTitle">Editar campeões</h2>
             <p>Gerencie posição, nomes, títulos, pontos e conquistas.</p>
           </div>
           <button class="secondary" type="button" data-close="championRankingEditorModal" aria-label="Fechar">Fechar</button>
@@ -326,7 +326,7 @@
             <label style="grid-column:1/-1">Conquistas<textarea id="rankingAchievements" required placeholder="Liga A | 1ª Ed\n| 3ª e 6ª Ed"></textarea><small class="champion-ranking-editor-help">Use competição | edição. Se o nome da competição não estiver informado, use apenas | edição.</small></label>
           </div>
           <div class="champion-ranking-editor-actions">
-            <button class="danger" id="championRankingDeleteBtn" type="button">Excluir do ranking</button>
+            <button class="danger" id="championRankingDeleteBtn" type="button">Excluir da lista</button>
             <button class="secondary" id="championRankingBackBtn" type="button">Voltar</button>
             <button class="primary" type="submit">Salvar alterações</button>
           </div>
@@ -376,7 +376,7 @@
           <button class="ghost" type="button" data-ranking-entry="${index}">Editar</button>
         </article>
       `).join('')
-      : '<div class="empty">Nenhum clube no ranking.</div>';
+      : '<div class="empty">Nenhum campeão cadastrado.</div>';
   }
 
   function showEditorList() {
@@ -438,19 +438,19 @@
 
     render();
     showEditorList();
-    toast(current ? 'Ranking atualizado' : 'Clube adicionado ao ranking');
+    toast(current ? 'Campeão atualizado' : 'Clube adicionado aos campeões');
   }
 
   function deleteCurrentEntry() {
     if (!isAdmin || !Number.isInteger(editingEntryIndex)) return;
     const entry = rankingEntries[editingEntryIndex];
-    if (!entry || !confirm(`Excluir ${entry.club} do ranking?`)) return;
+    if (!entry || !confirm(`Excluir ${entry.club} da lista de campeões?`)) return;
     const previousValue = clone(rankingEntries);
     rankingEntries.splice(editingEntryIndex, 1);
     if (!persistRanking(previousValue)) return;
     render();
     showEditorList();
-    toast('Clube removido do ranking');
+    toast('Clube removido dos campeões');
   }
 
   function updateAdminControls() {
@@ -483,12 +483,12 @@
       <header class="champion-ranking-header">
         <div>
           <span class="eyebrow">Hall da fama BDA</span>
-          <h2 id="championRankingTitle">Ranking de Campeões</h2>
+          <h2 id="championRankingTitle">Campeões e Títulos</h2>
           <p>Classificação histórica com nomes, títulos e pontuação administráveis.</p>
         </div>
         <div class="champion-ranking-tools">
-          <button class="primary champion-ranking-edit" id="editChampionRankingBtn" type="button" ${isAdmin ? '' : 'hidden'}>Editar ranking</button>
-          <div class="champion-ranking-summary" aria-label="Resumo do ranking">
+          <button class="primary champion-ranking-edit" id="editChampionRankingBtn" type="button" ${isAdmin ? '' : 'hidden'}>Editar campeões</button>
+          <div class="champion-ranking-summary" aria-label="Resumo dos campeões">
             <div><strong>${totalTitles}</strong><span>Títulos</span></div>
             <div><strong>${rankingEntries.length}</strong><span>Clubes</span></div>
             <div><strong>${record}</strong><span>Recorde</span></div>
@@ -498,11 +498,11 @@
       <div class="champion-ranking-podium" aria-label="Pódio dos campeões">
         ${podium.length ? podium.map(champion => podiumCard(champion, placeClass(champion.position))).join('') : '<div class="empty">O pódio ainda não possui clubes.</div>'}
       </div>
-      <div class="champion-ranking-list" role="list" aria-label="Classificação completa">
+      <div class="champion-ranking-list" role="list" aria-label="Lista completa de campeões">
         <div class="champion-ranking-list-head" aria-hidden="true">
           <span>Pos.</span><span>Clube e conquistas</span><span>Títulos</span><span>Pontos</span>
         </div>
-        ${rankingEntries.length ? rankingEntries.map(rankingRow).join('') : '<div class="empty">Nenhum clube no ranking.</div>'}
+        ${rankingEntries.length ? rankingEntries.map(rankingRow).join('') : '<div class="empty">Nenhum campeão cadastrado.</div>'}
       </div>
       <p class="champion-ranking-note">Em caso de igualdade no número de títulos e pontos, os clubes compartilham a mesma posição.</p>
     `;

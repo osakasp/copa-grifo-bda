@@ -1,16 +1,15 @@
 (() => {
   'use strict';
 
-  const ORDER = ['home', 'news', 'history', 'tournament', 'flash', 'season', 'registrations', 'ranking', 'champions', 'teams', 'community', 'feedback'];
+  const ORDER = ['home', 'news', 'history', 'tournament', 'flash', 'season', 'registrations', 'champions', 'teams', 'community', 'feedback'];
   const META = {
     home: ['⌂', 'Início', 'Visão geral da arena'],
     news: ['📰', 'Notícias', 'Comunicados e novidades'],
     history: ['📜', 'História', 'Memória oficial do clã'],
     tournament: ['🏆', 'Campeonatos', 'Copas, ligas e confrontos'],
-    flash: ['⚡', 'Copas Flash', 'Edições rápidas e ranking geral'],
+    flash: ['⚡', 'Copas Flash', 'Edições rápidas'],
     season: ['🗓️', 'Temporada', 'Calendário e classificação'],
     registrations: ['✍️', 'Inscrições', 'Vagas e aprovações'],
-    ranking: ['📊', 'Ranking', 'Classificação geral BDA'],
     champions: ['★', 'Campeões', 'Sala de troféus'],
     teams: ['🛡', 'Times', 'Clubes cadastrados'],
     community: ['💬', 'Comunidade', 'Arquibancada do clã'],
@@ -104,7 +103,7 @@
       mobileNav = document.createElement('nav');
       mobileNav.className = 'arena-mobile-nav';
       mobileNav.setAttribute('aria-label', 'Navegação móvel');
-      ['home', 'tournament', 'registrations', 'ranking'].forEach(page => mobileNav.append(mobileItem(page)));
+      ['home', 'tournament', 'champions', 'news'].forEach(page => mobileNav.append(mobileItem(page)));
 
       const more = document.createElement('button');
       more.type = 'button';
@@ -128,7 +127,7 @@
           <footer><img src="${iconUrl()}" alt="Grifo"><span><b>Clã BDA</b><small>Todos os campeonatos em uma só arena.</small></span></footer>
         </section>`;
 
-      ['flash', 'season', 'news', 'history', 'champions', 'teams', 'community', 'feedback'].forEach(page => {
+      ['registrations', 'flash', 'season', 'history', 'teams', 'community', 'feedback'].forEach(page => {
         const [icon, label, description] = META[page];
         const button = document.createElement('button');
         button.type = 'button';
