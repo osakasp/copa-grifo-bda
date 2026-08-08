@@ -13,11 +13,10 @@
     flash: { icon: '05', label: 'Copas Flash', description: 'Edições rápidas', color: '#a998c2', rgb: '169,152,194' },
     season: { icon: '06', label: 'Temporada', description: 'Calendário e classificação', color: '#8aaec7', rgb: '138,174,199' },
     registrations: { icon: '07', label: 'Inscrições', description: 'Vagas e aprovações', color: '#83b99b', rgb: '131,185,155' },
-    ranking: { icon: '08', label: 'Ranking', description: 'Classificação geral', color: '#d8b66a', rgb: '216,182,106' },
-    champions: { icon: '09', label: 'Campeões', description: 'Sala de Troféus', color: '#e3c45f', rgb: '227,196,95' },
-    teams: { icon: '10', label: 'Times', description: 'Clubes cadastrados', color: '#7fb5aa', rgb: '127,181,170' },
-    community: { icon: '11', label: 'Comunidade', description: 'Arquibancada do clã', color: '#a69abf', rgb: '166,154,191' },
-    feedback: { icon: '12', label: 'Feedback', description: 'Ajude a melhorar a Arena', color: '#85b5bf', rgb: '133,181,191' }
+    champions: { icon: '08', label: 'Campeões', description: 'Títulos da Arena BDA', color: '#e3c45f', rgb: '227,196,95' },
+    teams: { icon: '09', label: 'Times', description: 'Clubes cadastrados', color: '#7fb5aa', rgb: '127,181,170' },
+    community: { icon: '10', label: 'Comunidade', description: 'Arquibancada do clã', color: '#a69abf', rgb: '166,154,191' },
+    feedback: { icon: '11', label: 'Feedback', description: 'Ajude a melhorar a Arena', color: '#85b5bf', rgb: '133,181,191' }
   });
 
   document.documentElement.dataset.arenaInnovation = VERSION;
@@ -304,7 +303,7 @@
           <div class="arena-command-search"><i aria-hidden="true">⌕</i><input id="arenaCommandInput" type="search" autocomplete="off" placeholder="Buscar área" aria-label="Buscar área da Arena BDA"></div>
           <button class="arena-command-close" type="button" aria-label="Fechar">×</button>
         </header>
-        <div class="arena-command-caption"><span id="arenaCommandTitle">Navegação</span><span>12 áreas</span></div>
+        <div class="arena-command-caption"><span id="arenaCommandTitle">Navegação</span><span>11 áreas</span></div>
         <div class="arena-command-results"></div>
       </section>`;
     document.body.append(backdrop);
@@ -351,7 +350,7 @@
   }
 
   function installMobileCommandShortcut() {
-    const grid = $('.arena-nav-sheet-grid');
+    const grid = $('.arena-sheet-grid');
     if (!grid || $('.arena-command-sheet', grid)) return;
     const button = document.createElement('button');
     button.type = 'button';
