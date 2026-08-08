@@ -5,14 +5,10 @@
   const BUNDLES = Object.freeze({
     champions: [
       './champion-banners.js?v=20260808-2',
-      './ranking-campeoes.js?v=20260808-4'
+      './ranking-campeoes.js?v=20260808-5'
     ],
     registrations: [
       './central-inscricoes.js'
-    ],
-    ranking: [
-      './arena-editor-pro.js',
-      './ranking-bda.js'
     ],
     history: [
       './arena-editor-pro.js',
@@ -32,7 +28,7 @@
       './feedback-bda.js?v=20260803-1'
     ],
     teams: [
-      './perfis-clubes.js?v=20260726-2',
+      './perfis-clubes.js?v=20260808-1',
       './editor-perfis-times.js?v=20260726-2',
       './club-profile-router.js?v=20260726-2',
       './solicitacoes-edicao-times.js?v=20260726-1'
@@ -40,7 +36,7 @@
     news: [
       './noticias-bootstrap.js?v=20260727-1',
       './noticias-bda.js?v=20260801-3',
-      './noticias-nav-fix.js?v=20260727-1'
+      './noticias-nav-fix.js?v=20260808-1'
     ],
     tournament: [
       './confrontos-copa-grifo.js',
@@ -67,7 +63,6 @@
     season: 'season',
     flash: 'flash',
     news: 'news',
-    ranking: 'ranking',
     registrations: 'registrations',
     teams: 'teams',
     tournament: 'tournament',
@@ -79,7 +74,6 @@
     season: ['🗓️', 'Temporada'],
     flash: ['⚡', 'Copas Flash'],
     registrations: ['✍️', 'Inscrições'],
-    ranking: ['📊', 'Ranking'],
     news: ['📰', 'Notícias'],
     feedback: ['💬', 'Feedback']
   });
@@ -182,7 +176,8 @@
   function triggerPage(trigger) {
     if (!trigger) return '';
     if (trigger.id === 'newsTopShortcut') return 'news';
-    return trigger.dataset.go || trigger.dataset.mobileGo || trigger.dataset.sheetGo || '';
+    const page = trigger.dataset.go || trigger.dataset.mobileGo || trigger.dataset.sheetGo || '';
+    return page === 'ranking' ? 'champions' : page;
   }
 
   function routeTrigger(event) {
