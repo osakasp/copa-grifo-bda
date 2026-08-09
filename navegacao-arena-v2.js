@@ -106,7 +106,7 @@
     if (!$('.arena-side-footer', nav)) {
       const footer = document.createElement('div');
       footer.className = 'arena-side-footer';
-      footer.innerHTML = '<span>●</span><div><b>Arena online</b><small>arenabda.com.br</small></div>';
+      footer.innerHTML = '<div><b>Site oficial</b><small>arenabda.com.br</small></div>';
       nav.append(footer);
     }
   }

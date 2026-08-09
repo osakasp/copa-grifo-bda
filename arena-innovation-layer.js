@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '2026.08-human-ui';
+  const VERSION = '2026.08-professional-ui';
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
@@ -20,7 +20,7 @@
   });
 
   document.documentElement.dataset.arenaInnovation = VERSION;
-  document.body.classList.add('arena-innovation-2026', 'arena-minimal-2026', 'arena-human-ui');
+  document.body.classList.add('arena-innovation-2026', 'arena-minimal-2026', 'arena-human-ui', 'arena-professional-ui');
 
   const style = document.createElement('style');
   style.id = 'arenaInnovationStyles';
@@ -428,6 +428,219 @@
     body.arena-human-ui .arena-sheet-item i{
       border-radius:4px;
       font:800 8px/1 Inter,Arial,sans-serif;
+    }
+
+    /* Portal esportivo: informação acima de ornamento. */
+    body.arena-professional-ui{
+      --bg:#060a07;
+      --bg-soft:#080e0a;
+      --surface:#0b1410;
+      --surface-2:#0e1913;
+      --surface-3:#111f17;
+      --line:rgba(222,232,225,.11);
+      --line-strong:rgba(227,196,95,.32);
+      background:#060a07!important;
+      color:#edf2ee;
+    }
+    body.arena-professional-ui .topbar{
+      min-height:64px!important;
+      border:1px solid var(--line)!important;
+      border-radius:9px!important;
+      background:#0a120d!important;
+      box-shadow:none!important;
+      backdrop-filter:none!important;
+    }
+    body.arena-professional-ui .brand-copy strong{font-size:20px!important;letter-spacing:.015em!important}
+    body.arena-professional-ui .brand-copy span{font-size:7px!important;letter-spacing:.08em!important;text-transform:uppercase}
+    body.arena-professional-ui .brand-mark{border-radius:7px!important;box-shadow:none!important}
+    body.arena-professional-ui .arena-top-status{display:none!important}
+    body.arena-professional-ui .cloud-status{
+      min-height:32px!important;
+      padding:0 9px!important;
+      border-radius:4px!important;
+      background:transparent!important;
+      font-size:8px!important;
+      letter-spacing:.04em!important;
+      text-transform:none!important;
+    }
+    body.arena-professional-ui :is(.icon-btn,.admin-btn,#cloudPanelBtn){border-radius:5px!important;background:#0b1610!important}
+    body.arena-professional-ui .arena-clean-panel-icon,
+    body.arena-professional-ui .arena-clean-admin-icon{
+      display:grid;
+      place-items:center;
+      min-width:20px;
+      height:20px;
+      border-right:1px solid #2a3b31;
+      padding-right:5px;
+      font:800 7px/1 Inter,Arial,sans-serif;
+      letter-spacing:.04em;
+    }
+    body.arena-professional-ui .arena-notification-button>span{font-size:0!important;animation:none!important}
+    body.arena-professional-ui .arena-notification-button>span:after{
+      content:"AV";
+      font:800 7px/1 Inter,Arial,sans-serif;
+      letter-spacing:.04em;
+    }
+
+    @media(min-width:980px){
+      body.arena-professional-ui .bottom-nav.arena-side-nav{
+        width:214px!important;
+        padding:12px!important;
+        border:1px solid var(--line)!important;
+        border-radius:10px!important;
+        background:#08110c!important;
+        box-shadow:none!important;
+        backdrop-filter:none!important;
+      }
+      body.arena-professional-ui .arena-side-brand{padding:4px 4px 14px!important;border-bottom:1px solid var(--line)!important}
+      body.arena-professional-ui .arena-side-logo{border-radius:7px!important;box-shadow:none!important}
+      body.arena-professional-ui .arena-side-heading{padding:10px 5px 2px!important;color:#788980!important;font-size:7px!important;letter-spacing:.12em!important}
+      body.arena-professional-ui .arena-side-footer{
+        display:block!important;
+        padding:10px 7px!important;
+        border:0!important;
+        border-top:1px solid var(--line)!important;
+        border-radius:0!important;
+        background:transparent!important;
+      }
+    }
+
+    body.arena-professional-ui [data-page="home"] .hero{
+      min-height:330px!important;
+      padding:clamp(25px,4.2vw,48px)!important;
+      border:1px solid rgba(227,196,95,.20)!important;
+      border-radius:10px!important;
+      background:#0a1810!important;
+      box-shadow:none!important;
+    }
+    body.arena-professional-ui [data-page="home"] .hero:after{display:none!important}
+    body.arena-professional-ui [data-page="home"] .hero:before{opacity:.12!important;filter:grayscale(.2) contrast(1.04)!important}
+    body.arena-professional-ui [data-page="home"] .hero-content{
+      width:min(100%,690px)!important;
+      min-height:0!important;
+      padding:0!important;
+    }
+    body.arena-professional-ui [data-page="home"] .hero h1{
+      max-width:650px!important;
+      margin:10px 0 12px!important;
+      font-size:clamp(42px,6vw,64px)!important;
+      line-height:.92!important;
+      letter-spacing:-.015em!important;
+      text-transform:uppercase;
+    }
+    body.arena-professional-ui [data-page="home"] .hero p{
+      max-width:585px!important;
+      color:#bac7bf!important;
+      font-size:12px!important;
+      line-height:1.62!important;
+    }
+    body.arena-professional-ui [data-page="home"] .hero-actions{margin-top:21px!important}
+    body.arena-professional-ui .arena-hero-layout{display:block!important;padding:0!important}
+    body.arena-professional-ui .arena-hero-console{display:none!important}
+
+    body.arena-professional-ui .eyebrow{
+      display:inline-flex!important;
+      min-height:0!important;
+      padding:0!important;
+      border:0!important;
+      border-radius:0!important;
+      color:#cdb45e!important;
+      background:transparent!important;
+      font-size:8px!important;
+      line-height:1.2!important;
+      letter-spacing:.12em!important;
+      text-transform:uppercase!important;
+    }
+    body.arena-professional-ui .eyebrow:before{display:none!important}
+    body.arena-professional-ui .section-head{
+      margin:28px 0 12px!important;
+      padding:0!important;
+      border-left:0!important;
+    }
+    body.arena-professional-ui .section-head h2{
+      margin-top:4px!important;
+      font-size:clamp(23px,3vw,29px)!important;
+      line-height:1.05!important;
+      letter-spacing:0!important;
+      text-transform:none!important;
+    }
+    body.arena-professional-ui .section-head p{color:#84958b!important;font-size:10px!important}
+    body.arena-professional-ui .arena-section-accent:after{display:none!important}
+
+    body.arena-professional-ui #arenaStats{
+      display:grid!important;
+      grid-template-columns:repeat(5,minmax(0,1fr))!important;
+      gap:0!important;
+      margin:10px 0 30px!important;
+      overflow:hidden;
+      border:1px solid var(--line)!important;
+      border-radius:8px!important;
+      background:#09130d!important;
+    }
+    body.arena-professional-ui #arenaStats .stat{
+      min-height:72px!important;
+      padding:13px 15px!important;
+      border:0!important;
+      border-right:1px solid var(--line)!important;
+      border-radius:0!important;
+      background:transparent!important;
+      box-shadow:none!important;
+    }
+    body.arena-professional-ui #arenaStats .stat:last-child{border-right:0!important}
+    body.arena-professional-ui #arenaStats .stat b{color:#e3c45f!important;font-size:25px!important;font-variant-numeric:tabular-nums}
+    body.arena-professional-ui #arenaStats .stat span{margin-top:6px!important;color:#84958b!important;font-size:7px!important;letter-spacing:.07em!important}
+
+    body.arena-professional-ui .home-command{margin:0!important;padding:17px 0 20px!important}
+    body.arena-professional-ui .home-command>header{display:block!important}
+    body.arena-professional-ui .home-command h2{margin:4px 0 0!important;font-size:25px!important}
+    body.arena-professional-ui .home-online{display:none!important}
+    body.arena-professional-ui .home-command nav button{background:#09120d!important}
+    body.arena-professional-ui .home-command nav button b{font-weight:700!important}
+    body.arena-professional-ui .arena-home-scroll{gap:8px!important}
+    body.arena-professional-ui .arena-home-card{
+      min-height:158px!important;
+      padding:15px!important;
+      border-radius:7px!important;
+      background:#0a1510!important;
+      box-shadow:none!important;
+    }
+    body.arena-professional-ui .arena-home-card:before{display:none!important;content:none!important}
+    body.arena-professional-ui .arena-home-card h3{margin:9px 0 6px!important;font-size:24px!important;letter-spacing:0!important}
+
+    body.arena-professional-ui :where(.card,.form-card,.admin-panel,.arena-card,.champion-card,.team-card,.arena-stat,.gi-game,.rank-podium-card,.rank-hall article,.rank-rules article,.league-groups-preview article,.history-values article,.history-timeline article,.history-gallery-card,.registration-card,.registration-admin-card,.auto-standing-card,.champion-ranking-row,.champion-ranking-podium-card){
+      border-color:var(--line)!important;
+      border-radius:8px!important;
+      background:#0b1510!important;
+      box-shadow:none!important;
+    }
+    body.arena-professional-ui :where(.card,.arena-card,.champion-card,.team-card,.arena-stat,.gi-game):hover{transform:none!important;box-shadow:none!important}
+    body.arena-professional-ui :is(.arena-symbol,.arena-hero-symbol){display:none!important}
+    body.arena-professional-ui .champion-card:after{display:none!important}
+    body.arena-professional-ui :is(.arena-status,.arena-filter,.match-status,.live-pill){
+      border-radius:4px!important;
+      box-shadow:none!important;
+      text-shadow:none!important;
+    }
+    body.arena-professional-ui .arena-filter.active{background:#d7b856!important}
+    body.arena-professional-ui :is(input,select,textarea){border-radius:6px!important;background:#07100b!important;box-shadow:none!important}
+    body.arena-professional-ui :is(.modal,.arena-notification-panel,.arena-notification-editor,.arena-nav-sheet){border-radius:10px!important;background:#0b1510!important;box-shadow:none!important;backdrop-filter:none!important}
+    body.arena-professional-ui .admin-panel{background:#0b1510!important}
+    body.arena-professional-ui .admin-panel h3{text-transform:none!important;letter-spacing:0!important}
+    body.arena-professional-ui #arenaBackToTop{border-radius:5px!important}
+
+    @media(max-width:720px){
+      body.arena-professional-ui .topbar.arena-topbar-clean{
+        border-radius:8px!important;
+        background:#09120d!important;
+        box-shadow:none!important;
+        backdrop-filter:none!important;
+      }
+      body.arena-professional-ui [data-page="home"] .hero{min-height:310px!important;padding:27px 20px!important;border-radius:8px!important}
+      body.arena-professional-ui [data-page="home"] .hero h1{font-size:clamp(42px,13vw,58px)!important}
+      body.arena-professional-ui #arenaStats{grid-template-columns:repeat(5,minmax(88px,1fr))!important;overflow-x:auto}
+      body.arena-professional-ui #arenaStats .stat{min-height:67px!important;padding:12px!important}
+      body.arena-professional-ui .arena-mobile-nav{border-radius:8px!important;background:#09120d!important;box-shadow:none!important;backdrop-filter:none!important}
+      body.arena-professional-ui .arena-home-scroll{grid-auto-columns:82%!important}
     }
 
     @media(max-width:900px){body.arena-human-ui .home-command nav{grid-template-columns:repeat(2,minmax(0,1fr))}}
