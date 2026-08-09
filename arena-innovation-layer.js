@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '2026.08-minimal';
+  const VERSION = '2026.08-human-ui';
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
@@ -20,7 +20,7 @@
   });
 
   document.documentElement.dataset.arenaInnovation = VERSION;
-  document.body.classList.add('arena-innovation-2026', 'arena-minimal-2026');
+  document.body.classList.add('arena-innovation-2026', 'arena-minimal-2026', 'arena-human-ui');
 
   const style = document.createElement('style');
   style.id = 'arenaInnovationStyles';
@@ -242,6 +242,196 @@
     .arena-command-item em{color:#75877d;font-size:17px;font-style:normal}
     .arena-command-empty{grid-column:1/-1;padding:28px;color:#82938a;text-align:center;font-size:10px}
     body.arena-command-open{overflow:hidden}
+
+    /* Interface editorial: menos ornamentos e uma hierarquia de ação previsível. */
+    body.arena-human-ui button{
+      font-family:Inter,Arial,sans-serif;
+      letter-spacing:0!important;
+      text-transform:none;
+    }
+    body.arena-human-ui .arena-button-ripple{display:none!important}
+    body.arena-human-ui :is(.primary,.secondary,.ghost,.danger){
+      min-height:40px!important;
+      padding:0 14px!important;
+      border-radius:6px!important;
+      box-shadow:none!important;
+      font-size:10px!important;
+      font-weight:750!important;
+    }
+    body.arena-human-ui .primary{
+      color:#15130c!important;
+      border:1px solid #e4ca70!important;
+      background:#d7b856!important;
+    }
+    body.arena-human-ui .secondary{
+      color:#e1e8e3!important;
+      border:1px solid #2a3b31!important;
+      background:#101c15!important;
+    }
+    body.arena-human-ui .ghost{
+      color:#d7e0da!important;
+      border:1px solid #26372e!important;
+      background:transparent!important;
+    }
+    body.arena-human-ui .danger{
+      color:#ff9ba5!important;
+      border:1px solid rgba(255,114,128,.35)!important;
+      background:transparent!important;
+    }
+    body.arena-human-ui :is(.primary,.secondary,.ghost,.danger):hover{
+      transform:none!important;
+      filter:none!important;
+      border-color:var(--innovation-accent)!important;
+    }
+    body.arena-human-ui button:focus-visible{
+      outline:2px solid var(--innovation-accent)!important;
+      outline-offset:2px;
+    }
+    body.arena-human-ui :is(.icon-btn,.admin-btn,#arenaCommandTrigger,.arena-command-close,.arena-sheet-close){
+      border-radius:6px!important;
+      box-shadow:none!important;
+      background:#0c1811!important;
+    }
+    body.arena-human-ui .admin-btn.active{
+      color:var(--innovation-accent)!important;
+      border-color:var(--innovation-accent)!important;
+      background:#101c15!important;
+    }
+    body.arena-human-ui [data-page="home"] .hero-actions button{
+      min-height:44px!important;
+      padding:0 17px!important;
+      border-radius:6px!important;
+    }
+    body.arena-human-ui .home-command{
+      gap:13px;
+      padding:18px 0;
+      border:0;
+      border-top:1px solid var(--line);
+      border-bottom:1px solid var(--line);
+      border-radius:0;
+      background:transparent;
+      box-shadow:none;
+    }
+    body.arena-human-ui .home-command h2{
+      font-size:clamp(22px,3vw,30px);
+      letter-spacing:0;
+      text-transform:none;
+    }
+    body.arena-human-ui .home-online{
+      padding:0;
+      border:0;
+      border-radius:0;
+      background:transparent;
+    }
+    body.arena-human-ui .home-online i{box-shadow:none}
+    body.arena-human-ui .home-command nav{gap:7px}
+    body.arena-human-ui .home-command nav button{
+      grid-template-columns:30px minmax(0,1fr) auto;
+      gap:10px;
+      min-height:64px;
+      padding:10px 11px;
+      border:1px solid #223329;
+      border-radius:5px;
+      color:#e6ece8;
+      background:#09130d;
+      transition:border-color .14s ease,background .14s ease;
+    }
+    body.arena-human-ui .home-command nav button:hover{
+      transform:none;
+      border-color:rgba(var(--innovation-accent-rgb),.46);
+      background:#0d1b13;
+    }
+    body.arena-human-ui .home-command nav>button>i{
+      width:30px;
+      height:30px;
+      border:0;
+      border-right:1px solid #2a3b31;
+      border-radius:0;
+      color:var(--innovation-accent);
+      background:transparent;
+      font:800 8px/1 Inter,Arial,sans-serif;
+      font-variant-numeric:tabular-nums;
+    }
+    body.arena-human-ui .home-command nav button b{font-size:10px;font-weight:750}
+    body.arena-human-ui .home-command nav button small{margin-top:3px;font-size:7px;font-weight:500}
+    body.arena-human-ui .home-command nav button em{color:#718178;font-size:17px}
+    body.arena-human-ui :is(.arena-home-card button,.arena-open){
+      justify-content:space-between;
+      min-height:38px!important;
+      margin-top:13px;
+      padding:9px 0!important;
+      border:0!important;
+      border-top:1px solid var(--line)!important;
+      border-radius:0!important;
+      color:#d9e2dc!important;
+      background:transparent!important;
+      text-align:left;
+    }
+    body.arena-human-ui .section-head>button{
+      min-height:34px;
+      border-radius:5px!important;
+      background:transparent!important;
+    }
+    body.arena-human-ui .arena-side-nav .nav-btn{
+      grid-template-columns:34px 1fr!important;
+      min-height:49px!important;
+      padding:6px 8px!important;
+      border-radius:6px!important;
+      transition:border-color .14s ease,background .14s ease,color .14s ease!important;
+    }
+    body.arena-human-ui .arena-side-nav .nav-btn:hover{
+      transform:none!important;
+      background:#0d1a12!important;
+    }
+    body.arena-human-ui .arena-side-nav .nav-btn i{
+      width:32px!important;
+      height:32px!important;
+      border:0!important;
+      border-radius:4px!important;
+      color:#85968c!important;
+      background:#09140d!important;
+      font:800 8px/1 Inter,Arial,sans-serif!important;
+      font-variant-numeric:tabular-nums;
+    }
+    body.arena-human-ui .arena-side-nav .nav-btn.active{
+      color:#edf2ee!important;
+      border-color:#26382e!important;
+      border-left:2px solid var(--innovation-accent)!important;
+      background:#101e16!important;
+      box-shadow:none!important;
+    }
+    body.arena-human-ui .arena-side-nav .nav-btn.active i{
+      color:var(--innovation-accent)!important;
+      background:#0a150e!important;
+    }
+    body.arena-human-ui .arena-side-nav .nav-btn.active .arena-nav-copy small{color:#82938a!important}
+    body.arena-human-ui .arena-side-nav .nav-btn.active:after{display:none!important}
+    body.arena-human-ui .arena-mobile-item{
+      border-radius:5px;
+      font-weight:700;
+    }
+    body.arena-human-ui .arena-mobile-item i{
+      border-radius:3px;
+      font:800 8px/1 Inter,Arial,sans-serif;
+    }
+    body.arena-human-ui .arena-mobile-item.active{
+      color:#edf2ee;
+      border-top:2px solid var(--innovation-accent);
+      background:#101e16;
+      box-shadow:none;
+    }
+    body.arena-human-ui .arena-mobile-item.active i{color:var(--innovation-accent);background:transparent}
+    body.arena-human-ui .arena-sheet-item{
+      border-radius:6px;
+      background:#0b1710;
+    }
+    body.arena-human-ui .arena-sheet-item i{
+      border-radius:4px;
+      font:800 8px/1 Inter,Arial,sans-serif;
+    }
+
+    @media(max-width:900px){body.arena-human-ui .home-command nav{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:520px){body.arena-human-ui .home-command nav{grid-template-columns:1fr}}
 
     @media(max-width:1180px){#arenaCommandTrigger span{display:none}}
     @media(max-width:720px){
