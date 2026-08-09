@@ -10,17 +10,17 @@
   const MOBILE_SECONDARY_PAGES = ['news', 'history', 'flash', 'season', 'teams', 'community', 'feedback'];
   const ORDER = [...PRIMARY_PAGES, ...SECONDARY_PAGES];
   const META = {
-    home: ['⌂', 'Início', 'Visão geral da arena'],
-    news: ['📰', 'Notícias', 'Comunicados e novidades'],
-    history: ['📜', 'História', 'Memória oficial do clã'],
-    tournament: ['🏆', 'Campeonatos', 'Copas, ligas e confrontos'],
-    flash: ['⚡', 'Copas Flash', 'Edições rápidas'],
-    season: ['🗓️', 'Temporada', 'Calendário e classificação'],
-    registrations: ['✍️', 'Inscrições', 'Vagas e aprovações'],
-    champions: ['★', 'Campeões', 'Sala de troféus'],
-    teams: ['🛡', 'Times', 'Clubes cadastrados'],
-    community: ['💬', 'Comunidade', 'Arquibancada do clã'],
-    feedback: ['💬', 'Feedback', 'Ajude a melhorar a Arena']
+    home: ['01', 'Início', 'Visão geral da arena'],
+    tournament: ['02', 'Campeonatos', 'Copas, ligas e confrontos'],
+    registrations: ['03', 'Inscrições', 'Vagas e aprovações'],
+    champions: ['04', 'Campeões', 'Sala de troféus'],
+    teams: ['05', 'Times', 'Clubes cadastrados'],
+    community: ['06', 'Comunidade', 'Arquibancada do clã'],
+    news: ['07', 'Notícias', 'Comunicados e novidades'],
+    history: ['08', 'História', 'Memória oficial do clã'],
+    flash: ['09', 'Copas Flash', 'Edições rápidas'],
+    season: ['10', 'Temporada', 'Calendário e classificação'],
+    feedback: ['11', 'Feedback', 'Ajude a melhorar a Arena']
   };
 
   const $ = (selector, root = document) => root.querySelector(selector);
