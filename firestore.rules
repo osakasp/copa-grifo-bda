@@ -191,6 +191,14 @@ service cloud.firestore {
       return documentId.matches('registration-.*');
     }
 
+    function isPublicArenaDataset() {
+      return resource.data.dataset in [
+        'notification',
+        'news',
+        'clan-gallery'
+      ];
+    }
+
     function validPublicRegistration() {
       return request.resource.data.keys().hasOnly([
           'dataset',
@@ -321,7 +329,8 @@ service cloud.firestore {
     }
 
     match /arenaData/{documentId} {
-      allow read: if !isRegistration(documentId) || isArenaAdmin();
+      allow get: if !isRegistration(documentId) || isArenaAdmin();
+      allow list: if isArenaAdmin() || isPublicArenaDataset();
       allow create: if isArenaAdmin()
         || (isRegistration(documentId) && validPublicRegistration());
       allow update, delete: if isArenaAdmin();
