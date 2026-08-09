@@ -502,42 +502,29 @@
     if (!home || !hero || !content) return;
 
     hero.classList.add('arena-hero-v4');
-    $('.eyebrow', content).textContent = 'Arena BDA • Central oficial';
-    $('h1', content).textContent = 'Todos os campeonatos. Uma só arena.';
-    $('p', content).textContent = 'Organize competições, acompanhe resultados e fortaleça a história do Clã BDA em uma plataforma feita para o futebol mobile.';
+    $('.eyebrow', content).textContent = 'Arena BDA';
+    $('h1', content).textContent = 'Competições do Clã BDA';
+    $('p', content).textContent = 'Calendário, resultados, classificações e histórico oficial dos campeonatos do clã.';
 
     const primary = $('.hero-actions .primary', content);
     const secondary = $('.hero-actions .secondary', content);
     if (primary && !primary.querySelector('span')) {
-      primary.innerHTML = '<span>Explorar campeonatos</span><i aria-hidden="true">→</i>';
+      primary.innerHTML = '<span>Ver campeonatos</span><i aria-hidden="true">→</i>';
     }
     if (secondary && !secondary.querySelector('span')) {
-      secondary.innerHTML = '<span>Conhecer os clubes</span><i aria-hidden="true">↗</i>';
+      secondary.innerHTML = '<span>Ver clubes</span><i aria-hidden="true">↗</i>';
     }
 
-    if (!$('.arena-hero-layout', hero)) {
-      const layout = document.createElement('div');
-      layout.className = 'arena-hero-layout';
-      content.before(layout);
-      layout.append(content);
-
-      const consolePanel = document.createElement('aside');
-      consolePanel.className = 'arena-hero-console';
-      consolePanel.setAttribute('aria-label', 'Resumo da Arena BDA');
-      consolePanel.innerHTML = `
-        <header><span><i></i>Arena conectada</span><small>Atualização automática</small></header>
-        <div class="arena-console-brand">
-          <img src="${$('link[rel~="icon"]')?.href || './favicon.svg'}" alt="">
-          <div><small>PAINEL CENTRAL</small><b>Visão geral da Arena</b></div>
-        </div>
-      `;
-
-      const stats = $('.quick-stats', home);
-      if (stats) {
-        stats.classList.add('arena-console-stats');
-        consolePanel.append(stats);
-      }
-      layout.append(consolePanel);
+    const existingLayout = $('.arena-hero-layout', hero);
+    const stats = $('.quick-stats', home);
+    if (existingLayout) {
+      hero.insertBefore(content, existingLayout);
+      existingLayout.remove();
+    }
+    $('.arena-hero-console', hero)?.remove();
+    if (stats) {
+      stats.classList.remove('arena-console-stats');
+      hero.after(stats);
     }
 
     $('.home-grid', home)?.classList.add('arena-home-dashboard');
@@ -1219,8 +1206,8 @@
         admin.classList.add('arena-clean-admin');
         admin.classList.toggle('active', active);
         admin.innerHTML = active
-          ? '<i class="arena-clean-admin-dot" aria-hidden="true"></i><span class="arena-clean-admin-icon" aria-hidden="true">👤</span><b>Admin</b>'
-          : '<span class="arena-clean-admin-icon" aria-hidden="true">🔐</span><b>Entrar</b>';
+          ? '<i class="arena-clean-admin-dot" aria-hidden="true"></i><span class="arena-clean-admin-icon" aria-hidden="true">AD</span><b>Admin</b>'
+          : '<span class="arena-clean-admin-icon" aria-hidden="true">AC</span><b>Entrar</b>';
         admin.setAttribute('aria-label', active ? 'Administrador ativo. Toque para sair' : 'Entrar como administrador');
       }
     }
