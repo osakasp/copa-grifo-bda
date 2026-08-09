@@ -1,4 +1,4 @@
-const VERSION = 'v47-watermark-motion';
+const VERSION = 'v48-human-interface';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
