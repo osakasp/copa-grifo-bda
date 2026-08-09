@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '2026.07.27.2';
+  const VERSION = '2026.08.09.1';
   const q = selector => document.querySelector(selector);
   let reloading = false;
   let updateRequested = false;
@@ -19,15 +19,15 @@
     const style = document.createElement('style');
     style.id = 'arenaHealthStyles';
     style.textContent = `
-      .arena-health-banner{position:fixed;left:50%;bottom:calc(var(--nav-h,78px) + 20px);z-index:90000;display:flex;align-items:center;gap:10px;width:min(520px,calc(100% - 24px));padding:11px 12px;border:1px solid rgba(245,220,134,.42);border-radius:16px;color:#edf5ef;background:linear-gradient(145deg,#173821,#06100a);box-shadow:0 18px 55px #000b;transform:translateX(-50%);text-align:left}
-      .arena-health-banner>span{display:grid;place-items:center;width:35px;height:35px;flex:0 0 auto;border-radius:11px;background:rgba(245,220,134,.12);font-size:18px}.arena-health-banner>div{min-width:0;flex:1}.arena-health-banner b,.arena-health-banner small{display:block}.arena-health-banner b{font-size:10px}.arena-health-banner small{margin-top:3px;color:#aebdb3;font-size:8px}.arena-health-banner button{min-height:36px;padding:0 11px;border:0;border-radius:11px;color:#171107;background:#f2d77d;font-size:9px;font-weight:900;cursor:pointer}.arena-health-banner .arena-health-close{width:32px;padding:0;color:#dce7df;background:#ffffff0b}
-      .arena-offline-indicator{position:fixed;right:10px;top:75px;z-index:89999;padding:7px 9px;border:1px solid rgba(255,180,80,.34);border-radius:999px;color:#ffd49a;background:#271805e8;font-size:8px;font-weight:900;text-transform:uppercase;box-shadow:0 8px 25px #0008}.arena-offline-indicator[hidden]{display:none!important}
+      .arena-health-banner{position:fixed;left:50%;bottom:calc(var(--nav-h,78px) + 20px);z-index:90000;display:flex;align-items:center;gap:10px;width:min(500px,calc(100% - 24px));padding:10px 11px;border:1px solid rgba(227,196,95,.34);border-radius:6px;color:#edf5ef;background:#0b1510;box-shadow:0 12px 32px #0009;transform:translateX(-50%);text-align:left}
+      .arena-health-banner>span{display:grid;place-items:center;width:30px;height:28px;flex:0 0 auto;border-right:1px solid rgba(227,196,95,.28);color:#e3c45f;font:800 7px/1 Inter,Arial,sans-serif;letter-spacing:.05em}.arena-health-banner>div{min-width:0;flex:1}.arena-health-banner b,.arena-health-banner small{display:block}.arena-health-banner b{font-size:10px}.arena-health-banner small{margin-top:3px;color:#95a69c;font-size:8px}.arena-health-banner button{min-height:34px;padding:0 11px;border:1px solid #e4ca70;border-radius:4px;color:#171107;background:#d7b856;font-size:9px;font-weight:800;cursor:pointer}.arena-health-banner .arena-health-close{width:30px;padding:0;border-color:rgba(222,232,225,.12);color:#dce7df;background:transparent}
+      .arena-offline-indicator{position:fixed;right:10px;top:75px;z-index:89999;padding:7px 9px;border:1px solid rgba(255,180,80,.34);border-radius:4px;color:#ffd49a;background:#271805e8;font-size:8px;font-weight:800;text-transform:uppercase;box-shadow:none}.arena-offline-indicator[hidden]{display:none!important}
       @media(max-width:520px){.arena-health-banner{align-items:flex-start;bottom:calc(var(--nav-h,78px) + 12px)}.arena-health-banner button:not(.arena-health-close){align-self:center}.arena-health-banner small{font-size:9px}}
     `;
     document.head.append(style);
   }
 
-  function showBanner({ icon = '⚡', title, description, action = '', onAction = null }) {
+  function showBanner({ icon = 'IN', title, description, action = '', onAction = null }) {
     ensureStyles();
     q('#arenaHealthBanner')?.remove();
     const banner = document.createElement('aside');
@@ -98,9 +98,9 @@
       const offerUpdate = worker => {
         if (!worker || !navigator.serviceWorker.controller) return;
         showBanner({
-          icon: '✨',
-          title: 'Nova versão da Arena disponível',
-          description: 'Atualize quando estiver pronto. Seus campeonatos e clubes serão preservados.',
+          icon: 'UP',
+          title: 'Atualização disponível',
+          description: 'Recarregue para usar a versão mais recente da Arena.',
           action: 'Atualizar',
           onAction: banner => {
             const button = banner.querySelector('[data-arena-health-action]');
@@ -146,7 +146,7 @@
       console.warn('Arena BDA capturou um erro de interface', error);
       if (errorCount >= 3 && !q('#arenaHealthBanner')) {
         showBanner({
-          icon: '🛠️',
+          icon: 'ER',
           title: 'Alguma função não respondeu',
           description: 'Você pode continuar usando a Arena. Recarregue apenas se algum botão permanecer sem resposta.',
           action: 'Recarregar',
