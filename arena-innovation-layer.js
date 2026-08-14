@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '2026.08-professional-ui-2';
+  const VERSION = '2026.08-competition-app-ui';
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
@@ -23,7 +23,7 @@
   const brandIconUrl = () => $('link[rel~="icon"]')?.href || './favicon.svg';
 
   document.documentElement.dataset.arenaInnovation = VERSION;
-  document.body.classList.add('arena-innovation-2026', 'arena-minimal-2026', 'arena-human-ui', 'arena-professional-ui');
+  document.body.classList.add('arena-innovation-2026', 'arena-minimal-2026', 'arena-human-ui', 'arena-professional-ui', 'arena-competition-app-ui');
 
   const style = document.createElement('style');
   style.id = 'arenaInnovationStyles';
@@ -692,6 +692,225 @@
     }
     body.arena-professional-ui .arena-page-back:hover{border-color:#5b5130!important;background:#0d1b13!important}
 
+    /* Estrutura de aplicativo esportivo: conteúdo primeiro, ações previsíveis e placares legíveis. */
+    body.arena-competition-app-ui [data-page="home"]{gap:14px!important}
+    body.arena-competition-app-ui [data-page="home"] .hero{
+      min-height:226px!important;
+      padding:30px 34px!important;
+      border-color:#294735!important;
+      border-radius:12px!important;
+      background:#10291a!important;
+    }
+    body.arena-competition-app-ui [data-page="home"] .hero-content{width:min(100%,610px)!important}
+    body.arena-competition-app-ui [data-page="home"] .hero h1{
+      max-width:560px!important;
+      margin:8px 0 9px!important;
+      font-size:clamp(40px,5vw,54px)!important;
+      line-height:.96!important;
+    }
+    body.arena-competition-app-ui [data-page="home"] .hero p{max-width:525px!important;font-size:11px!important}
+    body.arena-competition-app-ui [data-page="home"] .hero-actions{margin-top:17px!important}
+    body.arena-competition-app-ui [data-page="home"] .hero-actions button{min-height:42px!important}
+    body.arena-competition-app-ui .arena-home-watermark{right:58px;width:188px;opacity:.11}
+
+    body.arena-competition-app-ui .arena-app-tabs{
+      display:flex;
+      align-items:center;
+      gap:2px;
+      overflow-x:auto;
+      min-height:54px;
+      padding:0 8px;
+      border:1px solid #20372a;
+      border-radius:10px;
+      background:#0a1710;
+      scrollbar-width:none;
+    }
+    body.arena-competition-app-ui .arena-app-tabs::-webkit-scrollbar{display:none}
+    body.arena-competition-app-ui .arena-app-tab{
+      position:relative;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex:1 0 auto;
+      gap:7px;
+      min-width:104px;
+      min-height:52px;
+      padding:0 13px;
+      border:0;
+      border-radius:0;
+      color:#8ea097;
+      background:transparent;
+      font-size:9px;
+      font-weight:700;
+      white-space:nowrap;
+    }
+    body.arena-competition-app-ui .arena-app-tab:hover{color:#e1e9e4;background:#0d1d14}
+    body.arena-competition-app-ui .arena-app-tab.active{color:#ead277;background:transparent}
+    body.arena-competition-app-ui .arena-app-tab.active:after{
+      content:"";
+      position:absolute;
+      right:13px;
+      bottom:0;
+      left:13px;
+      height:2px;
+      background:#d7b856;
+    }
+    body.arena-competition-app-ui .arena-app-tab svg{
+      display:block;
+      width:17px;
+      height:17px;
+      fill:none;
+      stroke:currentColor;
+      stroke-width:1.8;
+      stroke-linecap:round;
+      stroke-linejoin:round;
+    }
+
+    body.arena-competition-app-ui #arenaStats{
+      margin:0 0 6px!important;
+      border-color:#20372a!important;
+      border-radius:10px!important;
+      background:#0a1710!important;
+    }
+    body.arena-competition-app-ui #arenaStats .stat{min-height:64px!important;padding:11px 14px!important}
+    body.arena-competition-app-ui #arenaStats .stat b{font-size:22px!important}
+    body.arena-competition-app-ui #arenaStats .stat span{margin-top:4px!important;font-size:7px!important}
+
+    body.arena-competition-app-ui .section-head{margin:20px 0 10px!important}
+    body.arena-competition-app-ui .section-head h2{font-size:24px!important}
+    body.arena-competition-app-ui .home-tournaments{gap:8px!important}
+    body.arena-competition-app-ui .arena-home-scroll{
+      grid-auto-flow:row!important;
+      grid-auto-columns:auto!important;
+      grid-template-columns:repeat(2,minmax(0,1fr))!important;
+      gap:8px!important;
+      overflow:visible!important;
+      padding:0!important;
+    }
+    body.arena-competition-app-ui .arena-home-card{
+      display:grid!important;
+      grid-template-columns:minmax(0,1fr) auto!important;
+      grid-template-rows:auto auto auto!important;
+      align-content:center!important;
+      align-items:center!important;
+      min-height:112px!important;
+      padding:14px 15px!important;
+      border-color:#21392b!important;
+      border-left:3px solid #d7b856!important;
+      border-radius:9px!important;
+      background:#0b1911!important;
+    }
+    body.arena-competition-app-ui .arena-home-card .eyebrow,
+    body.arena-competition-app-ui .arena-home-card h3,
+    body.arena-competition-app-ui .arena-home-card p{grid-column:1;min-width:0}
+    body.arena-competition-app-ui .arena-home-card h3{
+      overflow:hidden;
+      margin:5px 12px 3px 0!important;
+      font-size:21px!important;
+      line-height:1!important;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    body.arena-competition-app-ui .arena-home-card button{
+      grid-column:2;
+      grid-row:1/4;
+      align-self:center;
+      min-height:36px!important;
+      margin:0!important;
+      padding:0 11px!important;
+      border:1px solid #304636!important;
+      border-radius:6px!important;
+      background:#102219!important;
+      white-space:nowrap;
+    }
+
+    body.arena-competition-app-ui .home-command{
+      margin-top:8px!important;
+      padding:15px!important;
+      border:1px solid #20372a!important;
+      border-radius:10px!important;
+      background:#08140d!important;
+    }
+    body.arena-competition-app-ui .home-command h2{font-size:22px!important}
+    body.arena-competition-app-ui .home-command nav{grid-template-columns:repeat(5,minmax(0,1fr))!important}
+    body.arena-competition-app-ui .home-command nav button{
+      grid-template-columns:30px minmax(0,1fr) 13px!important;
+      min-height:58px!important;
+      padding:8px!important;
+      border-color:#20372a!important;
+      border-radius:7px!important;
+      background:#0b1911!important;
+    }
+    body.arena-competition-app-ui .home-command nav>button>i{width:30px!important;height:30px!important}
+    body.arena-competition-app-ui .home-command nav>button>i svg{width:16px;height:16px}
+
+    body.arena-competition-app-ui [data-page="home"] .home-grid{gap:10px!important}
+    body.arena-competition-app-ui :is(.now-feature,.now-list){
+      border-color:#21392b!important;
+      border-radius:10px!important;
+      background:#0b1911!important;
+      box-shadow:none!important;
+    }
+    body.arena-competition-app-ui .now-feature>header{background:#0e2117}
+    body.arena-competition-app-ui .now-pill{border-radius:4px!important}
+    body.arena-competition-app-ui .now-feature>main{min-height:166px!important}
+    body.arena-competition-app-ui .now-row{min-height:68px!important}
+    body.arena-competition-app-ui .now-state{
+      padding:5px 7px;
+      border-radius:4px;
+      background:#102219;
+      text-transform:uppercase;
+    }
+
+    body.arena-competition-app-ui .arena-page-hero{
+      min-height:220px!important;
+      padding:28px 30px!important;
+      border-color:#294735!important;
+      border-radius:12px!important;
+      background:#10291a!important;
+      box-shadow:none!important;
+    }
+    body.arena-competition-app-ui .arena-page-hero:after{opacity:.55}
+    body.arena-competition-app-ui .arena-page-hero h1{
+      margin:7px 0 8px!important;
+      font-size:clamp(44px,7vw,68px)!important;
+      line-height:.86!important;
+    }
+    body.arena-competition-app-ui .arena-page-hero p{font-size:11px!important}
+    body.arena-competition-app-ui .arena-page-hero aside>b{font-size:52px!important}
+    body.arena-competition-app-ui .arena-catalog-head{margin:19px 0 10px!important}
+    body.arena-competition-app-ui .arena-catalog-head h2{font-size:27px!important;text-transform:none!important}
+    body.arena-competition-app-ui .arena-catalog-head .arena-toolbar{
+      padding:4px!important;
+      border-radius:8px!important;
+      background:#0a1710!important;
+    }
+    body.arena-competition-app-ui .arena-detail-nav{
+      margin:14px 0 10px!important;
+      padding:6px 7px 6px 12px!important;
+      border-color:#20372a!important;
+      border-radius:9px!important;
+      background:#0a1710!important;
+      box-shadow:none!important;
+    }
+    body.arena-competition-app-ui .arena-detail-nav nav{gap:1px!important}
+    body.arena-competition-app-ui .arena-detail-nav button{
+      min-height:36px!important;
+      border-radius:5px!important;
+      text-transform:none!important;
+    }
+    body.arena-competition-app-ui .arena-grid{gap:9px!important}
+    body.arena-competition-app-ui .arena-card{
+      min-height:300px!important;
+      border-color:#21392b!important;
+      border-radius:10px!important;
+      background:#0b1911!important;
+    }
+    body.arena-competition-app-ui .arena-card .arena-cover{height:132px!important}
+    body.arena-competition-app-ui .arena-card .arena-body{min-height:166px!important;padding:14px!important}
+    body.arena-competition-app-ui .arena-card .arena-body h3{font-size:23px!important}
+    body.arena-competition-app-ui .arena-card .arena-open{min-height:36px!important}
+
     @media(max-width:720px){
       body.arena-professional-ui{padding-bottom:calc(68px + env(safe-area-inset-bottom))!important}
       body.arena-professional-ui .topbar.arena-topbar-clean{
@@ -764,6 +983,20 @@
       body.arena-professional-ui .arena-sheet-item i{width:36px!important;height:36px!important;border-radius:6px!important;background:#0b1911!important}
       body.arena-professional-ui .arena-sheet-item i svg{width:18px!important;height:18px!important}
       body.arena-professional-ui .arena-home-scroll{grid-auto-columns:82%!important}
+      body.arena-competition-app-ui [data-page="home"] .hero{min-height:238px!important;padding:24px 19px!important}
+      body.arena-competition-app-ui [data-page="home"] .hero h1{font-size:clamp(38px,12vw,50px)!important}
+      body.arena-competition-app-ui .arena-home-watermark{right:-25px;top:38%;width:132px;opacity:.055}
+      body.arena-competition-app-ui .arena-app-tabs{margin-inline:-1px;padding-inline:2px;border-radius:8px}
+      body.arena-competition-app-ui .arena-app-tab{min-width:91px;padding-inline:10px}
+      body.arena-competition-app-ui .arena-home-scroll{grid-template-columns:1fr!important}
+      body.arena-competition-app-ui .arena-home-card{min-height:102px!important}
+      body.arena-competition-app-ui .home-command{padding:12px!important}
+      body.arena-competition-app-ui .home-command nav{grid-template-columns:1fr 1fr!important}
+      body.arena-competition-app-ui .home-command nav button:last-child{grid-column:1/-1}
+      body.arena-competition-app-ui .arena-page-hero{min-height:230px!important;padding:23px 18px!important;border-radius:9px!important}
+      body.arena-competition-app-ui .arena-page-hero h1{font-size:48px!important}
+      body.arena-competition-app-ui .arena-detail-nav{top:58px!important;border-radius:8px!important}
+      body.arena-competition-app-ui .arena-card{min-height:286px!important}
     }
 
     @media(max-width:360px){
@@ -774,6 +1007,10 @@
 
     @media(max-width:900px){body.arena-human-ui .home-command nav{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:520px){body.arena-human-ui .home-command nav{grid-template-columns:1fr}}
+    @media(max-width:520px){
+      body.arena-competition-app-ui .home-command nav{grid-template-columns:1fr!important}
+      body.arena-competition-app-ui .home-command nav button:last-child{grid-column:auto}
+    }
 
     @media(max-width:1180px){#arenaCommandTrigger span{display:none}}
     @media(max-width:720px){
@@ -842,6 +1079,38 @@
       const target = $(selector);
       if (target && !$('svg', target)) target.innerHTML = interfaceIcon(name);
     });
+  }
+
+  function installCompetitionAppHome() {
+    const home = $('[data-page="home"]');
+    if (!home) return;
+    const hero = $('.hero', home);
+    const stats = $('#arenaStats', home);
+    let tabs = $('.arena-app-tabs', home);
+    if (!tabs) {
+      tabs = document.createElement('nav');
+      tabs.className = 'arena-app-tabs';
+      tabs.setAttribute('aria-label', 'Atalhos da competição');
+      tabs.innerHTML = [
+        ['home', 'home', 'Visão geral'],
+        ['tournament', 'tournament', 'Jogos'],
+        ['season', 'season', 'Tabela'],
+        ['teams', 'teams', 'Times'],
+        ['news', 'news', 'Notícias']
+      ].map(([page, icon, label], index) => `<button type="button" class="arena-app-tab${index === 0 ? ' active' : ''}" data-go="${page}">${interfaceIcon(icon)}<span>${label}</span></button>`).join('');
+    }
+    if (stats && tabs.nextElementSibling !== stats) home.insertBefore(tabs, stats);
+    else if (!stats && hero?.nextElementSibling !== tabs) hero?.after(tabs);
+
+    const tournaments = $('.home-tournaments', home);
+    const command = $('.home-command', home);
+    if (tournaments) {
+      const heading = $('.section-head h2', tournaments);
+      const description = $('.section-head p', tournaments);
+      if (heading && heading.textContent !== 'Seus campeonatos') heading.textContent = 'Seus campeonatos';
+      if (description && description.textContent !== 'Acompanhe status, edições e resultados.') description.textContent = 'Acompanhe status, edições e resultados.';
+    }
+    if (tournaments && command && tournaments.nextElementSibling !== command) tournaments.after(command);
   }
 
   function renderCommandResults(container, query = '') {
@@ -956,6 +1225,7 @@
     installHeroWatermark();
     enhanceHomeShortcuts();
     enhanceInterfaceIcons();
+    installCompetitionAppHome();
     enhanceSectionHeads();
     syncPage();
   }
@@ -966,6 +1236,7 @@
     installHeroWatermark();
     enhanceHomeShortcuts();
     enhanceInterfaceIcons();
+    installCompetitionAppHome();
   });
   pageObserver.observe($('.app-shell') || document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
 
