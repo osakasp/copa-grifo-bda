@@ -1,4 +1,4 @@
-const VERSION = 'v53-competition-app-layout';
+const VERSION = 'v54-responsive-lazy-navigation';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,

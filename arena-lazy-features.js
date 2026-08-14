@@ -217,6 +217,19 @@
     window.ArenaBDAMotion?.refresh?.();
   }
 
+  function yieldToBrowser() {
+    return new Promise(resolve => {
+      let resolved = false;
+      const finish = () => {
+        if (resolved) return;
+        resolved = true;
+        resolve();
+      };
+      requestAnimationFrame(() => requestAnimationFrame(finish));
+      window.setTimeout(finish, 120);
+    });
+  }
+
   function ensureRoutes() {
     const nav = document.querySelector('.bottom-nav');
     const main = document.querySelector('main');
@@ -246,9 +259,10 @@
       return;
     }
     setRouteLoading(trigger, true);
+    navigateTo(page);
     try {
+      await yieldToBrowser();
       await loadBundle(bundle);
-      navigateTo(page);
     } catch (error) {
       const label = ROUTES[page]?.[1] || page;
       notify(`Não foi possível carregar ${label}`);
@@ -323,7 +337,15 @@
       event.stopPropagation();
       event.stopImmediatePropagation();
       setRouteLoading(tournamentTrigger, true);
-      loadBundle('tournament').then(() => tournamentTrigger.click()).catch(() => notify('Não foi possível carregar o campeonato')).finally(() => setRouteLoading(tournamentTrigger, false));
+      navigateTo('tournament');
+      yieldToBrowser()
+        .then(() => loadBundle('tournament'))
+        .then(() => {
+          setRouteLoading(tournamentTrigger, false);
+          tournamentTrigger.click();
+        })
+        .catch(() => notify('Não foi possível carregar o campeonato'))
+        .finally(() => setRouteLoading(tournamentTrigger, false));
     }
   }, true);
 
