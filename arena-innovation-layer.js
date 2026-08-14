@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '2026.08-professional-ui';
+  const VERSION = '2026.08-professional-ui-2';
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
@@ -18,6 +18,9 @@
     community: { icon: '10', label: 'Comunidade', description: 'Arquibancada do clã', color: '#a69abf', rgb: '166,154,191' },
     feedback: { icon: '11', label: 'Feedback', description: 'Ajude a melhorar a Arena', color: '#85b5bf', rgb: '133,181,191' }
   });
+
+  const interfaceIcon = name => window.ArenaBDAIcons?.get?.(name) || `<span>${PAGES[name]?.icon || ''}</span>`;
+  const brandIconUrl = () => $('link[rel~="icon"]')?.href || './favicon.svg';
 
   document.documentElement.dataset.arenaInnovation = VERSION;
   document.body.classList.add('arena-innovation-2026', 'arena-minimal-2026', 'arena-human-ui', 'arena-professional-ui');
@@ -476,10 +479,17 @@
       letter-spacing:.04em;
     }
     body.arena-professional-ui .arena-notification-button>span{font-size:0!important;animation:none!important}
-    body.arena-professional-ui .arena-notification-button>span:after{
-      content:"AV";
-      font:800 7px/1 Inter,Arial,sans-serif;
-      letter-spacing:.04em;
+    body.arena-professional-ui .arena-notification-button>span:after{display:none!important;content:none!important}
+    body.arena-professional-ui :is(#arenaCommandTrigger,.arena-notification-button,#shareBtn,.arena-clean-panel-icon) svg,
+    body.arena-professional-ui :is(.hero-actions,.home-command,.arena-command-item,.arena-command-sheet,.arena-command-search) svg{
+      display:block;
+      width:18px;
+      height:18px;
+      fill:none;
+      stroke:currentColor;
+      stroke-width:1.8;
+      stroke-linecap:round;
+      stroke-linejoin:round;
     }
 
     @media(min-width:980px){
@@ -506,6 +516,7 @@
     }
 
     body.arena-professional-ui [data-page="home"] .hero{
+      isolation:isolate;
       min-height:330px!important;
       padding:clamp(25px,4.2vw,48px)!important;
       border:1px solid rgba(227,196,95,.20)!important;
@@ -514,8 +525,10 @@
       box-shadow:none!important;
     }
     body.arena-professional-ui [data-page="home"] .hero:after{display:none!important}
-    body.arena-professional-ui [data-page="home"] .hero:before{opacity:.12!important;filter:grayscale(.2) contrast(1.04)!important}
+    body.arena-professional-ui [data-page="home"] .hero:before{display:none!important}
     body.arena-professional-ui [data-page="home"] .hero-content{
+      position:relative;
+      z-index:2;
       width:min(100%,690px)!important;
       min-height:0!important;
       padding:0!important;
@@ -535,6 +548,27 @@
       line-height:1.62!important;
     }
     body.arena-professional-ui [data-page="home"] .hero-actions{margin-top:21px!important}
+    body.arena-professional-ui [data-page="home"] .hero-actions button i{display:grid;place-items:center;font-size:0!important}
+    body.arena-professional-ui [data-page="home"] .hero-actions button i svg{width:16px;height:16px}
+    body.arena-professional-ui .arena-home-watermark{
+      position:absolute;
+      z-index:1;
+      right:clamp(34px,6vw,76px);
+      top:50%;
+      display:block;
+      width:clamp(158px,18vw,224px);
+      height:auto;
+      opacity:.13;
+      pointer-events:none;
+      user-select:none;
+      filter:saturate(.72) contrast(1.05);
+      transform:translateY(-50%);
+      animation:arenaWatermarkFloat 9s ease-in-out infinite;
+    }
+    @keyframes arenaWatermarkFloat{
+      0%,100%{transform:translateY(-50%) scale(1)}
+      50%{transform:translateY(calc(-50% - 6px)) scale(1.025)}
+    }
     body.arena-professional-ui .arena-hero-layout{display:block!important;padding:0!important}
     body.arena-professional-ui .arena-hero-console{display:none!important}
 
@@ -594,7 +628,24 @@
     body.arena-professional-ui .home-command>header{display:block!important}
     body.arena-professional-ui .home-command h2{margin:4px 0 0!important;font-size:25px!important}
     body.arena-professional-ui .home-online{display:none!important}
-    body.arena-professional-ui .home-command nav button{background:#09120d!important}
+    body.arena-professional-ui .home-command nav button{
+      grid-template-columns:34px minmax(0,1fr) 16px!important;
+      min-height:66px!important;
+      padding:10px!important;
+      border-color:#223329!important;
+      background:#09120d!important;
+    }
+    body.arena-professional-ui .home-command nav button:hover{border-color:#5a5132!important;background:#0c1811!important}
+    body.arena-professional-ui .home-command nav>button>i{
+      width:34px!important;
+      height:34px!important;
+      border-right:1px solid #2a3b31!important;
+      color:#d7b856!important;
+      font-size:0!important;
+    }
+    body.arena-professional-ui .home-command nav>button>i svg{width:18px;height:18px}
+    body.arena-professional-ui .home-command nav button em{display:grid;place-items:center;font-size:0!important}
+    body.arena-professional-ui .home-command nav button em svg{width:14px;height:14px}
     body.arena-professional-ui .home-command nav button b{font-weight:700!important}
     body.arena-professional-ui .arena-home-scroll{gap:8px!important}
     body.arena-professional-ui .arena-home-card{
@@ -674,6 +725,7 @@
       body.arena-professional-ui .topbar.arena-topbar-clean #cloudPanelBtn{min-width:68px!important;height:40px!important;min-height:40px!important;padding-inline:8px!important;border-radius:6px!important;background:#0a1610!important}
       body.arena-professional-ui [data-page="home"] .hero{min-height:310px!important;padding:27px 20px!important;border-radius:8px!important}
       body.arena-professional-ui [data-page="home"] .hero h1{font-size:clamp(42px,13vw,58px)!important}
+      body.arena-professional-ui .arena-home-watermark{right:-24px;top:35%;width:142px;opacity:.065}
       body.arena-professional-ui #arenaStats{grid-template-columns:repeat(5,minmax(88px,1fr))!important;overflow-x:auto}
       body.arena-professional-ui #arenaStats .stat{min-height:67px!important;padding:12px!important}
       body.arena-professional-ui .arena-mobile-nav{
@@ -732,7 +784,7 @@
       .arena-command-caption span:first-child{display:none}
       body.arena-minimal-2026 .hero{min-height:260px!important;border-radius:15px!important}
     }
-    @media(prefers-reduced-motion:reduce){.arena-command-backdrop{transition:none}}
+    @media(prefers-reduced-motion:reduce){.arena-command-backdrop{transition:none}.arena-home-watermark{animation:none!important}}
   `;
   document.head.append(style);
 
@@ -751,15 +803,56 @@
     return $('.page.active')?.dataset.page || 'home';
   }
 
+  function installHeroWatermark() {
+    const hero = $('[data-page="home"] .hero');
+    if (!hero || $('.arena-home-watermark', hero)) return;
+    const watermark = document.createElement('img');
+    watermark.className = 'arena-home-watermark';
+    watermark.src = brandIconUrl();
+    watermark.alt = '';
+    watermark.decoding = 'async';
+    watermark.setAttribute('aria-hidden', 'true');
+    hero.append(watermark);
+  }
+
+  function enhanceHomeShortcuts() {
+    const command = $('.home-command');
+    if (!command) return;
+    const heading = $('h2', command);
+    if (heading && heading.textContent !== 'Acesso rápido') heading.textContent = 'Acesso rápido';
+    $$('nav button[data-go]', command).forEach(button => {
+      const icon = $(':scope > i', button);
+      const arrow = $(':scope > em', button);
+      if (icon && !$('svg', icon)) icon.innerHTML = interfaceIcon(button.dataset.go);
+      if (arrow && !$('svg', arrow)) arrow.innerHTML = interfaceIcon('arrowRight');
+    });
+  }
+
+  function enhanceInterfaceIcons() {
+    const replacements = [
+      ['#arenaCommandTrigger > i', 'search'],
+      ['#arenaCommandPalette .arena-command-search > i', 'search'],
+      ['#arenaNotificationsBtn > span', 'notifications'],
+      ['#shareBtn', 'share'],
+      ['.arena-clean-panel-icon', 'settings'],
+      ['[data-page="home"] .hero-actions .primary i', 'arrowRight'],
+      ['[data-page="home"] .hero-actions .secondary i', 'share']
+    ];
+    replacements.forEach(([selector, name]) => {
+      const target = $(selector);
+      if (target && !$('svg', target)) target.innerHTML = interfaceIcon(name);
+    });
+  }
+
   function renderCommandResults(container, query = '') {
     const normalize = value => value.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const normalized = normalize(query.trim());
     const entries = Object.entries(PAGES).filter(([, meta]) => !normalized || normalize(`${meta.label} ${meta.description}`).includes(normalized));
     container.innerHTML = entries.length ? entries.map(([page, meta]) => `
       <button class="arena-command-item" type="button" data-command-page="${page}">
-        <i aria-hidden="true">${meta.icon}</i>
+        <i aria-hidden="true">${interfaceIcon(page)}</i>
         <span><b>${meta.label}</b><small>${meta.description}</small></span>
-        <em aria-hidden="true">›</em>
+        <em aria-hidden="true">${interfaceIcon('arrowRight')}</em>
       </button>`).join('') : '<div class="arena-command-empty">Nenhuma área encontrada.</div>';
   }
 
@@ -835,7 +928,7 @@
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'arena-sheet-item arena-command-sheet';
-    button.innerHTML = '<i aria-hidden="true">⌕</i><span><b>Buscar</b><small>Acessar qualquer área</small></span><em>›</em>';
+    button.innerHTML = `<i aria-hidden="true">${interfaceIcon('search')}</i><span><b>Buscar</b><small>Acessar qualquer área</small></span><em>${interfaceIcon('arrowRight')}</em>`;
     button.addEventListener('click', () => {
       $('.arena-nav-sheet-backdrop')?.classList.remove('show');
       document.body.classList.remove('arena-sheet-open');
@@ -860,6 +953,9 @@
   function refresh() {
     installCommandPalette();
     installMobileCommandShortcut();
+    installHeroWatermark();
+    enhanceHomeShortcuts();
+    enhanceInterfaceIcons();
     enhanceSectionHeads();
     syncPage();
   }
@@ -867,6 +963,9 @@
   const pageObserver = new MutationObserver(mutations => {
     if (mutations.some(mutation => mutation.type === 'attributes' && mutation.target.classList.contains('page'))) syncPage();
     installMobileCommandShortcut();
+    installHeroWatermark();
+    enhanceHomeShortcuts();
+    enhanceInterfaceIcons();
   });
   pageObserver.observe($('.app-shell') || document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
 
