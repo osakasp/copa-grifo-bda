@@ -9,6 +9,8 @@
   const MOBILE_PRIMARY_PAGES = ['home', 'tournament', 'registrations', 'champions'];
   const MOBILE_SECONDARY_PAGES = ['news', 'history', 'flash', 'season', 'teams', 'community', 'feedback'];
   const ORDER = [...PRIMARY_PAGES, ...SECONDARY_PAGES];
+  const HISTORY_PAGE_KEY = 'arenaNavigationPage';
+  const HISTORY_DEPTH_KEY = 'arenaNavigationDepth';
   const META = {
     home: ['01', 'Início', 'Visão geral da arena'],
     tournament: ['02', 'Campeonatos', 'Copas, ligas e confrontos'],
@@ -30,7 +32,108 @@
 
   let mobileNav;
   let sheet;
+  let pageBackButton;
   let viewportFrame = 0;
+
+  function normalizePage(page) {
+    return ORDER.includes(page) && $(`.page[data-page="${page}"]`) ? page : 'home';
+  }
+
+  function historyDepth() {
+    const value = Number(window.history.state?.[HISTORY_DEPTH_KEY]);
+    return Number.isInteger(value) && value > 0 ? value : 0;
+  }
+
+  function routeUrl(page) {
+    const url = new URL(window.location.href);
+    url.hash = page === 'home' ? '' : page;
+    return `${url.pathname}${url.search}${url.hash}`;
+  }
+
+  function routeState(page, depth) {
+    const currentState = window.history.state;
+    return {
+      ...(currentState && typeof currentState === 'object' ? currentState : {}),
+      [HISTORY_PAGE_KEY]: page,
+      [HISTORY_DEPTH_KEY]: depth
+    };
+  }
+
+  function syncPageBack() {
+    if (!pageBackButton) return;
+    const visible = historyDepth() > 0 || currentPage() !== 'home';
+    pageBackButton.hidden = !visible;
+  }
+
+  function installHistoryNavigation() {
+    if (window.navigate?.arenaHistoryEnabled) return;
+
+    const renderPage = typeof window.navigate === 'function'
+      ? window.navigate.bind(window)
+      : page => {
+          $$('.page').forEach(item => item.classList.toggle('active', item.dataset.page === page));
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+    const requestedPage = normalizePage(window.location.hash.slice(1));
+
+    const navigateWithHistory = (page, options = {}) => {
+      const targetPage = normalizePage(page);
+      const activePage = currentPage();
+      const fromHistory = options?.fromHistory === true;
+
+      if (!fromHistory && targetPage !== activePage) {
+        const depth = historyDepth();
+        if (options?.replace === true) {
+          window.history.replaceState(routeState(targetPage, depth), '', routeUrl(targetPage));
+        } else {
+          window.history.pushState(routeState(targetPage, depth + 1), '', routeUrl(targetPage));
+        }
+      }
+
+      renderPage(targetPage);
+      closeSheet();
+      requestAnimationFrame(() => {
+        syncActive();
+        syncPageBack();
+      });
+    };
+
+    navigateWithHistory.arenaHistoryEnabled = true;
+    window.navigate = navigateWithHistory;
+
+    window.history.replaceState(routeState('home', 0), '', routeUrl('home'));
+    renderPage('home');
+    if (requestedPage !== 'home') {
+      window.history.pushState(routeState(requestedPage, 1), '', routeUrl(requestedPage));
+      renderPage(requestedPage);
+    }
+
+    window.addEventListener('popstate', event => {
+      const statePage = event.state?.[HISTORY_PAGE_KEY];
+      const hashPage = window.location.hash.slice(1);
+      navigateWithHistory(normalizePage(statePage || hashPage), { fromHistory: true });
+    });
+  }
+
+  function buildPageBack() {
+    const topbar = $('.topbar');
+    if (!topbar) return;
+
+    pageBackButton = $('.arena-page-back', topbar);
+    if (!pageBackButton) {
+      pageBackButton = document.createElement('button');
+      pageBackButton.type = 'button';
+      pageBackButton.className = 'arena-page-back';
+      pageBackButton.setAttribute('aria-label', 'Voltar para a página anterior');
+      pageBackButton.innerHTML = '<i aria-hidden="true">&#8592;</i><span>Voltar</span>';
+      pageBackButton.addEventListener('click', () => {
+        if (historyDepth() > 0) window.history.back();
+        else window.navigate('home', { replace: true });
+      });
+      topbar.prepend(pageBackButton);
+    }
+    syncPageBack();
+  }
 
   function go(page) {
     if (typeof navigate === 'function') navigate(page);
@@ -224,6 +327,8 @@
       sideMore.classList.toggle('active', active);
       active ? sideMore.setAttribute('aria-current', 'page') : sideMore.removeAttribute('aria-current');
     }
+
+    syncPageBack();
   }
 
   function syncMobileViewport() {
@@ -243,6 +348,8 @@
 
   function init() {
     document.body.classList.add('arena-navigation-ready');
+    installHistoryNavigation();
+    buildPageBack();
     buildSidebar();
     buildMobile();
     syncActive();
@@ -252,6 +359,12 @@
   const style = document.createElement('style');
   style.textContent = `
     .arena-side-brand,.arena-side-heading,.arena-side-footer,.arena-mobile-nav,.arena-nav-sheet-backdrop{display:none}
+    .topbar>.top-actions{margin-left:auto}
+    .arena-page-back{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:82px;height:40px;flex:0 0 auto;padding:0 11px;border:1px solid var(--line);border-radius:6px;color:var(--text);background:transparent;font-size:10px;font-weight:750;line-height:1;white-space:nowrap}
+    .arena-page-back[hidden]{display:none!important}
+    .arena-page-back:hover{border-color:rgba(242,215,125,.42);background:rgba(255,255,255,.04)}
+    .arena-page-back:focus-visible{outline:2px solid var(--gold-soft);outline-offset:2px}
+    .arena-page-back i{font:700 18px/1 Arial,sans-serif;font-style:normal}
 
     @media(min-width:981px){
       html{scroll-padding-top:90px}
@@ -282,6 +395,8 @@
     @media(max-width:980px){
       body.arena-navigation-ready{padding-bottom:calc(74px + env(safe-area-inset-bottom))!important}
       .bottom-nav.arena-side-nav{display:none!important}
+      .arena-page-back{width:40px;min-width:40px;height:40px;padding:0;border-radius:6px}
+      .arena-page-back span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
       .arena-mobile-nav{position:fixed;left:8px;right:8px;bottom:max(6px,env(safe-area-inset-bottom));z-index:48;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;height:62px;padding:5px;border:1px solid rgba(242,215,125,.20);border-radius:19px;background:linear-gradient(180deg,rgba(15,31,22,.97),rgba(5,12,8,.985));box-shadow:0 12px 34px rgba(0,0,0,.48);backdrop-filter:blur(14px);transition:opacity .16s ease,transform .16s ease,visibility .16s}
       .arena-mobile-nav.keyboard-open{opacity:0;visibility:hidden;pointer-events:none;transform:translateY(calc(100% + 18px))}
       .arena-mobile-item{display:grid;place-items:center;align-content:center;gap:3px;min-width:0;min-height:50px;padding:3px 2px;border:0;border-radius:13px;color:var(--muted);background:transparent;font-size:7px;font-weight:800;line-height:1}.arena-mobile-item i{display:grid;place-items:center;width:28px;height:26px;border-radius:9px;font-style:normal;font-size:16px;line-height:1}.arena-mobile-item span{overflow:hidden;width:100%;text-overflow:ellipsis;white-space:nowrap}.arena-mobile-item.active{color:#171107;background:linear-gradient(135deg,var(--gold-soft),var(--gold));box-shadow:0 6px 14px rgba(216,178,72,.15)}.arena-mobile-item.active i{background:rgba(255,255,255,.22)}
@@ -291,7 +406,7 @@
       .arena-nav-sheet footer{display:flex;align-items:center;gap:10px;padding-top:12px;border-top:1px solid var(--line)}.arena-nav-sheet footer img{width:40px;height:40px;border:1px solid rgba(242,215,125,.4);border-radius:12px;object-fit:cover}.arena-nav-sheet footer b,.arena-nav-sheet footer small{display:block}.arena-nav-sheet footer b{font-size:9px;text-transform:uppercase}.arena-nav-sheet footer small{margin-top:3px;color:var(--muted);font-size:8px}body.arena-sheet-open{overflow:hidden}
     }
 
-    @media(max-width:390px){.arena-mobile-nav{left:5px;right:5px;gap:2px;padding-inline:4px}.arena-mobile-item{font-size:6.5px}.arena-mobile-item i{width:27px;height:25px;font-size:15px}}
+    @media(max-width:390px){.arena-page-back{width:38px;min-width:38px;height:38px}.arena-mobile-nav{left:5px;right:5px;gap:2px;padding-inline:4px}.arena-mobile-item{font-size:6.5px}.arena-mobile-item i{width:27px;height:25px;font-size:15px}}
     @media(prefers-reduced-transparency:reduce){.arena-mobile-nav,.arena-nav-sheet-backdrop{backdrop-filter:none}}
   `;
   document.head.append(style);
