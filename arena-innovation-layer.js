@@ -627,20 +627,97 @@
     body.arena-professional-ui .admin-panel{background:#0b1510!important}
     body.arena-professional-ui .admin-panel h3{text-transform:none!important;letter-spacing:0!important}
     body.arena-professional-ui #arenaBackToTop{border-radius:5px!important}
+    body.arena-professional-ui .arena-page-back{
+      min-width:80px!important;
+      height:40px!important;
+      padding:0 12px!important;
+      border:1px solid #2a3a31!important;
+      border-radius:6px!important;
+      color:#dce5df!important;
+      background:#0a1610!important;
+      box-shadow:none!important;
+      font-size:10px!important;
+      font-weight:700!important;
+    }
+    body.arena-professional-ui .arena-page-back:hover{border-color:#5b5130!important;background:#0d1b13!important}
 
     @media(max-width:720px){
+      body.arena-professional-ui{padding-bottom:calc(68px + env(safe-area-inset-bottom))!important}
       body.arena-professional-ui .topbar.arena-topbar-clean{
-        border-radius:8px!important;
-        background:#09120d!important;
-        box-shadow:none!important;
+        top:0!important;
+        min-height:57px!important;
+        margin:0 0 12px!important;
+        padding:8px 12px!important;
+        gap:6px!important;
+        border-width:0 0 1px!important;
+        border-color:#223128!important;
+        border-radius:0!important;
+        background:rgba(7,16,11,.98)!important;
+        box-shadow:0 8px 24px rgba(0,0,0,.18)!important;
         backdrop-filter:none!important;
       }
+      body.arena-professional-ui.arena-has-page-back .topbar.arena-topbar-clean .brand{display:none!important}
+      body.arena-professional-ui .topbar.arena-topbar-clean .brand,
+      body.arena-professional-ui .topbar.arena-topbar-clean .brand-mark{width:40px!important;min-width:40px!important;height:40px!important;border-radius:7px!important}
+      body.arena-professional-ui .topbar.arena-topbar-clean .top-actions{gap:4px!important}
+      body.arena-professional-ui .arena-page-back{
+        width:auto!important;
+        min-width:76px!important;
+        height:40px!important;
+        padding:0 11px!important;
+        gap:7px!important;
+        border-radius:6px!important;
+      }
+      body.arena-professional-ui .arena-page-back span{position:static!important;width:auto!important;height:auto!important;overflow:visible!important;clip-path:none!important;white-space:nowrap!important}
+      body.arena-professional-ui .arena-page-back svg{width:17px!important;height:17px!important}
+      body.arena-professional-ui .topbar.arena-topbar-clean :is(#arenaNotificationsBtn,#adminBtn){width:40px!important;min-width:40px!important;height:40px!important;min-height:40px!important;border-radius:6px!important;background:#0a1610!important}
+      body.arena-professional-ui .topbar.arena-topbar-clean #cloudPanelBtn{min-width:68px!important;height:40px!important;min-height:40px!important;padding-inline:8px!important;border-radius:6px!important;background:#0a1610!important}
       body.arena-professional-ui [data-page="home"] .hero{min-height:310px!important;padding:27px 20px!important;border-radius:8px!important}
       body.arena-professional-ui [data-page="home"] .hero h1{font-size:clamp(42px,13vw,58px)!important}
       body.arena-professional-ui #arenaStats{grid-template-columns:repeat(5,minmax(88px,1fr))!important;overflow-x:auto}
       body.arena-professional-ui #arenaStats .stat{min-height:67px!important;padding:12px!important}
-      body.arena-professional-ui .arena-mobile-nav{border-radius:8px!important;background:#09120d!important;box-shadow:none!important;backdrop-filter:none!important}
+      body.arena-professional-ui .arena-mobile-nav{
+        left:0!important;
+        right:0!important;
+        bottom:0!important;
+        width:100%!important;
+        height:calc(64px + env(safe-area-inset-bottom))!important;
+        padding:4px 8px env(safe-area-inset-bottom)!important;
+        gap:2px!important;
+        border-width:1px 0 0!important;
+        border-color:#223128!important;
+        border-radius:0!important;
+        background:rgba(6,14,10,.985)!important;
+        box-shadow:0 -8px 24px rgba(0,0,0,.24)!important;
+        backdrop-filter:none!important;
+      }
+      body.arena-professional-ui .arena-mobile-item{
+        position:relative!important;
+        min-height:56px!important;
+        gap:3px!important;
+        border-radius:5px!important;
+        color:#7f9187!important;
+        background:transparent!important;
+        box-shadow:none!important;
+        font-size:8px!important;
+        font-weight:650!important;
+      }
+      body.arena-professional-ui .arena-mobile-item i{width:24px!important;height:24px!important;color:inherit!important;background:transparent!important}
+      body.arena-professional-ui .arena-mobile-item i svg{width:19px!important;height:19px!important;stroke-width:1.75!important}
+      body.arena-professional-ui .arena-mobile-item.active{color:#e3c45f!important;background:transparent!important}
+      body.arena-professional-ui .arena-mobile-item.active:before{content:"";position:absolute;left:24%;right:24%;top:-4px;height:2px;border-radius:0 0 2px 2px;background:#d7b856}
+      body.arena-professional-ui .arena-nav-sheet{padding:16px 14px max(14px,env(safe-area-inset-bottom))!important;border-radius:12px 12px 0 0!important;background:#08130d!important;box-shadow:0 -18px 48px rgba(0,0,0,.42)!important}
+      body.arena-professional-ui .arena-nav-sheet h2{font-size:24px!important;letter-spacing:0!important;text-transform:none!important}
+      body.arena-professional-ui .arena-sheet-item{grid-template-columns:38px 1fr auto!important;min-height:58px!important;padding:8px 10px!important;border-radius:6px!important;background:transparent!important}
+      body.arena-professional-ui .arena-sheet-item i{width:36px!important;height:36px!important;border-radius:6px!important;background:#0b1911!important}
+      body.arena-professional-ui .arena-sheet-item i svg{width:18px!important;height:18px!important}
       body.arena-professional-ui .arena-home-scroll{grid-auto-columns:82%!important}
+    }
+
+    @media(max-width:360px){
+      body.arena-professional-ui .topbar.arena-topbar-clean{padding-inline:8px!important}
+      body.arena-professional-ui .arena-page-back{min-width:70px!important;padding-inline:8px!important}
+      body.arena-professional-ui .topbar.arena-topbar-clean #cloudPanelBtn{min-width:60px!important;padding-inline:5px!important}
     }
 
     @media(max-width:900px){body.arena-human-ui .home-command nav{grid-template-columns:repeat(2,minmax(0,1fr))}}

@@ -24,11 +24,26 @@
     season: ['10', 'Temporada', 'Calendário e classificação'],
     feedback: ['11', 'Feedback', 'Ajude a melhorar a Arena']
   };
+  const ICONS = {
+    home: '<svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5M9 21v-6h6v6"/></svg>',
+    tournament: '<svg viewBox="0 0 24 24"><path d="M8 4h8v3c0 4-1.8 7-4 7S8 11 8 7V4Z"/><path d="M8 6H5v1c0 3 1.6 5 4.2 5M16 6h3v1c0 3-1.6 5-4.2 5M12 14v4M8 21h8M9 18h6"/></svg>',
+    registrations: '<svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2h6v2M8.5 12l2.5 2.5 4.5-5"/></svg>',
+    champions: '<svg viewBox="0 0 24 24"><path d="m12 3 2.6 5.3 5.9.9-4.3 4.2 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.2 5.9-.9L12 3Z"/></svg>',
+    teams: '<svg viewBox="0 0 24 24"><path d="m12 3 8 3v5c0 5.2-3.4 8.6-8 10-4.6-1.4-8-4.8-8-10V6l8-3Z"/><path d="M9 12h6M12 9v6"/></svg>',
+    community: '<svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="3"/><circle cx="17" cy="10" r="2.5"/><path d="M3.5 20c.4-3.6 2.2-5.5 5.5-5.5s5.1 1.9 5.5 5.5M14 15.5c.8-.5 1.8-.7 2.9-.7 2.5 0 3.9 1.6 4.1 4.5"/></svg>',
+    news: '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
+    history: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>',
+    flash: '<svg viewBox="0 0 24 24"><path d="m13.5 2-8 12H12l-1.5 8 8-12H12l1.5-8Z"/></svg>',
+    season: '<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M8 14h2M14 14h2"/></svg>',
+    feedback: '<svg viewBox="0 0 24 24"><path d="M4 5h16v12H9l-5 4V5Z"/><path d="m9 11 2 2 4-4"/></svg>',
+    more: '<svg viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h14"/></svg>'
+  };
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const iconUrl = () => $('link[rel~="icon"]')?.href || './favicon.svg';
   const currentPage = () => $('.page.active')?.dataset.page || 'home';
+  const navIcon = page => ICONS[page] || ICONS.more;
 
   let mobileNav;
   let sheet;
@@ -63,6 +78,7 @@
     if (!pageBackButton) return;
     const visible = historyDepth() > 0 || currentPage() !== 'home';
     pageBackButton.hidden = !visible;
+    document.body.classList.toggle('arena-has-page-back', visible);
   }
 
   function installHistoryNavigation() {
@@ -125,7 +141,7 @@
       pageBackButton.type = 'button';
       pageBackButton.className = 'arena-page-back';
       pageBackButton.setAttribute('aria-label', 'Voltar para a página anterior');
-      pageBackButton.innerHTML = '<i aria-hidden="true">&#8592;</i><span>Voltar</span>';
+      pageBackButton.innerHTML = '<i aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m14.5 5-7 7 7 7"/><path d="M8 12h10"/></svg></i><span>Voltar</span>';
       pageBackButton.addEventListener('click', () => {
         if (historyDepth() > 0) window.history.back();
         else window.navigate('home', { replace: true });
@@ -154,7 +170,7 @@
     button.classList.add('arena-nav-item');
     button.title = `${meta[1]} • ${meta[2]}`;
     button.setAttribute('aria-label', meta[1]);
-    button.innerHTML = `<i>${meta[0]}</i><span class="arena-nav-copy"><b>${meta[1]}</b><small>${meta[2]}</small></span>`;
+    button.innerHTML = `<i aria-hidden="true">${navIcon(button.dataset.go)}</i><span class="arena-nav-copy"><b>${meta[1]}</b><small>${meta[2]}</small></span>`;
   }
 
   function buildSidebar() {
@@ -197,7 +213,7 @@
       more = document.createElement('button');
       more.type = 'button';
       more.className = 'nav-btn arena-nav-item arena-side-more-toggle';
-      more.innerHTML = '<i>⋯</i><span class="arena-nav-copy"><b>Mais</b><small>5 áreas</small></span>';
+      more.innerHTML = `<i aria-hidden="true">${navIcon('more')}</i><span class="arena-nav-copy"><b>Mais</b><small>5 áreas</small></span>`;
       more.addEventListener('click', () => setSidebarMore(!nav.classList.contains('arena-side-more-open')));
     }
     more.setAttribute('aria-label', 'Mostrar mais áreas');
@@ -232,7 +248,7 @@
     button.type = 'button';
     button.className = 'arena-mobile-item';
     button.dataset.mobileGo = page;
-    button.innerHTML = `<i>${icon}</i><span>${label}</span>`;
+    button.innerHTML = `<i aria-hidden="true">${navIcon(page)}</i><span>${label}</span>`;
     button.setAttribute('aria-label', label);
     button.addEventListener('click', () => go(page));
     return button;
@@ -249,7 +265,7 @@
       more.type = 'button';
       more.className = 'arena-mobile-item';
       more.dataset.mobileMore = 'true';
-      more.innerHTML = '<i>☰</i><span>Mais</span>';
+      more.innerHTML = `<i aria-hidden="true">${navIcon('more')}</i><span>Mais</span>`;
       more.setAttribute('aria-label', 'Abrir mais opções');
       more.addEventListener('click', openSheet);
       mobileNav.append(more);
@@ -273,7 +289,7 @@
         button.type = 'button';
         button.className = 'arena-sheet-item';
         button.dataset.sheetGo = page;
-        button.innerHTML = `<i>${icon}</i><span><b>${label}</b><small>${description}</small></span><em>›</em>`;
+        button.innerHTML = `<i aria-hidden="true">${navIcon(page)}</i><span><b>${label}</b><small>${description}</small></span><em>›</em>`;
         button.addEventListener('click', () => go(page));
         $('.arena-sheet-grid', sheet).append(button);
       });
@@ -364,7 +380,8 @@
     .arena-page-back[hidden]{display:none!important}
     .arena-page-back:hover{border-color:rgba(242,215,125,.42);background:rgba(255,255,255,.04)}
     .arena-page-back:focus-visible{outline:2px solid var(--gold-soft);outline-offset:2px}
-    .arena-page-back i{font:700 18px/1 Arial,sans-serif;font-style:normal}
+    .arena-page-back i{display:grid;place-items:center;font-style:normal}
+    .arena-page-back svg,.arena-nav-item i svg,.arena-mobile-item i svg,.arena-sheet-item i svg{display:block;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
     @media(min-width:981px){
       html{scroll-padding-top:90px}
