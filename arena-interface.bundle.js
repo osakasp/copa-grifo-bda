@@ -36,7 +36,12 @@
     flash: '<svg viewBox="0 0 24 24"><path d="m13.5 2-8 12H12l-1.5 8 8-12H12l1.5-8Z"/></svg>',
     season: '<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M8 14h2M14 14h2"/></svg>',
     feedback: '<svg viewBox="0 0 24 24"><path d="M4 5h16v12H9l-5 4V5Z"/><path d="m9 11 2 2 4-4"/></svg>',
-    more: '<svg viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h14"/></svg>'
+    more: '<svg viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h14"/></svg>',
+    notifications: '<svg viewBox="0 0 24 24"><path d="M6.5 9a5.5 5.5 0 0 1 11 0c0 6 2.5 6 2.5 8H4c0-2 2.5-2 2.5-8Z"/><path d="M10 20h4"/></svg>',
+    settings: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg>',
+    search: '<svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg>',
+    share: '<svg viewBox="0 0 24 24"><path d="M14 5h5v5M19 5l-8 8"/><path d="M18 13v6H5V6h6"/></svg>',
+    arrowRight: '<svg viewBox="0 0 24 24"><path d="M5 12h14M14 7l5 5-5 5"/></svg>'
   };
 
   const $ = (selector, root = document) => root.querySelector(selector);
@@ -44,6 +49,7 @@
   const iconUrl = () => $('link[rel~="icon"]')?.href || './favicon.svg';
   const currentPage = () => $('.page.active')?.dataset.page || 'home';
   const navIcon = page => ICONS[page] || ICONS.more;
+  window.ArenaBDAIcons = Object.freeze({ get: navIcon });
 
   let mobileNav;
   let sheet;
