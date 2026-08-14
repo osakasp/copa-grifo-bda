@@ -1,4 +1,4 @@
-const VERSION = 'v50-mobile-page-back';
+const VERSION = 'v51-mobile-navigation-design';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
