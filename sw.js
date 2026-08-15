@@ -1,4 +1,4 @@
-const VERSION = 'v61-active-page-lifecycle';
+const VERSION = 'v62-championship-cards';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
