@@ -75,11 +75,7 @@
         './arena-runtime.bundle.js?v=20260814-4',
         './arena-bda.js?v=20260814-1',
         './arena-lazy-features.js?v=20260814-3',
-        './arena-interface.bundle.js?v=20260814-3'
-      ];
-
-      const enhancementScripts = [
-        './arena-innovation-layer.js?v=20260814-4'
+        './arena-interface.bundle.js?v=20260814-5'
       ];
 
       const cloudScripts = [
@@ -215,7 +211,6 @@
         try { win.localStorage.removeItem('arena-bda-theme'); } catch {}
 
         const coreFailures = [];
-        const enhancementFailures = [];
         const cloudFailures = [];
         let cloudPromise = null;
         let cloudReady = false;
@@ -280,18 +275,10 @@
           win.toast('A Arena abriu, mas alguns recursos não carregaram');
         }
 
-        const startEnhancements = () => {
-          doc.documentElement.dataset.arenaEnhancements = 'loading';
-          loadOrderedBatch(doc, enhancementScripts, enhancementFailures, 15000).then(() => {
-            if (generation !== loadGeneration) return;
-            doc.documentElement.dataset.arenaEnhancements = enhancementFailures.length ? 'partial' : 'ready';
-            win.dispatchEvent(new win.CustomEvent('arena:enhancements-ready', {
-              detail: { failures: enhancementFailures.map(item => item.src) }
-            }));
-          });
-        };
-        if ('requestIdleCallback' in win) win.requestIdleCallback(startEnhancements, { timeout: 2600 });
-        else win.setTimeout(startEnhancements, 900);
+        doc.documentElement.dataset.arenaEnhancements = 'ready';
+        win.dispatchEvent(new win.CustomEvent('arena:enhancements-ready', {
+          detail: { failures: [] }
+        }));
 
         const scheduleCloudWhenQuiet = (delay = 1200) => {
           clearTimeout(cloudIdleTimer);
