@@ -1,4 +1,4 @@
-const VERSION = 'v58-unified-visual-system';
+const VERSION = 'v59-mobile-layout-fix';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,

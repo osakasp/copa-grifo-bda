@@ -9,7 +9,8 @@
 
   const styles = document.createElement('style');
   styles.textContent = `
-    .cloud-panel-trigger{color:#171107;border-color:var(--gold);background:linear-gradient(135deg,var(--gold-soft),var(--gold));box-shadow:0 8px 22px rgba(216,178,72,.2)}
+    .cloud-panel-trigger{display:inline-flex;align-items:center;justify-content:center;gap:6px;color:#171107;border-color:var(--gold);background:linear-gradient(135deg,var(--gold-soft),var(--gold));box-shadow:0 8px 22px rgba(216,178,72,.2)}
+    .cloud-panel-trigger svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
     .cloud-panel-trigger[hidden]{display:none!important}
     .cloud-admin-modal{width:min(100%,560px)}
     .cloud-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
@@ -40,7 +41,7 @@
   panelButton.id = 'cloudPanelBtn';
   panelButton.type = 'button';
   panelButton.className = 'admin-btn cloud-panel-trigger';
-  panelButton.textContent = 'PAINEL';
+  panelButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.1A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.1A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.1A1.7 1.7 0 0 0 15.4 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.13.37.34.7.6 1 .3.27.68.4 1.1.4h.1v4h-.1c-.42 0-.8.13-1.1.4-.26.3-.47.63-.6 1Z"></path></svg><span>PAINEL</span>';
   panelButton.hidden = true;
   panelButton.setAttribute('aria-label', 'Abrir painel administrativo');
 
