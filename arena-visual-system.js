@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '2026.08-unified-visual-system';
+  const VERSION = '2026.08.15-accessibility';
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
@@ -926,6 +926,11 @@
         scroll-padding-bottom:calc(84px + env(safe-area-inset-bottom));
         font-size:14px;
       }
+      #arenaApp :is(button,[role="button"],input[type="button"],input[type="submit"],input[type="reset"]):not([hidden]){
+        min-inline-size:44px!important;
+        min-block-size:44px!important;
+        touch-action:manipulation;
+      }
       body.arena-visual-system main{padding-bottom:calc(82px + env(safe-area-inset-bottom))}
       body.arena-visual-system :is(.primary,.secondary,.ghost,.danger){font-size:11px}
       body.arena-visual-system .section-head h2{font-size:22px}
@@ -1154,9 +1159,8 @@
     const watermark = document.createElement('img');
     watermark.className = 'arena-home-watermark';
     watermark.src = brandIconUrl();
-    watermark.alt = '';
+    watermark.alt = 'Escudo oficial do Clã BDA';
     watermark.decoding = 'async';
-    watermark.setAttribute('aria-hidden', 'true');
     hero.append(watermark);
   }
 

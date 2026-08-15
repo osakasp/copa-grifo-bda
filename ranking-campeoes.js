@@ -197,7 +197,7 @@
     const team = findChampionTeam(champion);
     const label = `Escudo de ${champion.club}`;
     return team?.badge
-      ? `<span class="champion-club-shield has-image" role="img" aria-label="${escapeHtml(label)}"><img src="${escapeHtml(team.badge)}" alt=""></span>`
+      ? `<span class="champion-club-shield has-image"><img src="${escapeHtml(team.badge)}" alt="${escapeHtml(label)}"></span>`
       : `<span class="champion-club-shield" role="img" aria-label="${escapeHtml(label)}"><b>${escapeHtml(initials(champion.club, team?.code))}</b></span>`;
   }
 
