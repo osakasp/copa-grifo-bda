@@ -27,5 +27,6 @@ bundle "$repo_dir/arena-runtime.bundle.js" \
   bda-logo.js
 
 bundle "$repo_dir/arena-interface.bundle.js" \
+  arena-page-lifecycle.js \
   navegacao-arena-v2.js \
   arena-visual-system.js

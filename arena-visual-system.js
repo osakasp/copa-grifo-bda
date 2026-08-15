@@ -797,40 +797,53 @@
     }
     body.arena-visual-system .arena-home-card{
       display:grid;
-      grid-template-columns:minmax(0,1fr) auto;
-      grid-template-rows:auto auto auto;
-      align-content:center;
-      align-items:center;
-      min-height:112px;
-      padding:14px 15px;
+      grid-template-columns:132px minmax(0,1fr);
+      grid-template-rows:minmax(0,1fr) auto;
+      min-height:158px;
+      padding:0;
+      overflow:hidden;
       border-color:#21392b;
-      border-left:3px solid #d7b856;
       border-radius:9px;
       background:#0b1911;
     }
-    body.arena-visual-system .arena-home-card .eyebrow,
-    body.arena-visual-system .arena-home-card h3,
-    body.arena-visual-system .arena-home-card p{grid-column:1;min-width:0}
+    body.arena-visual-system .arena-home-media{
+      grid-column:1;
+      grid-row:1/3;
+      min-height:158px;
+      border-right:1px solid #21392b;
+      background:#07110b;
+    }
+    body.arena-visual-system .arena-home-media>img{width:100%;height:100%;object-fit:cover}
+    body.arena-visual-system .arena-home-media .arena-cover-fallback img{width:62px;height:62px}
+    body.arena-visual-system .arena-home-copy{grid-column:2;grid-row:1;min-width:0;padding:12px 13px 7px}
+    body.arena-visual-system .arena-home-top{display:flex;align-items:center;justify-content:space-between;gap:7px}
+    body.arena-visual-system .arena-home-state{color:#e3c45f;font-size:8px}
+    body.arena-visual-system .arena-home-edition{border-color:#304636;background:#102219}
     body.arena-visual-system .arena-home-card h3{
       overflow:hidden;
-      margin:5px 12px 3px 0;
-      font-size:21px;
+      margin:8px 0 7px;
+      font-size:20px;
       line-height:1;
       text-overflow:ellipsis;
       white-space:nowrap;
     }
+    body.arena-visual-system .arena-home-next{padding-top:7px;border-top:1px solid #20372a}
+    body.arena-visual-system .arena-home-next b{margin-top:1px;color:#e7eee9;font-size:10px}
+    body.arena-visual-system .arena-home-next small{font-size:8px}
     body.arena-visual-system .arena-home-card button{
       grid-column:2;
-      grid-row:1/4;
-      align-self:center;
-      min-height:36px;
-      margin:0;
-      padding:0 11px;
+      grid-row:2;
+      justify-self:start;
+      min-height:32px;
+      margin:0 13px 10px;
+      padding:0 10px;
       border:1px solid #304636;
       border-radius:6px;
       background:#102219;
       white-space:nowrap;
     }
+    body.arena-visual-system .arena-card-next{border-color:#20372a}
+    body.arena-visual-system .arena-card-next b{color:#e7eee9}
 
     body.arena-visual-system .home-command{
       margin-top:8px;
@@ -1097,7 +1110,11 @@
       body.arena-visual-system .arena-app-tabs{margin-inline:-1px;padding-inline:2px;border-radius:8px}
       body.arena-visual-system .arena-app-tab{min-width:0;padding-inline:2px}
       body.arena-visual-system .arena-home-scroll{grid-template-columns:1fr}
-      body.arena-visual-system .arena-home-card{min-height:102px}
+      body.arena-visual-system .arena-home-card{grid-template-columns:104px minmax(0,1fr);min-height:146px}
+      body.arena-visual-system .arena-home-media{min-height:146px}
+      body.arena-visual-system .arena-home-copy{padding:11px 11px 7px}
+      body.arena-visual-system .arena-home-card h3{font-size:18px}
+      body.arena-visual-system .arena-home-card button{margin:0 11px 9px}
       body.arena-visual-system .home-command{padding:12px}
       body.arena-visual-system .home-command nav{grid-template-columns:1fr 1fr}
       body.arena-visual-system .home-command nav button:last-child{grid-column:1/-1}
@@ -1111,6 +1128,7 @@
       body.arena-visual-system .topbar{padding-inline:8px}
       body.arena-visual-system .arena-page-back{min-width:70px;padding-inline:8px}
       body.arena-visual-system .topbar #shareBtn{display:none}
+      body.arena-visual-system .arena-home-card{grid-template-columns:92px minmax(0,1fr)}
     }
 
     @media(max-width:900px){body.arena-visual-system .home-command nav{grid-template-columns:repeat(2,minmax(0,1fr))}}
