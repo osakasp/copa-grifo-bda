@@ -4,12 +4,14 @@
 
   const CRITICAL_IMAGE = '.brand-mark img,.griffin img,.arena-side-logo img,.hero img,[data-media-priority="high"]';
   const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  const coarsePointer = matchMedia('(hover: none) and (pointer: coarse)');
   let frame = 0;
   let runtimeLite = false;
 
   function isLiteMode() {
     return Boolean(
       matchMedia('(prefers-reduced-motion: reduce)').matches
+      || coarsePointer.matches
       || runtimeLite
       || connection?.saveData
       || (navigator.deviceMemory && navigator.deviceMemory <= 4)
@@ -96,6 +98,7 @@
       html.arena-performance-lite .topbar{background:linear-gradient(180deg,#0a1810,#030906)!important}
       html.arena-performance-lite .arena-detail-nav,html.arena-performance-lite #giManager>nav,html.arena-performance-lite .pro-admin-bar{background:#040b07!important}
       html.arena-performance-lite .hero::before,html.arena-performance-lite .app::before,html.arena-performance-lite .app::after{filter:none!important}
+      html.arena-performance-lite [data-page="home"] .hero::before,html.arena-performance-lite .arena-home-watermark,html.arena-performance-lite .champion-club-shield,html.arena-performance-lite .champion-club-shield::before{animation:none!important;will-change:auto!important}
       html.arena-performance-lite .app::before,html.arena-performance-lite .app::after{animation:none!important}
       html.arena-performance-lite .arena-button-ripple{display:none!important}
       html.arena-performance-lite .page.active{animation-duration:.18s!important;animation-timing-function:ease-out!important}
@@ -120,6 +123,7 @@
   else window.addEventListener('load', () => setTimeout(measureFrameBudget, 900), { once: true, passive: true });
   document.addEventListener('visibilitychange', syncVisibility, { passive: true });
   connection?.addEventListener?.('change', syncPerformanceMode, { passive: true });
+  coarsePointer.addEventListener?.('change', syncPerformanceMode);
   window.ArenaDOMEvents?.subscribe(scheduleImages, { selector: 'img' });
 
   window.ArenaBDAMediaPerformance = Object.freeze({

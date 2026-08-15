@@ -9,12 +9,14 @@
 
   function matches(records, selector) {
     if (!selector) return true;
-    return records.some(record => {
-      if (record.type === 'attributes') return record.target instanceof Element && record.target.matches(selector);
-      return [...record.addedNodes, ...record.removedNodes].some(node =>
-        node instanceof Element && (node.matches(selector) || node.querySelector(selector))
-      );
-    });
+    for (const record of records) {
+      for (const nodes of [record.addedNodes, record.removedNodes]) {
+        for (const node of nodes) {
+          if (node instanceof Element && (node.matches(selector) || node.querySelector(selector))) return true;
+        }
+      }
+    }
+    return false;
   }
 
   function flush() {
@@ -34,7 +36,9 @@
       queued.push(...records);
       if (!frame) frame = requestAnimationFrame(flush);
     });
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+    // Os assinantes decoram conteúdo inserido. Observar cada troca de classe fazia
+    // navegação, animações e estados de botão reexecutarem todos eles no celular.
+    observer.observe(document.body, { childList: true, subtree: true });
   }
 
   function subscribe(callback, options = {}) {
@@ -45,6 +49,4 @@
   }
 
   window.ArenaDOMEvents = Object.freeze({ subscribe, subscriberCount: () => subscribers.size });
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
-  else start();
 })();

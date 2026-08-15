@@ -1,4 +1,4 @@
-const VERSION = 'v56-supercopa-bda';
+const VERSION = 'v57-performance-mobile';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
