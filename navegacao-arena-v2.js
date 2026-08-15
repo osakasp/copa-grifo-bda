@@ -50,6 +50,7 @@
 
   let mobileNav;
   let sheet;
+  let sheetTrigger;
   let pageBackButton;
   let viewportFrame = 0;
 
@@ -110,7 +111,7 @@
       }
 
       renderPage(targetPage);
-      closeSheet();
+      closeSheet(false);
       requestAnimationFrame(() => {
         syncActive();
         syncPageBack();
@@ -160,7 +161,7 @@
       $$('.page').forEach(item => item.classList.toggle('active', item.dataset.page === page));
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-    closeSheet();
+    closeSheet(false);
     requestAnimationFrame(syncActive);
   }
 
@@ -270,6 +271,9 @@
       more.dataset.mobileMore = 'true';
       more.innerHTML = `<i aria-hidden="true">${navIcon('more')}</i><span>Mais</span>`;
       more.setAttribute('aria-label', 'Abrir mais opções');
+      more.setAttribute('aria-controls', 'arenaMobileNavigationSheet');
+      more.setAttribute('aria-expanded', 'false');
+      more.setAttribute('aria-haspopup', 'dialog');
       more.addEventListener('click', openSheet);
       mobileNav.append(more);
       document.body.append(mobileNav);
@@ -278,6 +282,7 @@
     if (!sheet) {
       sheet = document.createElement('div');
       sheet.className = 'arena-nav-sheet-backdrop';
+      sheet.id = 'arenaMobileNavigationSheet';
       sheet.setAttribute('aria-hidden', 'true');
       sheet.innerHTML = `
         <section class="arena-nav-sheet" role="dialog" aria-modal="true" aria-label="Mais opções">
@@ -304,16 +309,39 @@
   }
 
   function openSheet() {
+    sheetTrigger = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     sheet?.classList.add('show');
     sheet?.setAttribute('aria-hidden', 'false');
+    $('.arena-mobile-item[data-mobile-more]')?.setAttribute('aria-expanded', 'true');
     document.body.classList.add('arena-sheet-open');
     $('.arena-sheet-close', sheet)?.focus();
   }
 
-  function closeSheet() {
+  function closeSheet(restoreFocus = true) {
+    const wasOpen = sheet?.classList.contains('show');
+    const focusTarget = sheetTrigger;
     sheet?.classList.remove('show');
     sheet?.setAttribute('aria-hidden', 'true');
+    $('.arena-mobile-item[data-mobile-more]')?.setAttribute('aria-expanded', 'false');
     document.body.classList.remove('arena-sheet-open');
+    sheetTrigger = null;
+    if (restoreFocus && wasOpen && focusTarget?.isConnected) requestAnimationFrame(() => focusTarget.focus());
+  }
+
+  function trapSheetFocus(event) {
+    if (event.key !== 'Tab' || !sheet?.classList.contains('show')) return;
+    const focusable = $$('button:not([hidden]):not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])', sheet)
+      .filter(element => element.getClientRects().length > 0);
+    if (!focusable.length) return event.preventDefault();
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
   }
 
   function syncActive() {
@@ -329,6 +357,12 @@
 
     $$('.arena-mobile-item[data-mobile-go]').forEach(button => {
       const active = button.dataset.mobileGo === page;
+      button.classList.toggle('active', active);
+      active ? button.setAttribute('aria-current', 'page') : button.removeAttribute('aria-current');
+    });
+
+    $$('.arena-app-tab[data-go]').forEach(button => {
+      const active = button.dataset.go === page;
       button.classList.toggle('active', active);
       active ? button.setAttribute('aria-current', 'page') : button.removeAttribute('aria-current');
     });
@@ -378,6 +412,8 @@
   const style = document.createElement('style');
   style.textContent = `
     .arena-side-brand,.arena-side-heading,.arena-side-footer,.arena-mobile-nav,.arena-nav-sheet-backdrop{display:none}
+    .arena-skip-link{position:fixed;left:50%;top:8px;z-index:1000;min-height:44px;padding:0 16px;display:flex;align-items:center;border:2px solid var(--gold-soft);border-radius:8px;color:#171107;background:var(--gold-soft);font-size:13px;font-weight:850;text-decoration:none;transform:translate(-50%,-140%)}
+    .arena-skip-link:focus{transform:translate(-50%,0)}
     .topbar>.top-actions{margin-left:auto}
     .arena-page-back{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:82px;height:40px;flex:0 0 auto;padding:0 11px;border:1px solid var(--line);border-radius:6px;color:var(--text);background:transparent;font-size:12px;font-weight:750;line-height:1;white-space:nowrap}
     .arena-page-back[hidden]{display:none}
@@ -435,6 +471,7 @@
     if (event.target.closest('[data-go], [data-mobile-go], [data-sheet-go]')) setTimeout(syncActive, 20);
   });
   document.addEventListener('keydown', event => {
+    trapSheetFocus(event);
     if (event.key !== 'Escape') return;
     closeSheet();
     setSidebarMore(false);
