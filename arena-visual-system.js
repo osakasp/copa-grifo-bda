@@ -920,7 +920,12 @@
     body.arena-visual-system .arena-card .arena-open{min-height:36px}
 
     @media(max-width:720px){
-      body.arena-visual-system{padding-bottom:calc(68px + env(safe-area-inset-bottom))}
+      body.arena-visual-system{
+        overflow-x:clip;
+        padding-bottom:calc(92px + env(safe-area-inset-bottom));
+        scroll-padding-bottom:calc(84px + env(safe-area-inset-bottom));
+      }
+      body.arena-visual-system main{padding-bottom:calc(82px + env(safe-area-inset-bottom))}
       body.arena-visual-system .topbar{
         top:0;
         min-height:57px;
@@ -935,9 +940,21 @@
         backdrop-filter:none;
       }
       body.arena-visual-system.arena-has-page-back .topbar .brand{display:none}
-      body.arena-visual-system .topbar .brand,
+      body.arena-visual-system .topbar .brand{
+        width:auto;
+        min-width:40px;
+        height:40px;
+        flex:0 0 auto;
+        gap:0;
+      }
       body.arena-visual-system .topbar .brand-mark{width:40px;min-width:40px;height:40px;border-radius:7px}
-      body.arena-visual-system .topbar .top-actions{gap:4px}
+      body.arena-visual-system .topbar .brand-copy{display:none}
+      body.arena-visual-system .topbar .top-actions{
+        min-width:0;
+        flex:1 1 auto;
+        justify-content:flex-end;
+        gap:4px;
+      }
       body.arena-visual-system .arena-page-back{
         width:auto;
         min-width:76px;
@@ -948,13 +965,86 @@
       }
       body.arena-visual-system .arena-page-back span{position:static;width:auto;height:auto;overflow:visible;clip-path:none;white-space:nowrap}
       body.arena-visual-system .arena-page-back svg{width:17px;height:17px}
-      body.arena-visual-system .topbar :is(#arenaNotificationsBtn,#adminBtn){width:40px;min-width:40px;height:40px;min-height:40px;border-radius:6px;background:#0a1610}
-      body.arena-visual-system .topbar #cloudPanelBtn{min-width:68px;height:40px;min-height:40px;padding-inline:8px;border-radius:6px;background:#0a1610}
+      body.arena-visual-system .topbar :is(#arenaNotificationsBtn,#shareBtn){width:40px;min-width:40px;height:40px;min-height:40px;padding:0;border-radius:6px;background:#0a1610}
+      body.arena-visual-system .topbar #cloudPanelBtn{
+        width:40px;
+        min-width:40px;
+        height:40px;
+        min-height:40px;
+        padding:0;
+        border-radius:6px;
+        color:#dce5df;
+        background:#0a1610;
+      }
+      body.arena-visual-system .topbar #cloudPanelBtn span{display:none}
+      body.arena-visual-system .topbar #cloudPanelBtn svg{width:18px;height:18px}
+      body.arena-visual-system .topbar #adminBtn{
+        width:52px;
+        min-width:52px;
+        height:40px;
+        min-height:40px;
+        padding:0 6px;
+        overflow:hidden;
+        border-radius:6px;
+        background:#0a1610;
+        font-size:0;
+        white-space:nowrap;
+      }
+      body.arena-visual-system .topbar #adminBtn:before{content:"Entrar";font-size:11px}
+      body.arena-visual-system .topbar #adminBtn[data-account-state="member"]:before{content:"Conta"}
+      body.arena-visual-system .topbar #adminBtn[data-account-state="admin"]:before{content:"Admin"}
+      body.arena-visual-system .topbar #memberLogoutBtn{
+        width:48px;
+        min-width:48px;
+        height:40px;
+        min-height:40px;
+        padding:0 5px;
+        border-radius:6px;
+        font-size:11px;
+        white-space:nowrap;
+      }
       body.arena-visual-system [data-page="home"] .hero{min-height:310px;padding:27px 20px;border-radius:8px}
       body.arena-visual-system [data-page="home"] .hero h1{font-size:clamp(42px,13vw,58px)}
       body.arena-visual-system .arena-home-watermark{right:-24px;top:35%;width:142px;opacity:.065}
-      body.arena-visual-system #arenaStats{grid-template-columns:repeat(5,minmax(88px,1fr));overflow-x:auto}
-      body.arena-visual-system #arenaStats .stat{min-height:67px;padding:12px}
+      body.arena-visual-system .arena-app-tabs{
+        display:grid;
+        grid-template-columns:repeat(5,minmax(0,1fr));
+        gap:0;
+        overflow:visible;
+        padding:0;
+      }
+      body.arena-visual-system .arena-app-tab{
+        min-width:0;
+        min-height:58px;
+        padding:5px 2px;
+        flex-direction:column;
+        gap:4px;
+        font-size:11px;
+      }
+      body.arena-visual-system .arena-app-tab.active:after{right:5px;left:5px}
+      body.arena-visual-system #arenaStats{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:1px;
+        overflow:visible;
+        border:0;
+        background:#20372a;
+      }
+      body.arena-visual-system #arenaStats .stat{
+        min-width:0;
+        min-height:72px;
+        padding:12px 14px;
+        border:0;
+        background:#0a1710;
+      }
+      body.arena-visual-system #arenaStats .stat:last-child{grid-column:1/-1}
+      body.arena-visual-system #arenaStats .stat span{
+        line-height:1.25;
+        letter-spacing:.04em;
+        overflow-wrap:anywhere;
+      }
+      body.arena-visual-system .admin-panel.show{scroll-margin-bottom:calc(84px + env(safe-area-inset-bottom))}
+      body.arena-visual-system .admin-panel.show .admin-tools{display:grid;grid-template-columns:1fr}
+      body.arena-visual-system .admin-panel.show .admin-tools button{width:100%;min-width:0}
       body.arena-visual-system .arena-mobile-nav{
         left:0;
         right:0;
@@ -978,9 +1068,10 @@
         color:#7f9187;
         background:transparent;
         box-shadow:none;
-        font-size:11px;
+        font-size:10.5px;
         font-weight:650;
       }
+      body.arena-visual-system .arena-mobile-item span{letter-spacing:-.02em}
       body.arena-visual-system .arena-mobile-item i{width:24px;height:24px;color:inherit;background:transparent}
       body.arena-visual-system .arena-mobile-item i svg{width:19px;height:19px;stroke-width:1.75}
       body.arena-visual-system .arena-mobile-item.active{color:#e3c45f;background:transparent}
@@ -995,7 +1086,7 @@
       body.arena-visual-system [data-page="home"] .hero h1{font-size:clamp(38px,12vw,50px)}
       body.arena-visual-system .arena-home-watermark{right:-25px;top:38%;width:132px;opacity:.055}
       body.arena-visual-system .arena-app-tabs{margin-inline:-1px;padding-inline:2px;border-radius:8px}
-      body.arena-visual-system .arena-app-tab{min-width:91px;padding-inline:10px}
+      body.arena-visual-system .arena-app-tab{min-width:0;padding-inline:2px}
       body.arena-visual-system .arena-home-scroll{grid-template-columns:1fr}
       body.arena-visual-system .arena-home-card{min-height:102px}
       body.arena-visual-system .home-command{padding:12px}
@@ -1010,7 +1101,7 @@
     @media(max-width:360px){
       body.arena-visual-system .topbar{padding-inline:8px}
       body.arena-visual-system .arena-page-back{min-width:70px;padding-inline:8px}
-      body.arena-visual-system .topbar #cloudPanelBtn{min-width:60px;padding-inline:5px}
+      body.arena-visual-system .topbar #shareBtn{display:none}
     }
 
     @media(max-width:900px){body.arena-visual-system .home-command nav{grid-template-columns:repeat(2,minmax(0,1fr))}}
