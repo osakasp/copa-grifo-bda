@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '2026.08.15-accessibility';
+  const VERSION = '2026.08.15-keyboard-accessibility';
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
@@ -294,7 +294,7 @@
       filter:none;
       border-color:var(--arena-accent);
     }
-    body.arena-visual-system button:focus-visible{
+    body.arena-visual-system :is(a[href],button,input,select,textarea,summary,[tabindex]:not([tabindex="-1"])):focus-visible{
       outline:2px solid var(--arena-accent);
       outline-offset:2px;
     }
