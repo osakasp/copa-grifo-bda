@@ -41,22 +41,28 @@
       './noticias-bda.js?v=20260801-3'
     ],
     tournament: [
-      './cores-automaticas-campeonatos.js?v=20260802-2',
+      './cores-automaticas-campeonatos.js?v=20260802-2'
+    ],
+    tournamentDetail: [
       './confrontos-copa-grifo.js',
-      './gestor-inteligente.js?v=20260803-3',
-      './sorteio-campeonatos.js?v=20260730-1',
-      './arena-editor-pro.js',
+      './gestor-inteligente.js?v=20260814-1',
       './classificacao-automatica.js?v=20260730-1',
-      './gerador-grupos-ligas.js',
+      './resultados-cards-pro.js?v=20260803-1',
+      './placar-mobile-stability.js?v=20260803-1'
+    ],
+    tournamentEnhancements: [
       './logo-liga.js',
       './midia-campeonato-refresh.js?v=20260726-1',
       './copa-francos-design-lite.js?v=20260726-2',
-      './confronto-editor-v2.js?v=20260802-2',
-      './resultados-cards-pro.js?v=20260803-1',
-      './placar-mobile-stability.js?v=20260803-1',
       './captura-confrontos-simples.js?v=20260730-1',
-      './match-center-bda.js?v=20260727-1',
-      './regulamento-interativo.js?v=20260727-1'
+      './match-center-bda.js?v=20260814-1',
+      './regulamento-interativo.js?v=20260814-1'
+    ],
+    tournamentAdmin: [
+      './sorteio-campeonatos.js?v=20260730-1',
+      './arena-editor-pro.js',
+      './gerador-grupos-ligas.js',
+      './confronto-editor-v2.js?v=20260802-2'
     ]
   });
   const PAGE_BUNDLE = Object.freeze({
@@ -145,7 +151,10 @@
 
     const promise = (async () => {
       document.documentElement.dataset.loadingBundle = name;
-      for (const source of sources) await loadScript(source, `${name}:${source}`);
+      for (let index = 0; index < sources.length; index += 1) {
+        await loadScript(sources[index], `${name}:${sources[index]}`);
+        if (index < sources.length - 1) await yieldToBrowser();
+      }
       loadedBundles.add(name);
       window.dispatchEvent(new CustomEvent('arena:bundle-loaded', { detail: { name, sources: [...sources] } }));
     })().finally(() => {
@@ -271,8 +280,39 @@
     }
   }
 
+  function tournamentPageActive() {
+    return document.querySelector('.page.active')?.dataset.page === 'tournament';
+  }
+
+  function adminActive() {
+    return Boolean(window.ArenaBDAAuth?.isAdmin?.() || document.documentElement.classList.contains('arena-admin-authenticated'));
+  }
+
+  function scheduleTournamentAdmin() {
+    if (!adminActive()) return;
+    idle(() => {
+      if (tournamentPageActive()) loadBundle('tournamentAdmin').catch(() => {});
+    }, 1400);
+  }
+
   function scheduleTournamentExtras() {
-    window.setTimeout(() => loadBundle('tournament').catch(() => {}), 0);
+    idle(() => {
+      if (!tournamentPageActive()) return;
+      loadBundle('tournamentEnhancements')
+        .then(scheduleTournamentAdmin)
+        .catch(() => {});
+    }, 900);
+  }
+
+  function scheduleTournamentDetail() {
+    window.setTimeout(() => {
+      if (!tournamentPageActive()) return;
+      loadBundle('tournament')
+        .then(() => yieldToBrowser())
+        .then(() => loadBundle('tournamentDetail'))
+        .then(scheduleTournamentExtras)
+        .catch(() => notify('Não foi possível carregar os detalhes do campeonato'));
+    }, 0);
   }
 
   function setButtonLoading(button, loading) {
@@ -332,20 +372,9 @@
     }
 
     const tournamentTrigger = event.target instanceof Element ? event.target.closest('[data-open-tournament],[data-home-tournament]') : null;
-    if (tournamentTrigger && !loadedBundles.has('tournament')) {
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation();
-      setRouteLoading(tournamentTrigger, true);
-      navigateTo('tournament');
-      yieldToBrowser()
-        .then(() => loadBundle('tournament'))
-        .then(() => {
-          setRouteLoading(tournamentTrigger, false);
-          tournamentTrigger.click();
-        })
-        .catch(() => notify('Não foi possível carregar o campeonato'))
-        .finally(() => setRouteLoading(tournamentTrigger, false));
+    if (tournamentTrigger) {
+      if (loadedBundles.has('tournamentDetail')) scheduleTournamentExtras();
+      else scheduleTournamentDetail();
     }
   }, true);
 
@@ -356,7 +385,10 @@
     const page = triggerPage(routeTrigger(event));
     const bundle = PAGE_BUNDLE[page];
     if (bundle) prefetchBundle(bundle);
-    if (page === 'tournament' || event.target.closest('[data-open-tournament],[data-home-tournament]')) prefetchBundle('tournament');
+    if (page === 'tournament' || event.target.closest('[data-open-tournament],[data-home-tournament]')) {
+      prefetchBundle('tournament');
+      prefetchBundle('tournamentDetail');
+    }
   }, { passive: true, capture: true });
 
   document.addEventListener('focusin', event => {
@@ -380,7 +412,6 @@
     }
     const active = document.querySelector('.page.active')?.dataset.page;
     if (active && PAGE_BUNDLE[active]) loadBundle(PAGE_BUNDLE[active]).catch(() => {});
-    if (active === 'tournament') scheduleTournamentExtras();
   }
 
   function backgroundWarmup() {
@@ -411,6 +442,9 @@
   });
 
   ensureRoutes();
+  window.addEventListener('arena:permissions-updated', event => {
+    if (event.detail?.isAdmin && tournamentPageActive() && loadedBundles.has('tournamentDetail')) scheduleTournamentAdmin();
+  });
   initialRoute();
   backgroundWarmup();
 })();

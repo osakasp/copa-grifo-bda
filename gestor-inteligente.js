@@ -768,7 +768,7 @@
       currentUser = state.user;
       if (!state.isAdmin) openEditorId = '';
       render();
-    });
+    }, false);
   } else if (window.firebase?.auth) {
     firebase.auth().onAuthStateChanged(user => {
       currentUser = user;
