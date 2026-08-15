@@ -1,4 +1,4 @@
-const VERSION = 'v55-progressive-tournament-modules';
+const VERSION = 'v56-supercopa-bda';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
