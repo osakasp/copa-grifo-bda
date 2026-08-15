@@ -1230,19 +1230,34 @@
     syncPage();
   }
 
-  const pageObserver = new MutationObserver(mutations => {
-    if (mutations.some(mutation => mutation.type === 'attributes' && mutation.target.classList.contains('page'))) syncPage();
-    installMobileCommandShortcut();
-    installHeroWatermark();
-    enhanceHomeShortcuts();
-    enhanceInterfaceIcons();
-    installCompetitionAppHome();
+  const observerRoot = $('.app-shell') || document.body;
+  const pageObserver = new MutationObserver(syncPage);
+  const observePage = page => pageObserver.observe(page, {
+    attributes: true,
+    attributeFilter: ['class']
   });
-  pageObserver.observe($('.app-shell') || document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+  $$('.page', observerRoot).forEach(observePage);
+
+  const STRUCTURE_SELECTOR = '.page,.section-head,.arena-sheet-grid,.hero,.home-command,.home-tournaments,.top-actions,#arenaStats,#arenaNotificationsBtn';
+  let refreshFrame = 0;
+  const structureObserver = new MutationObserver(mutations => {
+    const addedElements = mutations.flatMap(mutation => [...mutation.addedNodes]).filter(node => node instanceof Element);
+    if (!addedElements.some(node => node.matches(STRUCTURE_SELECTOR) || node.querySelector(STRUCTURE_SELECTOR))) return;
+    if (refreshFrame) return;
+    refreshFrame = requestAnimationFrame(() => {
+      refreshFrame = 0;
+      addedElements.forEach(node => {
+        if (node.matches('.page')) observePage(node);
+        node.querySelectorAll?.('.page').forEach(observePage);
+      });
+      refresh();
+    });
+  });
+  structureObserver.observe(observerRoot, { childList: true, subtree: true });
 
   document.addEventListener('click', event => {
     if (event.target.closest('[data-go],[data-mobile-go],[data-sheet-go]')) setTimeout(syncPage, 30);
   });
 
-  [0, 320, 900].forEach(delay => setTimeout(refresh, delay));
+  [0, 700].forEach(delay => setTimeout(refresh, delay));
 })();

@@ -72,14 +72,14 @@
       ];
 
       const coreScripts = [
-        './arena-runtime.bundle.js?v=20260808-3',
+        './arena-runtime.bundle.js?v=20260814-4',
         './arena-bda.js?v=20260814-1',
-        './arena-lazy-features.js?v=20260814-2',
+        './arena-lazy-features.js?v=20260814-3',
         './arena-interface.bundle.js?v=20260814-3'
       ];
 
       const enhancementScripts = [
-        './arena-innovation-layer.js?v=20260814-3'
+        './arena-innovation-layer.js?v=20260814-4'
       ];
 
       const cloudScripts = [
@@ -219,6 +219,13 @@
         const cloudFailures = [];
         let cloudPromise = null;
         let cloudReady = false;
+        let lastInteractionAt = win.performance.now();
+        let cloudIdleTimer = 0;
+
+        const noteInteraction = () => { lastInteractionAt = win.performance.now(); };
+        ['pointerdown', 'touchstart', 'keydown', 'scroll'].forEach(type => {
+          doc.addEventListener(type, noteInteraction, { passive: true, capture: true });
+        });
 
         const ensureCloud = reason => {
           if (cloudPromise) return cloudPromise;
@@ -283,14 +290,32 @@
             }));
           });
         };
-        if ('requestIdleCallback' in win) win.requestIdleCallback(startEnhancements, { timeout: 1200 });
-        else win.setTimeout(startEnhancements, 400);
+        if ('requestIdleCallback' in win) win.requestIdleCallback(startEnhancements, { timeout: 2600 });
+        else win.setTimeout(startEnhancements, 900);
 
-        const startCloudWhenIdle = () => ensureCloud('idle').catch(error => {
-          console.error('[Arena BDA] Recursos online não carregaram', error);
-        });
-        if ('requestIdleCallback' in win) win.requestIdleCallback(startCloudWhenIdle, { timeout: 3500 });
-        else win.setTimeout(startCloudWhenIdle, 2500);
+        const scheduleCloudWhenQuiet = (delay = 1200) => {
+          clearTimeout(cloudIdleTimer);
+          cloudIdleTimer = win.setTimeout(() => {
+            if (cloudPromise || generation !== loadGeneration) return;
+            const quietFor = win.performance.now() - lastInteractionAt;
+            if (doc.hidden || quietFor < 4000) {
+              scheduleCloudWhenQuiet(Math.max(1200, 4000 - quietFor));
+              return;
+            }
+            const startCloudWhenIdle = () => {
+              if (win.performance.now() - lastInteractionAt < 3000) {
+                scheduleCloudWhenQuiet(1800);
+                return;
+              }
+              ensureCloud('idle').catch(error => {
+                console.error('[Arena BDA] Recursos online não carregaram', error);
+              });
+            };
+            if ('requestIdleCallback' in win) win.requestIdleCallback(startCloudWhenIdle, { timeout: 8000 });
+            else startCloudWhenIdle();
+          }, delay);
+        };
+        scheduleCloudWhenQuiet(8000);
       }
 
       function validArenaDocument() {
