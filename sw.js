@@ -1,4 +1,4 @@
-const VERSION = 'v59-mobile-layout-fix';
+const VERSION = 'v60-mobile-type-auto-update';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
@@ -9,7 +9,10 @@ const ACTIVE_CACHES = new Set(Object.values(CACHE));
 const SHELL = ['./', './index.html', './preview-v2.html', './favicon.svg', './site.webmanifest'];
 
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE.shell).then(cache => cache.addAll(SHELL)).catch(() => {}));
+  event.waitUntil(Promise.all([
+    self.skipWaiting(),
+    caches.open(CACHE.shell).then(cache => cache.addAll(SHELL)).catch(() => {})
+  ]));
 });
 
 self.addEventListener('activate', event => {

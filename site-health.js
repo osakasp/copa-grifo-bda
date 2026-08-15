@@ -1,10 +1,9 @@
 (() => {
   'use strict';
 
-  const VERSION = '2026.08.09.1';
+  const VERSION = '2026.08.14.2';
   const q = selector => document.querySelector(selector);
   let reloading = false;
-  let updateRequested = false;
   let errorCount = 0;
   let errorWindow = 0;
   const signatures = new Set();
@@ -105,7 +104,6 @@
           onAction: banner => {
             const button = banner.querySelector('[data-arena-health-action]');
             if (button) { button.disabled = true; button.textContent = 'Atualizando...'; }
-            updateRequested = true;
             worker.postMessage({ type: 'SKIP_WAITING' });
           }
         });
@@ -120,7 +118,7 @@
       });
 
       navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (!updateRequested || reloading) return;
+        if (reloading) return;
         reloading = true;
         location.reload();
       });

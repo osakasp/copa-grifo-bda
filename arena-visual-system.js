@@ -924,8 +924,14 @@
         overflow-x:clip;
         padding-bottom:calc(92px + env(safe-area-inset-bottom));
         scroll-padding-bottom:calc(84px + env(safe-area-inset-bottom));
+        font-size:14px;
       }
       body.arena-visual-system main{padding-bottom:calc(82px + env(safe-area-inset-bottom))}
+      body.arena-visual-system :is(.primary,.secondary,.ghost,.danger){font-size:11px}
+      body.arena-visual-system .section-head h2{font-size:22px}
+      body.arena-visual-system .section-head p{font-size:10.5px}
+      body.arena-visual-system .admin-panel h3{font-size:19px}
+      body.arena-visual-system .admin-panel p{font-size:10.5px}
       body.arena-visual-system .topbar{
         top:0;
         min-height:57px;
@@ -990,7 +996,7 @@
         font-size:0;
         white-space:nowrap;
       }
-      body.arena-visual-system .topbar #adminBtn:before{content:"Entrar";font-size:11px}
+      body.arena-visual-system .topbar #adminBtn:before{content:"Entrar";font-size:10px}
       body.arena-visual-system .topbar #adminBtn[data-account-state="member"]:before{content:"Conta"}
       body.arena-visual-system .topbar #adminBtn[data-account-state="admin"]:before{content:"Admin"}
       body.arena-visual-system .topbar #memberLogoutBtn{
@@ -1000,11 +1006,12 @@
         min-height:40px;
         padding:0 5px;
         border-radius:6px;
-        font-size:11px;
+        font-size:10px;
         white-space:nowrap;
       }
       body.arena-visual-system [data-page="home"] .hero{min-height:310px;padding:27px 20px;border-radius:8px}
-      body.arena-visual-system [data-page="home"] .hero h1{font-size:clamp(42px,13vw,58px)}
+      body.arena-visual-system [data-page="home"] .hero h1{font-size:clamp(32px,9.5vw,40px)}
+      body.arena-visual-system [data-page="home"] .hero p{font-size:10.5px}
       body.arena-visual-system .arena-home-watermark{right:-24px;top:35%;width:142px;opacity:.065}
       body.arena-visual-system .arena-app-tabs{
         display:grid;
@@ -1019,7 +1026,7 @@
         padding:5px 2px;
         flex-direction:column;
         gap:4px;
-        font-size:11px;
+        font-size:10px;
       }
       body.arena-visual-system .arena-app-tab.active:after{right:5px;left:5px}
       body.arena-visual-system #arenaStats{
@@ -1037,7 +1044,9 @@
         background:#0a1710;
       }
       body.arena-visual-system #arenaStats .stat:last-child{grid-column:1/-1}
+      body.arena-visual-system #arenaStats .stat b{font-size:20px}
       body.arena-visual-system #arenaStats .stat span{
+        font-size:10px;
         line-height:1.25;
         letter-spacing:.04em;
         overflow-wrap:anywhere;
@@ -1068,7 +1077,7 @@
         color:#7f9187;
         background:transparent;
         box-shadow:none;
-        font-size:10.5px;
+        font-size:9.5px;
         font-weight:650;
       }
       body.arena-visual-system .arena-mobile-item span{letter-spacing:-.02em}
@@ -1077,13 +1086,13 @@
       body.arena-visual-system .arena-mobile-item.active{color:#e3c45f;background:transparent}
       body.arena-visual-system .arena-mobile-item.active:before{content:"";position:absolute;left:24%;right:24%;top:-4px;height:2px;border-radius:0 0 2px 2px;background:#d7b856}
       body.arena-visual-system .arena-nav-sheet{padding:16px 14px max(14px,env(safe-area-inset-bottom));border-radius:12px 12px 0 0;background:#08130d;box-shadow:0 -18px 48px rgba(0,0,0,.42)}
-      body.arena-visual-system .arena-nav-sheet h2{font-size:24px;letter-spacing:0;text-transform:none}
+      body.arena-visual-system .arena-nav-sheet h2{font-size:21px;letter-spacing:0;text-transform:none}
       body.arena-visual-system .arena-sheet-item{grid-template-columns:38px 1fr auto;min-height:58px;padding:8px 10px;border-radius:6px;background:transparent}
       body.arena-visual-system .arena-sheet-item i{width:36px;height:36px;border-radius:6px;background:#0b1911}
       body.arena-visual-system .arena-sheet-item i svg{width:18px;height:18px}
       body.arena-visual-system .arena-home-scroll{grid-auto-columns:82%}
-      body.arena-visual-system [data-page="home"] .hero{min-height:238px;padding:24px 19px}
-      body.arena-visual-system [data-page="home"] .hero h1{font-size:clamp(38px,12vw,50px)}
+      body.arena-visual-system [data-page="home"] .hero{min-height:220px;padding:22px 18px}
+      body.arena-visual-system [data-page="home"] .hero h1{font-size:clamp(32px,9.5vw,40px)}
       body.arena-visual-system .arena-home-watermark{right:-25px;top:38%;width:132px;opacity:.055}
       body.arena-visual-system .arena-app-tabs{margin-inline:-1px;padding-inline:2px;border-radius:8px}
       body.arena-visual-system .arena-app-tab{min-width:0;padding-inline:2px}
@@ -1093,7 +1102,7 @@
       body.arena-visual-system .home-command nav{grid-template-columns:1fr 1fr}
       body.arena-visual-system .home-command nav button:last-child{grid-column:1/-1}
       body.arena-visual-system .arena-page-hero{min-height:230px;padding:23px 18px;border-radius:9px}
-      body.arena-visual-system .arena-page-hero h1{font-size:48px}
+      body.arena-visual-system .arena-page-hero h1{font-size:40px}
       body.arena-visual-system .arena-detail-nav{top:58px;border-radius:8px}
       body.arena-visual-system .arena-card{min-height:286px}
     }
