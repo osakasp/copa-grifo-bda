@@ -8,7 +8,7 @@
     ],
     champions: [
       './champion-banners.js?v=20260808-2',
-      './ranking-campeoes.js?v=20260808-8'
+      './ranking-campeoes.js?v=20260815-1'
     ],
     registrations: [
       './central-inscricoes.js'
