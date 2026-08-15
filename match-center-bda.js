@@ -638,8 +638,17 @@
     ensureModals();
     installEvents();
     const root = $('#arenaDetail') || $('[data-page="tournament"]') || document.body;
-    observer = new MutationObserver(scheduleEnhance);
-    observer.observe(root, { childList: true, subtree: true });
+    if (window.ArenaDOMEvents?.subscribe) {
+      window.ArenaDOMEvents.subscribe(scheduleEnhance, { selector: '#giManager,.gi-head,.gi-game' });
+    } else {
+      observer = new MutationObserver(mutations => {
+        const relevant = mutations.some(mutation => [...mutation.addedNodes].some(node =>
+          node instanceof Element && (node.matches('#giManager,.gi-head,.gi-game') || node.querySelector('#giManager,.gi-head,.gi-game'))
+        ));
+        if (relevant) scheduleEnhance();
+      });
+      observer.observe(root, { childList: true, subtree: true });
+    }
     auth?.subscribe?.(() => { scheduleEnhance(); if (active?.mode === 'live') renderLive(); });
     scheduleEnhance();
   }

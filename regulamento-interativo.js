@@ -309,8 +309,17 @@
     ensureModal();
     installEvents();
     const root = $('#arenaDetail') || $('[data-page="tournament"]') || document.body;
-    observer = new MutationObserver(schedule);
-    observer.observe(root, { childList: true, subtree: true });
+    if (window.ArenaDOMEvents?.subscribe) {
+      window.ArenaDOMEvents.subscribe(schedule, { selector: '#giManager,.gi-head' });
+    } else {
+      observer = new MutationObserver(mutations => {
+        const relevant = mutations.some(mutation => [...mutation.addedNodes].some(node =>
+          node instanceof Element && (node.matches('#giManager,.gi-head') || node.querySelector('#giManager,.gi-head'))
+        ));
+        if (relevant) schedule();
+      });
+      observer.observe(root, { childList: true, subtree: true });
+    }
     auth?.subscribe?.(() => { schedule(); if ($('#regulationModal')?.classList.contains('show')) render(); });
     schedule();
   }

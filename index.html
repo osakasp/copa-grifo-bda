@@ -74,7 +74,7 @@
       const coreScripts = [
         './arena-runtime.bundle.js?v=20260808-3',
         './arena-bda.js?v=20260809-2',
-        './arena-lazy-features.js?v=20260814-1',
+        './arena-lazy-features.js?v=20260814-2',
         './arena-interface.bundle.js?v=20260814-3'
       ];
 
@@ -179,14 +179,29 @@
         });
       }
 
+      function yieldFrame(doc) {
+        return new Promise(resolve => {
+          const targetWindow = doc.defaultView || window;
+          let resolved = false;
+          const finish = () => {
+            if (resolved) return;
+            resolved = true;
+            resolve();
+          };
+          targetWindow.requestAnimationFrame(() => targetWindow.requestAnimationFrame(finish));
+          targetWindow.setTimeout(finish, 120);
+        });
+      }
+
       async function loadOrderedBatch(doc, scripts, failures, timeoutMs) {
-        const requests = scripts.map((src, index) =>
-          queueScript(doc, src, timeoutMs + (index * 250), index < 6 ? 'high' : 'auto').catch(error => {
+        for (let index = 0; index < scripts.length; index += 1) {
+          const src = scripts[index];
+          await queueScript(doc, src, timeoutMs + (index * 250), index < 6 ? 'high' : 'auto').catch(error => {
             failures.push({ src, error });
             console.error(`[Arena BDA] Falha no módulo ${src}`, error);
-          })
-        );
-        await Promise.all(requests);
+          });
+          if (index < scripts.length - 1) await yieldFrame(doc);
+        }
       }
 
       async function enhanceArena(generation) {
