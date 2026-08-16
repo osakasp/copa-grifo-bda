@@ -1,10 +1,10 @@
 (() => {
   'use strict';
 
-  const PRIMARY_PAGES = ['home', 'tournament', 'champions', 'teams'];
-  const SECONDARY_PAGES = ['registrations', 'community', 'news', 'history', 'flash', 'season', 'feedback'];
-  const MOBILE_PRIMARY_PAGES = ['home', 'tournament', 'champions', 'teams'];
-  const MOBILE_SECONDARY_PAGES = ['registrations', 'community', 'news', 'history', 'flash', 'season', 'feedback'];
+  const PRIMARY_PAGES = ['home', 'tournament', 'teams'];
+  const SECONDARY_PAGES = ['champions', 'registrations', 'community', 'news', 'history', 'flash', 'season', 'feedback'];
+  const MOBILE_PRIMARY_PAGES = ['home', 'tournament', 'teams'];
+  const MOBILE_SECONDARY_PAGES = ['champions', 'registrations', 'community', 'news', 'history', 'flash', 'season', 'feedback'];
   const ORDER = [...PRIMARY_PAGES, ...SECONDARY_PAGES];
   const HISTORY_PAGE_KEY = 'arenaNavigationPage';
   const HISTORY_DEPTH_KEY = 'arenaNavigationDepth';

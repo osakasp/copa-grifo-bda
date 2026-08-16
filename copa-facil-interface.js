@@ -161,7 +161,7 @@
     body.arena-copa-facil .arena-app-tab:hover{color:var(--cf-green);background:#f5f8f6}
     body.arena-copa-facil .arena-app-tab.active{color:var(--cf-green-dark);background:#fff}
     body.arena-copa-facil .arena-app-tab.active:after{background:var(--cf-green)}
-    body.arena-copa-facil #arenaStats{grid-template-columns:repeat(4,minmax(0,1fr));border-color:var(--cf-border);background:#fff}
+    body.arena-copa-facil #arenaStats{grid-template-columns:repeat(3,minmax(0,1fr));border-color:var(--cf-border);background:#fff}
     body.arena-copa-facil #arenaStats .stat{border-color:var(--cf-border);background:#fff}
     body.arena-copa-facil #arenaStats .stat b{color:var(--cf-green)}
     body.arena-copa-facil #arenaStats .stat span{color:var(--cf-muted)}
@@ -201,6 +201,13 @@
     body.arena-copa-facil .arena-detail-nav button{color:var(--cf-muted)}
     body.arena-copa-facil .arena-detail-nav button:hover{color:var(--cf-green-dark);background:var(--cf-green-soft)}
     body.arena-copa-facil .arena-card{border-color:var(--cf-border);background:#fff}
+    body.arena-copa-facil .arena-card .arena-cover,
+    body.arena-copa-facil .arena-card .arena-body>p,
+    body.arena-copa-facil .arena-card .arena-capacity{display:none}
+    body.arena-copa-facil .arena-card .arena-body{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;padding:14px}
+    body.arena-copa-facil .arena-card .arena-body h3{grid-column:1;margin:0}
+    body.arena-copa-facil .arena-card .arena-meta{grid-column:1;gap:12px;margin:0}
+    body.arena-copa-facil .arena-card .arena-open{grid-column:2;grid-row:1/3;align-self:stretch}
     body.arena-copa-facil .arena-card .arena-body{color:var(--cf-text);background:#fff}
     body.arena-copa-facil .arena-card .arena-open{color:var(--cf-green-dark);border-color:var(--cf-border);background:transparent}
     body.arena-copa-facil .arena-stat{border-color:var(--cf-border);background:#fff}
@@ -219,6 +226,11 @@
     }
     html:not(.arena-admin-authenticated) body.arena-copa-facil [data-page="teams"]>.form-card{display:none!important}
     html.arena-admin-authenticated body.arena-copa-facil .copa-team-register{display:none}
+    html:not(.arena-admin-authenticated) body.arena-copa-facil [data-page="home"] .hero-actions button:nth-child(n+2){display:none}
+    html:not(.arena-admin-authenticated) body.arena-copa-facil #arenaDetail .arena-detail-nav nav{display:none}
+    html:not(.arena-admin-authenticated) body.arena-copa-facil #arenaDetail .arena-stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+    html:not(.arena-admin-authenticated) body.arena-copa-facil #arenaDetail .arena-stat:nth-child(2){display:none}
+    html:not(.arena-admin-authenticated) body.arena-copa-facil #giManager .gi-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
 
     body.arena-copa-facil :is(input,select,textarea){
       color:var(--cf-text);
@@ -388,7 +400,9 @@
     }
 
     @media(max-width:900px){
-      body.arena-copa-facil #arenaStats{grid-template-columns:repeat(2,minmax(0,1fr))}
+      body.arena-copa-facil #arenaStats{grid-template-columns:repeat(3,minmax(0,1fr))}
+      body.arena-copa-facil .arena-card .arena-body{grid-template-columns:minmax(0,1fr)}
+      body.arena-copa-facil .arena-card .arena-open{grid-column:1;grid-row:auto;min-height:44px}
     }
 
     @media(prefers-color-scheme:dark){
