@@ -2,19 +2,16 @@
   'use strict';
 
   const MATCH_KEY = 'bda-v3-confrontos';
-  const TEAM_KEY = 'bda-v2-teams';
   const TOURNAMENT_KEY = 'bda-v3-tournaments';
-  const PHASES = ['Preliminar', 'Fase de grupos', '16 avos de final', 'Oitavas de final', 'Quartas de final', 'Semifinal', 'Final'];
-  const STATUSES = ['Agendado', 'Em andamento', 'Finalizado', 'Adiado', 'Cancelado'];
   const authCore = window.ArenaBDAAuth;
 
   let modal = null;
+  let managerSheet = null;
   let currentTournamentId = '';
   let currentGameId = '';
   let returnFocus = null;
   let scrollY = 0;
   let saving = false;
-  let allowGeneratorAction = false;
   let observerTimer = 0;
 
   const $ = (selector, root = document) => root.querySelector(selector);
@@ -32,11 +29,8 @@
   const notify = message => typeof window.toast === 'function' ? window.toast(message) : console.info(message);
 
   function read(key, fallback) {
-    try {
-      return JSON.parse(localStorage.getItem(key)) ?? fallback;
-    } catch {
-      return fallback;
-    }
+    try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
+    catch { return fallback; }
   }
 
   function isAdmin() {
@@ -56,17 +50,16 @@
   }
 
   function tournaments() {
-    const list = read(TOURNAMENT_KEY, []);
-    return Array.isArray(list) ? list : [];
+    const value = read(TOURNAMENT_KEY, []);
+    return Array.isArray(value) ? value : [];
   }
 
-  function tournament() {
-    const id = tournamentId();
-    return tournaments().find(item => item?.id === id) || null;
+  function tournament(tid = tournamentId()) {
+    return tournaments().find(item => String(item?.id) === String(tid)) || null;
   }
 
-  function isSupercopa() {
-    const item = tournament();
+  function isSupercopa(tid = tournamentId()) {
+    const item = tournament(tid);
     const id = norm(item?.id).replace(/[^a-z0-9]/g, '');
     const name = norm(item?.name).replace(/[^a-z0-9]/g, '');
     return id === 'supercopa' || name.includes('supercopabda');
@@ -86,151 +79,96 @@
     return games(tid).find(game => String(game?.id) === String(id)) || null;
   }
 
-  function teamNames(tid) {
-    const names = new Set();
-    (read(TEAM_KEY, []) || []).forEach(team => team?.name && names.add(String(team.name)));
-    const event = tournaments().find(item => item?.id === tid);
-    (event?.participants || []).forEach(name => name && names.add(String(name)));
-    games(tid).forEach(game => {
-      if (game?.ta) names.add(String(game.ta));
-      if (game?.tb) names.add(String(game.tb));
-    });
-    return [...names].sort((a, b) => a.localeCompare(b, 'pt-BR'));
-  }
-
   function numberOrEmpty(value) {
-    return value === '' || value == null ? '' : Number(value);
-  }
-
-  function options(values, selected) {
-    const list = values.includes(selected) ? values : [selected, ...values].filter(Boolean);
-    return list.map(value => `<option value="${esc(value)}" ${String(value) === String(selected) ? 'selected' : ''}>${esc(value)}</option>`).join('');
-  }
-
-  async function persistCloud(tid, list) {
-    if (!window.firebase || typeof firebase.firestore !== 'function' || !isAdmin()) return;
-    await firebase.firestore().collection('arenaData').doc(`confrontos-${tid}`).set({
-      dataset: 'confrontos',
-      tournamentId: tid,
-      games: list,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      updatedBy: currentEmail()
-    });
+    if (value === '' || value == null) return '';
+    const number = Number(value);
+    return Number.isInteger(number) && number >= 0 && number <= 99 ? number : NaN;
   }
 
   async function persistGames(tid, list) {
     const store = matchStore();
     store[tid] = list;
     localStorage.setItem(MATCH_KEY, JSON.stringify(store));
-    await persistCloud(tid, list);
+
+    if (window.firebase && typeof firebase.firestore === 'function' && isAdmin()) {
+      await firebase.firestore().collection('arenaData').doc(`confrontos-${tid}`).set({
+        dataset: 'confrontos',
+        tournamentId: tid,
+        games: list,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedBy: currentEmail()
+      });
+    }
+
     window.ArenaBDAMatchManager?.render?.();
-    window.dispatchEvent(new CustomEvent('arena:matches-updated', {
-      detail: { tournamentId: tid, count: list.length }
-    }));
+    window.dispatchEvent(new CustomEvent('arena:matches-updated', { detail: { tournamentId: tid } }));
   }
 
   function ensureModal() {
     if (modal?.isConnected) return modal;
     modal = document.createElement('div');
-    modal.id = 'arenaSimpleMatchEditor';
-    modal.className = 'asm-backdrop';
+    modal.id = 'arenaQuickScore';
+    modal.className = 'aqs-backdrop';
     modal.setAttribute('aria-hidden', 'true');
-    modal.innerHTML = '<section class="asm-dialog" role="dialog" aria-modal="true" aria-labelledby="asmTitle"></section>';
-    modal.addEventListener('click', event => {
-      if (event.target === modal) close();
-    });
+    modal.innerHTML = '<section class="aqs-dialog" role="dialog" aria-modal="true" aria-labelledby="aqsTitle"></section>';
+    modal.addEventListener('click', event => { if (event.target === modal) closeScore(); });
     document.body.append(modal);
     return modal;
   }
 
-  function render(game) {
-    const dialog = $('.asm-dialog', ensureModal());
-    const datalist = teamNames(currentTournamentId).map(name => `<option value="${esc(name)}"></option>`).join('');
+  function renderScore(game) {
+    const dialog = $('.aqs-dialog', ensureModal());
     dialog.innerHTML = `
-      <header class="asm-head">
-        <div><span>RESULTADO</span><h2 id="asmTitle">${esc(game.ta)} × ${esc(game.tb)}</h2><p>Para um jogo normal, informe somente o placar e salve.</p></div>
-        <button type="button" class="asm-close" data-asm-close aria-label="Fechar editor">×</button>
+      <header class="aqs-head">
+        <span>RESULTADO</span>
+        <button type="button" data-aqs-close aria-label="Fechar">×</button>
       </header>
-      <form class="asm-form" data-asm-form>
-        <datalist id="asmTeams">${datalist}</datalist>
-        <section class="asm-score" aria-label="Placar da partida">
+      <h2 id="aqsTitle">${esc(game.ta)} <small>×</small> ${esc(game.tb)}</h2>
+      <p>Digite o placar. Só isso.</p>
+      <form data-aqs-form>
+        <div class="aqs-score">
           <label><span>${esc(game.ta)}</span><input name="a" type="number" min="0" max="99" inputmode="numeric" value="${game.a === '' || game.a == null ? '' : Number(game.a)}" aria-label="Placar de ${esc(game.ta)}"></label>
-          <b aria-hidden="true">×</b>
+          <b>×</b>
           <label><span>${esc(game.tb)}</span><input name="b" type="number" min="0" max="99" inputmode="numeric" value="${game.b === '' || game.b == null ? '' : Number(game.b)}" aria-label="Placar de ${esc(game.tb)}"></label>
-        </section>
-        <p class="asm-hint">Você não precisa mexer nas opções abaixo para lançar um resultado comum.</p>
-
-        <details class="asm-advanced">
-          <summary>Opções avançadas do jogo</summary>
-          <div class="asm-grid">
-            <label>Time A<input name="ta" list="asmTeams" value="${esc(game.ta || '')}" required></label>
-            <label>Time B<input name="tb" list="asmTeams" value="${esc(game.tb || '')}" required></label>
-            <label>Fase<select name="phase">${options(PHASES, game.phase || 'Oitavas de final')}</select></label>
-            <label>Status<select name="status">${options(STATUSES, game.status || 'Agendado')}</select></label>
-            <label>Data<input name="date" type="date" value="${esc(game.date || '')}"></label>
-            <label>Horário<input name="time" type="time" value="${esc(game.time || '')}"></label>
-            <label>Local<input name="place" value="${esc(game.place || '')}" placeholder="Opcional"></label>
-            <label>Ordem<input name="pos" type="number" min="1" value="${Number(game.pos) || 1}"></label>
-            <label>Pênaltis A<input name="pa" type="number" min="0" max="99" value="${game.pa === '' || game.pa == null ? '' : Number(game.pa)}"></label>
-            <label>Pênaltis B<input name="pb" type="number" min="0" max="99" value="${game.pb === '' || game.pb == null ? '' : Number(game.pb)}"></label>
-            <label>W.O.<select name="wo"><option value="none" ${game.wo === 'none' || !game.wo ? 'selected' : ''}>Sem W.O.</option><option value="a" ${game.wo === 'a' ? 'selected' : ''}>Vitória Time A</option><option value="b" ${game.wo === 'b' ? 'selected' : ''}>Vitória Time B</option></select></label>
-            <label>Jogo<select name="leg"><option value="1" ${Number(game.leg) !== 2 ? 'selected' : ''}>Único / ida</option><option value="2" ${Number(game.leg) === 2 ? 'selected' : ''}>Volta</option></select></label>
-          </div>
-          <label class="asm-note">Observação<textarea name="note" placeholder="Opcional">${esc(game.note || '')}</textarea></label>
-          <button type="button" class="danger asm-delete" data-asm-delete>Excluir este jogo</button>
-        </details>
-
-        <footer class="asm-actions">
-          <button type="button" class="secondary" data-asm-clear>Limpar placar</button>
-          <button type="button" class="ghost" data-asm-cancel>Cancelar</button>
-          <button type="submit" class="primary" data-asm-save>Salvar resultado</button>
+        </div>
+        <footer>
+          <button type="button" class="ghost" data-aqs-clear>Limpar</button>
+          <button type="submit" class="primary" data-aqs-save>Salvar resultado</button>
         </footer>
       </form>`;
 
-    $('[data-asm-close]', dialog)?.addEventListener('click', close);
-    $('[data-asm-cancel]', dialog)?.addEventListener('click', close);
-    $('[data-asm-clear]', dialog)?.addEventListener('click', () => {
-      const form = $('[data-asm-form]', dialog);
-      ['a', 'b', 'pa', 'pb'].forEach(name => { form.elements[name].value = ''; });
-      form.elements.wo.value = 'none';
-      form.elements.status.value = 'Agendado';
+    $('[data-aqs-close]', dialog)?.addEventListener('click', closeScore);
+    $('[data-aqs-clear]', dialog)?.addEventListener('click', () => {
+      const form = $('[data-aqs-form]', dialog);
+      form.elements.a.value = '';
+      form.elements.b.value = '';
+      form.elements.a.focus();
     });
-    $('[data-asm-delete]', dialog)?.addEventListener('click', async () => {
-      const current = gameById(currentTournamentId, currentGameId);
-      if (!current || !confirm(`Excluir ${current.ta} × ${current.tb}?`)) return;
-      try {
-        await persistGames(currentTournamentId, games(currentTournamentId).filter(item => String(item?.id) !== String(currentGameId)));
-        notify('Jogo excluído');
-        close();
-      } catch (error) {
-        console.error(error);
-        notify('Não foi possível excluir o jogo');
-      }
-    });
-    $('[data-asm-form]', dialog)?.addEventListener('submit', save);
+    $('[data-aqs-form]', dialog)?.addEventListener('submit', saveScore);
   }
 
-  function open(id, trigger) {
+  function openScore(id, trigger) {
     if (!isAdmin()) return;
     const tid = tournamentId();
     const game = gameById(tid, id);
-    if (!game) return notify('Não foi possível localizar este jogo');
+    if (!game) return notify('Jogo não encontrado');
+
     currentTournamentId = tid;
     currentGameId = String(id);
     returnFocus = trigger || null;
     scrollY = window.scrollY;
-    render(game);
+    renderScore(game);
     ensureModal().classList.add('show');
     modal.setAttribute('aria-hidden', 'false');
-    document.body.classList.add('asm-open');
-    requestAnimationFrame(() => $('.asm-score input', modal)?.focus({ preventScroll: true }));
+    document.body.classList.add('aqs-open');
+    requestAnimationFrame(() => $('.aqs-score input', modal)?.focus({ preventScroll: true }));
   }
 
-  function close() {
+  function closeScore() {
     if (!modal) return;
     modal.classList.remove('show');
     modal.setAttribute('aria-hidden', 'true');
-    document.body.classList.remove('asm-open');
+    document.body.classList.remove('aqs-open');
     window.scrollTo({ top: scrollY, behavior: 'auto' });
     returnFocus?.focus?.({ preventScroll: true });
     returnFocus = null;
@@ -238,286 +176,253 @@
     currentGameId = '';
   }
 
-  async function save(event) {
+  async function saveScore(event) {
     event.preventDefault();
     if (saving || !isAdmin()) return;
+
+    const tid = currentTournamentId;
+    const id = currentGameId;
     const form = event.currentTarget;
-    const editingTournamentId = currentTournamentId;
-    const list = [...games(editingTournamentId)];
-    const index = list.findIndex(game => String(game?.id) === currentGameId);
+    const a = numberOrEmpty(form.elements.a.value);
+    const b = numberOrEmpty(form.elements.b.value);
+
+    if (Number.isNaN(a) || Number.isNaN(b)) return notify('Use números entre 0 e 99');
+    if ((a === '') !== (b === '')) return notify('Informe os dois lados do placar');
+
+    const list = [...games(tid)];
+    const index = list.findIndex(game => String(game?.id) === id);
     if (index < 0) return notify('Jogo não encontrado');
 
-    const previous = list[index];
-    const next = {
-      ...previous,
-      ta: form.elements.ta.value.trim() || 'Time A',
-      tb: form.elements.tb.value.trim() || 'Time B',
-      phase: form.elements.phase.value,
-      status: form.elements.status.value,
-      date: form.elements.date.value,
-      time: form.elements.time.value,
-      place: form.elements.place.value.trim(),
-      pos: Math.max(1, Number(form.elements.pos.value) || 1),
-      pa: numberOrEmpty(form.elements.pa.value),
-      pb: numberOrEmpty(form.elements.pb.value),
-      wo: ['a', 'b'].includes(form.elements.wo.value) ? form.elements.wo.value : 'none',
-      leg: Number(form.elements.leg.value) === 2 ? 2 : 1,
-      a: numberOrEmpty(form.elements.a.value),
-      b: numberOrEmpty(form.elements.b.value),
-      note: form.elements.note.value.trim(),
+    list[index] = {
+      ...list[index],
+      a,
+      b,
+      pa: '',
+      pb: '',
+      wo: 'none',
+      status: a === '' ? 'Agendado' : 'Finalizado',
       updated: Date.now()
     };
 
-    if (norm(next.ta) === norm(next.tb)) return notify('Escolha dois times diferentes');
-    if ((next.a === '') !== (next.b === '')) return notify('Informe os dois lados do placar');
-    if ((next.pa === '') !== (next.pb === '')) return notify('Informe os dois lados dos pênaltis');
-    if (next.pa !== '' && next.pa === next.pb) return notify('Os pênaltis precisam ter um vencedor');
-    if (next.wo !== 'none') {
-      next.a = ''; next.b = ''; next.pa = ''; next.pb = ''; next.status = 'Finalizado';
-    } else if (next.a !== '' && next.b !== '') {
-      next.status = 'Finalizado';
-    }
-
-    list[index] = next;
-    const saveButton = $('[data-asm-save]', form);
+    const button = $('[data-aqs-save]', form);
     saving = true;
-    saveButton.disabled = true;
-    saveButton.textContent = 'Salvando...';
+    if (button) { button.disabled = true; button.textContent = 'Salvando...'; }
+
     try {
-      window.ArenaBDAScoreSync?.begin?.(editingTournamentId);
-      await persistGames(editingTournamentId, list);
-      notify('Resultado salvo');
-      close();
+      window.ArenaBDAScoreSync?.begin?.(tid);
+      await persistGames(tid, list);
+      notify(a === '' ? 'Placar limpo' : 'Resultado salvo');
+      closeScore();
     } catch (error) {
       console.error(error);
-      notify(String(error?.code || '').includes('permission-denied')
-        ? 'A conta atual não tem permissão para sincronizar'
-        : 'Resultado salvo neste aparelho; sincronização pendente');
-      window.ArenaBDAMatchManager?.render?.();
+      notify('O resultado ficou salvo neste aparelho, mas a nuvem falhou');
     } finally {
-      window.ArenaBDAScoreSync?.end?.(editingTournamentId);
+      window.ArenaBDAScoreSync?.end?.(tid);
       saving = false;
-      if (saveButton?.isConnected) {
-        saveButton.disabled = false;
-        saveButton.textContent = 'Salvar resultado';
-      }
+      if (button?.isConnected) { button.disabled = false; button.textContent = 'Salvar resultado'; }
     }
   }
 
-  function generatorSummary() {
-    const mode = $('#leagueMode')?.value || 'groups';
-    const participants = tournament()?.participants?.length || 0;
-    if (mode === 'league') {
-      const turns = $('#leagueLegs')?.value === '2' ? 'turno e returno' : 'turno único';
-      return `${participants} times • pontos corridos • ${turns}`;
+  function ensureManagerSheet() {
+    if (managerSheet?.isConnected) return managerSheet;
+    managerSheet = document.createElement('div');
+    managerSheet.id = 'arenaSimpleManager';
+    managerSheet.className = 'asmgr-backdrop';
+    managerSheet.setAttribute('aria-hidden', 'true');
+    managerSheet.innerHTML = '<section class="asmgr-sheet" role="dialog" aria-modal="true" aria-labelledby="asmgrTitle"></section>';
+    managerSheet.addEventListener('click', event => { if (event.target === managerSheet) closeManager(); });
+    document.body.append(managerSheet);
+    return managerSheet;
+  }
+
+  function renderManager() {
+    const tid = tournamentId();
+    const item = tournament(tid);
+    const participants = Array.isArray(item?.participants) ? item.participants.length : 0;
+    const supercopa = isSupercopa(tid);
+    const sheet = $('.asmgr-sheet', ensureManagerSheet());
+
+    sheet.innerHTML = `
+      <header>
+        <div><span>ORGANIZAR</span><h2 id="asmgrTitle">${esc(item?.name || 'Campeonato')}</h2></div>
+        <button type="button" data-asmgr-close aria-label="Fechar">×</button>
+      </header>
+      ${supercopa ? `
+        <section class="asmgr-card recommended">
+          <strong>Formato recomendado</strong>
+          <h3>4 grupos → quartas → semifinal → final</h3>
+          <p>Com ${participants || 16} times: 4 grupos de 4 e 2 classificados por grupo.</p>
+          <button type="button" class="primary" data-asmgr-supercopa>Usar este formato</button>
+        </section>
+      ` : `
+        <section class="asmgr-card">
+          <strong>Formato</strong>
+          <h3>Escolha uma opção</h3>
+          <div class="asmgr-options">
+            <button type="button" data-asmgr-format="groups">Grupos + mata-mata</button>
+            <button type="button" data-asmgr-format="league">Pontos corridos</button>
+          </div>
+        </section>
+      `}
+      <button type="button" class="asmgr-link" data-asmgr-advanced>Opções avançadas</button>`;
+
+    $('[data-asmgr-close]', sheet)?.addEventListener('click', closeManager);
+    $('[data-asmgr-supercopa]', sheet)?.addEventListener('click', applySupercopaPreset);
+    $$('[data-asmgr-format]', sheet).forEach(button => button.addEventListener('click', () => openGenerator(button.dataset.asmgrFormat)));
+    $('[data-asmgr-advanced]', sheet)?.addEventListener('click', () => openGenerator(''));
+  }
+
+  function openManager(trigger) {
+    if (!isAdmin()) return;
+    returnFocus = trigger || null;
+    renderManager();
+    ensureManagerSheet().classList.add('show');
+    managerSheet.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('asmgr-open');
+  }
+
+  function closeManager() {
+    if (!managerSheet) return;
+    managerSheet.classList.remove('show');
+    managerSheet.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('asmgr-open');
+    returnFocus?.focus?.({ preventScroll: true });
+    returnFocus = null;
+  }
+
+  function activateGenerator() {
+    const button = $('#giManager [data-league-generator]');
+    if (!button) {
+      notify('O gerador ainda está carregando');
+      return false;
     }
-    const groups = Number($('#leagueGroupCount')?.value || 4);
-    const qualifiers = Number($('#leagueQualifiers')?.value || 2);
-    const turns = $('#leagueLegs')?.value === '2' ? 'turno e returno' : 'turno único';
-    return `${participants} times • ${groups} grupos • ${qualifiers} classificados por grupo • ${turns}`;
+    button.click();
+    return true;
+  }
+
+  function openGenerator(mode) {
+    closeManager();
+    if (!activateGenerator()) return;
+    requestAnimationFrame(() => {
+      if (mode && $('#leagueMode')) {
+        $('#leagueMode').value = mode;
+        $('#leagueMode').dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      $('#leagueGeneratorPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   }
 
   function applySupercopaPreset() {
-    const mode = $('#leagueMode');
-    const groups = $('#leagueGroupCount');
-    const qualifiers = $('#leagueQualifiers');
-    const legs = $('#leagueLegs');
-    const distribution = $('#leagueDistribution');
-    if (!mode || !groups || !qualifiers || !legs || !distribution) return;
-    const count = tournament()?.participants?.length || 0;
-    mode.value = 'groups';
-    groups.value = count >= 16 ? '4' : '2';
-    qualifiers.value = '2';
-    legs.value = '1';
-    distribution.value = 'random';
-    mode.dispatchEvent(new Event('change', { bubbles: true }));
-    notify('Formato recomendado da Supercopa aplicado');
+    closeManager();
+    if (!activateGenerator()) return;
+
+    setTimeout(() => {
+      const mode = $('#leagueMode');
+      const groupCount = $('#leagueGroupCount');
+      const qualifiers = $('#leagueQualifiers');
+      const legs = $('#leagueLegs');
+      const distribution = $('#leagueDistribution');
+      if (!mode || !groupCount || !qualifiers) return notify('Não foi possível preparar a Supercopa');
+
+      mode.value = 'groups';
+      groupCount.value = '4';
+      qualifiers.value = '2';
+      if (legs) legs.value = '1';
+      if (distribution) distribution.value = 'random';
+      [mode, groupCount, qualifiers, legs, distribution].filter(Boolean).forEach(element => {
+        element.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+
+      setTimeout(() => {
+        const generate = $('#leagueGeneratorPanel [data-generate-schedule]');
+        if (!generate) return notify('O gerador ainda está carregando');
+        if (confirm('Criar a Supercopa com 4 grupos de 4 e 2 classificados por grupo?')) generate.click();
+      }, 120);
+    }, 120);
   }
 
-  function moveAdvancedGeneratorFields(panel) {
-    const config = $('.league-config-card', panel);
-    const grid = $('.league-config-grid', panel);
-    if (!config || !grid || $('#simpleGeneratorAdvanced', config)) return;
-    const advancedLabels = [$('#leagueLegs', grid)?.closest('label'), $('#leagueDistribution', grid)?.closest('label')].filter(Boolean);
-    if (!advancedLabels.length) return;
-    const details = document.createElement('details');
-    details.id = 'simpleGeneratorAdvanced';
-    details.className = 'cge-advanced';
-    details.innerHTML = '<summary>Opções avançadas</summary><div class="cge-advanced-grid"></div>';
-    const holder = $('.cge-advanced-grid', details);
-    advancedLabels.forEach(label => holder.append(label));
-    const actions = $('.league-config-actions', config);
-    if (actions) config.insertBefore(details, actions);
-    else config.append(details);
-  }
-
-  function decorateGenerator() {
-    const panel = $('#leagueGeneratorPanel');
-    if (!panel || panel.hidden) return;
-    const heading = $('.league-generator-head h2', panel);
-    const intro = $('.league-generator-head p', panel);
-    if (heading) heading.textContent = 'Criar tabela';
-    if (intro) intro.textContent = 'Escolha o formato, confira a prévia e gere os jogos. O sistema calcula as rodadas e a classificação.';
-
-    if (!$('.cge-steps', panel)) {
-      const guide = document.createElement('div');
-      guide.className = 'cge-steps';
-      guide.innerHTML = '<span><b>1</b> Escolha o formato</span><span><b>2</b> Confira os grupos</span><span><b>3</b> Gere a tabela</span>';
-      $('.league-generator-head', panel)?.after(guide);
-    }
-
-    if (isSupercopa() && !$('.cge-supercopa', panel)) {
-      const recommendation = document.createElement('section');
-      recommendation.className = 'cge-supercopa';
-      recommendation.innerHTML = '<div><b>🏆 Formato recomendado para a Supercopa</b><span>4 grupos de 4, 2 classificados por grupo e depois quartas de final, semifinal e final.</span></div><button type="button" class="secondary" data-cge-supercopa>Usar recomendado</button>';
-      $('.league-config-card', panel)?.before(recommendation);
-    }
-
-    moveAdvancedGeneratorFields(panel);
-
-    const generate = $('[data-generate-schedule]', panel);
-    if (generate) {
-      generate.textContent = 'Revisar e gerar tabela';
-      generate.setAttribute('aria-label', 'Revisar configuração e gerar tabela do campeonato');
-    }
-    const shuffle = $('[data-preview-groups]', panel);
-    if (shuffle) shuffle.textContent = 'Sortear novamente';
-    const knockout = $('[data-generate-knockout]', panel);
-    if (knockout) knockout.textContent = knockout.disabled ? 'Finalize os grupos primeiro' : 'Avançar para mata-mata';
-
-    if (!$('.cge-safe-note', panel)) {
-      const actions = $('.league-config-actions', panel);
-      if (actions) {
-        const note = document.createElement('p');
-        note.className = 'cge-safe-note';
-        note.textContent = 'Nada será substituído sem confirmação. A Arena cria um backup antes da nova tabela.';
-        actions.after(note);
-      }
-    }
-  }
-
-  function decorateManager() {
+  function simplifyManager() {
     const manager = $('#giManager');
     if (!manager) return;
-    const head = $('.gi-head', manager);
-    const eyebrow = $('.eyebrow', head || document);
-    const intro = $('p', head || document);
-    if (eyebrow) eyebrow.textContent = 'Gerenciamento do campeonato';
-    if (intro) intro.textContent = 'Digite os placares diretamente nos jogos. Eles são salvos automaticamente.';
-    $('#giCloud', manager)?.setAttribute('aria-live', 'polite');
 
     const nav = $(':scope > nav', manager);
     if (nav) {
-      const gamesTab = $('[data-tab="games"]', nav);
-      const bracketTab = $('[data-tab="bracket"]', nav);
-      const configTab = $('[data-tab="config"]', nav);
-      const generatorTab = $('[data-league-generator]', nav);
-      if (gamesTab) gamesTab.textContent = 'Resultados';
-      if (bracketTab) bracketTab.textContent = 'Mata-mata';
-      if (configTab) {
-        configTab.textContent = 'Regras avançadas';
-        configTab.classList.add('cge-advanced-tab');
-      }
-      if (generatorTab) generatorTab.textContent = 'Gerenciar';
+      const buttons = $$(':scope > button', nav);
+      buttons.forEach(button => {
+        const tab = button.dataset.tab || '';
+        if (tab === 'games') button.textContent = 'Jogos';
+        else if (tab === 'bracket') button.textContent = 'Tabela';
+        else button.hidden = true;
+      });
     }
 
-    $$('.gi-score-input', manager).forEach(input => {
-      const team = input.closest('.gi-team')?.querySelector('strong')?.textContent?.trim() || 'time';
-      input.setAttribute('aria-label', `Placar de ${team}`);
-      input.setAttribute('inputmode', 'numeric');
+    $$('#giManager [data-del]').forEach(button => { button.hidden = true; });
+    $$('#giManager [data-edit]').forEach(button => {
+      button.textContent = 'Resultado';
+      button.setAttribute('aria-label', 'Lançar resultado deste jogo');
     });
-    $$('.gi-game [data-edit]', manager).forEach(button => {
-      button.textContent = 'Ajustes';
-      button.setAttribute('aria-label', 'Abrir ajustes deste jogo');
-    });
-    $$('.gi-game footer .danger[data-del]', manager).forEach(button => {
-      button.classList.add('cge-direct-delete');
-      button.tabIndex = -1;
-      button.setAttribute('aria-hidden', 'true');
-    });
-    decorateGenerator();
+
+    const head = $('.gi-head', manager);
+    if (isAdmin() && head && !head.querySelector('[data-simple-manage]')) {
+      const actions = head.lastElementChild || head;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'secondary';
+      button.dataset.simpleManage = 'true';
+      button.textContent = 'Organizar';
+      button.setAttribute('aria-label', 'Organizar formato do campeonato');
+      actions.append(button);
+    }
   }
 
   document.addEventListener('click', event => {
-    const edit = event.target.closest('#giManager [data-edit]');
-    if (edit && isAdmin()) {
+    const scoreButton = event.target.closest('#giManager [data-edit]');
+    if (scoreButton) {
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation();
-      open(edit.dataset.edit, edit);
+      openScore(scoreButton.dataset.edit, scoreButton);
       return;
     }
 
-    const preset = event.target.closest('[data-cge-supercopa]');
-    if (preset) {
+    const manageButton = event.target.closest('[data-simple-manage]');
+    if (manageButton) {
       event.preventDefault();
-      event.stopPropagation();
-      applySupercopaPreset();
-      return;
-    }
-
-    const generate = event.target.closest('[data-generate-schedule]');
-    if (generate && isAdmin() && !allowGeneratorAction) {
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation();
-      const summary = generatorSummary();
-      if (!confirm(`Gerar esta tabela?\n\n${summary}\n\nA Arena fará um backup antes de substituir jogos gerados anteriormente.`)) return;
-      allowGeneratorAction = true;
-      generate.click();
-      queueMicrotask(() => { allowGeneratorAction = false; });
-      return;
-    }
-
-    const knockout = event.target.closest('[data-generate-knockout]');
-    if (knockout && isAdmin() && !allowGeneratorAction && !knockout.disabled) {
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation();
-      if (!confirm('Avançar para o mata-mata?\n\nA Arena usará a classificação dos grupos para criar os confrontos automaticamente.')) return;
-      allowGeneratorAction = true;
-      knockout.click();
-      queueMicrotask(() => { allowGeneratorAction = false; });
+      openManager(manageButton);
     }
   }, true);
 
   document.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && modal?.classList.contains('show')) {
-      event.preventDefault();
-      close();
-    }
+    if (event.key !== 'Escape') return;
+    if (modal?.classList.contains('show')) closeScore();
+    else if (managerSheet?.classList.contains('show')) closeManager();
   });
 
   const style = document.createElement('style');
-  style.id = 'championshipGuidedEditorStyles';
   style.textContent = `
-    #giManager>nav{overflow-x:auto;scrollbar-width:none}#giManager>nav::-webkit-scrollbar{display:none}
-    #giManager>nav button{min-height:44px!important;min-width:102px}
-    #giManager .cge-advanced-tab{opacity:.58}
-    #giManager .cge-direct-delete{display:none!important}
-    #giManager .gi-score-input{min-width:54px;min-height:48px!important;text-align:center;font-size:18px!important}
-    #giManager .gi-game footer button{min-height:44px}
-    #leagueGeneratorPanel button,#leagueGeneratorPanel select,#leagueGeneratorPanel input{min-height:44px!important}
-    .cge-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:11px 0}.cge-steps span{display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--line);border-radius:13px;color:var(--muted);background:#ffffff06;font-size:9px}.cge-steps b{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;color:#171107;background:var(--gold-soft);font-size:10px}
-    .cge-supercopa{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin:11px 0;padding:14px;border:1px solid rgba(242,215,125,.38);border-radius:17px;background:rgba(216,178,72,.08)}.cge-supercopa b,.cge-supercopa span{display:block}.cge-supercopa b{color:var(--gold-soft);font-size:12px}.cge-supercopa span{margin-top:4px;color:var(--muted);font-size:9px}.cge-supercopa button{min-height:44px}
-    .cge-advanced{margin-top:10px;border:1px solid var(--line);border-radius:14px;background:#03080655}.cge-advanced summary{display:flex;align-items:center;min-height:48px;padding:0 12px;cursor:pointer;color:var(--gold-soft);font-size:10px;font-weight:900}.cge-advanced[open] summary{border-bottom:1px solid var(--line)}.cge-advanced-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:12px}.cge-safe-note{margin:9px 2px 0;color:var(--muted);font-size:9px;line-height:1.45}
-    .asm-backdrop{display:none;position:fixed;inset:0;z-index:10000;place-items:end center;padding:10px;background:rgba(0,0,0,.76);backdrop-filter:blur(6px)}.asm-backdrop.show{display:grid}.asm-dialog{width:min(100%,560px);max-height:92vh;overflow:auto;border:1px solid var(--line-strong);border-radius:24px 24px 0 0;background:#0c1811;box-shadow:0 24px 80px #000b}.asm-head{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;gap:12px;padding:17px;border-bottom:1px solid var(--line);background:#0c1811}.asm-head span{color:var(--gold-soft);font-size:9px;font-weight:900}.asm-head h2{margin:4px 0;font-size:25px}.asm-head p{margin:0;color:var(--muted);font-size:9px}.asm-close{min-width:48px;min-height:48px;border:1px solid var(--line);border-radius:14px;color:var(--text);background:#ffffff08;font-size:24px}.asm-form{padding:16px}.asm-score{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:end;padding:16px;border:1px solid var(--line-strong);border-radius:18px;background:#07100c}.asm-score label{display:grid;gap:7px;text-align:center}.asm-score label span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);font-size:11px;font-weight:800}.asm-score input{width:100%;min-height:60px!important;text-align:center;font-size:28px!important;font-weight:900}.asm-score>b{align-self:center;color:var(--muted);font-size:22px}.asm-hint{margin:9px 2px;color:var(--muted);font-size:9px;text-align:center}.asm-advanced{margin-top:13px;border:1px solid var(--line);border-radius:15px;background:#03080655}.asm-advanced summary{display:flex;align-items:center;min-height:50px;padding:0 13px;cursor:pointer;color:var(--gold-soft);font-size:10px;font-weight:900}.asm-advanced[open] summary{border-bottom:1px solid var(--line)}.asm-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;padding:12px}.asm-grid label,.asm-note{display:grid;gap:6px;color:var(--muted);font-size:9px;font-weight:800}.asm-grid input,.asm-grid select,.asm-note textarea{min-height:44px!important;font-size:16px!important}.asm-note{padding:0 12px 12px}.asm-delete{width:calc(100% - 24px);min-height:44px;margin:0 12px 12px}.asm-actions{display:grid;grid-template-columns:1fr 1fr 1.25fr;gap:8px;margin-top:14px}.asm-actions button{min-height:48px}.asm-open{overflow:hidden}
-    @media(max-width:650px){.cge-steps{grid-template-columns:1fr}.cge-supercopa{grid-template-columns:1fr}.cge-supercopa button{width:100%}.cge-advanced-grid,.asm-grid{grid-template-columns:1fr}.asm-actions{grid-template-columns:1fr}.league-config-grid{grid-template-columns:1fr!important}.asm-dialog{border-radius:20px 20px 0 0}}
-    @media(min-width:740px){.asm-backdrop{place-items:center}.asm-dialog{border-radius:24px}}
-    @media(prefers-reduced-motion:reduce){.asm-backdrop{backdrop-filter:none}}
+    #giManager>nav{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+    #giManager>nav button[hidden]{display:none!important}
+    #giManager .gi-game footer{grid-template-columns:1fr!important}
+    #giManager [data-del]{display:none!important}
+    #giManager [data-edit],#giManager [data-simple-manage]{min-height:44px!important}
+    body.aqs-open,body.asmgr-open{overflow:hidden}
+    .aqs-backdrop,.asmgr-backdrop{position:fixed;inset:0;z-index:100500;display:none;align-items:flex-end;justify-content:center;padding:14px;background:#000b;backdrop-filter:blur(8px)}
+    .aqs-backdrop.show,.asmgr-backdrop.show{display:flex}
+    .aqs-dialog,.asmgr-sheet{width:min(520px,100%);max-height:92vh;overflow:auto;border:1px solid var(--line-strong);border-radius:24px;background:#08110c;box-shadow:0 24px 80px #000c}
+    .aqs-dialog{padding:18px}.aqs-head,.asmgr-sheet>header{display:flex;align-items:center;justify-content:space-between;gap:12px}.aqs-head>span,.asmgr-sheet>header span{color:var(--gold-soft);font-size:10px;font-weight:900;letter-spacing:.12em}.aqs-head button,.asmgr-sheet>header button{width:44px;height:44px;border:1px solid var(--line);border-radius:14px;color:var(--text);background:#ffffff08;font-size:24px}.aqs-dialog h2{margin:18px 0 4px;font-size:clamp(25px,7vw,38px);line-height:1;text-align:center}.aqs-dialog h2 small{color:var(--muted);font-size:.7em}.aqs-dialog>p{margin:0 0 18px;color:var(--muted);text-align:center;font-size:11px}.aqs-score{display:grid;grid-template-columns:1fr 34px 1fr;gap:8px;align-items:end}.aqs-score label{display:grid;gap:8px;text-align:center}.aqs-score label span{min-height:34px;display:grid;place-items:end center;color:var(--text);font-size:11px;font-weight:800}.aqs-score input{width:100%;height:72px;padding:0 6px;border:1px solid var(--line-strong);border-radius:18px;color:var(--gold-soft);background:#030806;text-align:center;font:900 34px/1 "Barlow Condensed",system-ui}.aqs-score>b{display:grid;place-items:center;height:72px;color:var(--muted);font-size:24px}.aqs-dialog footer{display:grid;grid-template-columns:.7fr 1.3fr;gap:8px;margin-top:18px}.aqs-dialog footer button{min-height:48px}
+    .asmgr-sheet{padding:18px}.asmgr-sheet>header h2{margin:3px 0 0;font-size:25px}.asmgr-card{margin-top:15px;padding:16px;border:1px solid var(--line);border-radius:18px;background:#ffffff06}.asmgr-card.recommended{border-color:#f2d77d55;background:linear-gradient(145deg,#173a26,#08110c)}.asmgr-card strong{color:var(--gold-soft);font-size:9px;text-transform:uppercase;letter-spacing:.1em}.asmgr-card h3{margin:7px 0 5px;font-size:22px;line-height:1.05}.asmgr-card p{margin:0 0 14px;color:var(--muted);font-size:10px;line-height:1.5}.asmgr-card>button{width:100%;min-height:48px}.asmgr-options{display:grid;gap:8px;margin-top:12px}.asmgr-options button{min-height:48px;border:1px solid var(--line);border-radius:14px;color:var(--text);background:#ffffff08;font-weight:800}.asmgr-link{width:100%;min-height:44px;margin-top:8px;border:0;color:var(--muted);background:transparent;text-decoration:underline}
+    @media(min-width:700px){.aqs-backdrop,.asmgr-backdrop{align-items:center}.aqs-dialog,.asmgr-sheet{border-radius:22px}}
   `;
-  document.head.appendChild(style);
+  document.head.append(style);
 
   function ensure() {
     clearTimeout(observerTimer);
-    observerTimer = window.setTimeout(decorateManager, 45);
+    observerTimer = setTimeout(simplifyManager, 40);
   }
 
-  if (window.ArenaDOMEvents?.subscribe) {
-    window.ArenaDOMEvents.subscribe(ensure, { selector: '#giManager,#leagueGeneratorPanel,.gi-game' });
-  } else if (document.body) {
-    new MutationObserver(ensure).observe(document.body, { childList: true, subtree: true });
-  }
-  window.addEventListener('arena:matches-updated', ensure);
-  ensure();
+  document.addEventListener('arena:bundle-loaded', ensure);
+  window.ArenaDOMEvents?.subscribe?.(ensure, { selector: '#giManager,.gi-game,.gi-head' });
+  const observer = new MutationObserver(ensure);
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+  simplifyManager();
 })();
