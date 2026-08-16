@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '2026.08.16-copa-facil-interface';
+  const VERSION = '2026.08.16-copa-facil-interface-simple-home';
   const STYLE_ID = 'arenaCopaFacilInterfaceStyles';
   const THEME_COLOR = '#176b3d';
 
@@ -227,6 +227,10 @@
     html:not(.arena-admin-authenticated) body.arena-copa-facil [data-page="teams"]>.form-card{display:none!important}
     html.arena-admin-authenticated body.arena-copa-facil .copa-team-register{display:none}
     html:not(.arena-admin-authenticated) body.arena-copa-facil [data-page="home"] .hero-actions button:nth-child(n+2){display:none}
+    html:not(.arena-admin-authenticated) body.arena-copa-facil [data-page="home"] :is(#clanHistoryHome,#newsHome){display:none!important}
+    html:not(.arena-admin-authenticated) body.arena-copa-facil [data-page="home"] .home-tournament-links .secondary{display:none!important}
+    html:not(.arena-admin-authenticated) body.arena-copa-facil [data-page="home"] .home-grid{grid-template-columns:minmax(0,1fr)!important}
+    html:not(.arena-admin-authenticated) body.arena-copa-facil [data-page="home"] .home-grid>section:nth-child(n+2){display:none!important}
     html:not(.arena-admin-authenticated) body.arena-copa-facil #arenaDetail .arena-detail-nav nav{display:none}
     html:not(.arena-admin-authenticated) body.arena-copa-facil #arenaDetail .arena-stats{grid-template-columns:repeat(3,minmax(0,1fr))}
     html:not(.arena-admin-authenticated) body.arena-copa-facil #arenaDetail .arena-stat:nth-child(2){display:none}
