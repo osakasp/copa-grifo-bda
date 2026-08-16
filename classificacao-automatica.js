@@ -11,7 +11,7 @@ const placeholder=v=>/^vencedor\s+/i.test(String(v||''));
 function read(k,f){try{return JSON.parse(localStorage.getItem(k))??f}catch{return f}}
 function tournaments(){const x=read(TK,[]);return Array.isArray(x)?x:[]}
 function store(){const x=read(MK,{});return x&&typeof x==='object'?x:{}}
-function games(id){const x=store()[id],list=Array.isArray(x)?x:[],t=tours().find(item=>String(item?.id)===String(id));return window.ArenaBDAValidMatches?.forTournament(t,list)||list}
+function games(id){const x=store()[id],list=Array.isArray(x)?x:[],t=tournaments().find(item=>String(item?.id)===String(id));return window.ArenaBDAValidMatches?.forTournament(t,list)||list}
 function clubs(){const x=read(TEAMK,[]);return Array.isArray(x)?x:[]}
 function tournament(){return tournaments().find(t=>t.id===currentId)||null}
 function finished(g){return ['a','b'].includes(g?.wo)||(has(g?.a)&&has(g?.b))}
