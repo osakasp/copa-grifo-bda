@@ -398,7 +398,9 @@
         initialCloudLoad = false;
         render();
       }, error => {
-        console.error('Falha ao carregar notificações', error);
+        if (!String(error?.code || '').includes('permission-denied') || isAdmin()) {
+          console.error('Falha ao carregar notificações', error);
+        }
         render();
       });
   }

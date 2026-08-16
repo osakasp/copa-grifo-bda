@@ -2087,7 +2087,12 @@
     html:not(.arena-admin-authenticated) body.arena-copa-facil #arenaDetail .arena-detail-nav nav{display:none}
     html:not(.arena-admin-authenticated) body.arena-copa-facil #arenaDetail .arena-stats{grid-template-columns:repeat(3,minmax(0,1fr))}
     html:not(.arena-admin-authenticated) body.arena-copa-facil #arenaDetail .arena-stat:nth-child(2){display:none}
-    html:not(.arena-admin-authenticated) body.arena-copa-facil #giManager .gi-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+    html:not(.arena-admin-authenticated) body.arena-copa-facil #arenaDetail .arena-hero{min-height:0!important;padding:18px!important}
+    html:not(.arena-admin-authenticated) body.arena-copa-facil #arenaDetail .arena-hero>img,
+    html:not(.arena-admin-authenticated) body.arena-copa-facil #arenaDetail .arena-hero-symbol,
+    html:not(.arena-admin-authenticated) body.arena-copa-facil #arenaDetail .arena-hero-copy>p{display:none}
+    html:not(.arena-admin-authenticated) body.arena-copa-facil #giManager{margin-top:0}
+    html:not(.arena-admin-authenticated) body.arena-copa-facil #giManager :is(.gi-head,.gi-metrics,.gi-progress){display:none}
 
     body.arena-copa-facil :is(input,select,textarea){
       color:var(--cf-text);
@@ -2310,6 +2315,13 @@
     heading.append(button);
   }
 
+  function simplifyTournamentDetail() {
+    const detail = document.querySelector('#arenaDetail');
+    const stats = detail?.querySelector('.arena-stats');
+    const competition = detail?.querySelector('#tournamentCompetition');
+    if (stats && competition && stats.nextElementSibling !== competition) stats.after(competition);
+  }
+
   let simplifyFrame = 0;
   function scheduleSimplify() {
     if (simplifyFrame) return;
@@ -2317,6 +2329,7 @@
       simplifyFrame = 0;
       simplifyTournamentClubs();
       ensureTeamShortcut();
+      simplifyTournamentDetail();
       keepLast();
     });
   }
@@ -2329,11 +2342,12 @@
     const section = toggle.closest('#tournamentClubs');
     section?.classList.toggle('is-expanded');
     simplifyTournamentClubs();
+    simplifyTournamentDetail();
   });
   document.addEventListener('arena:bundle-loaded', scheduleSimplify);
   window.addEventListener('arena:enhancements-ready', scheduleSimplify);
   window.addEventListener('arena:permissions-updated', scheduleSimplify);
-  window.ArenaDOMEvents?.subscribe?.(scheduleSimplify, { selector: '#giManager,.gi-game,.stand-group,.arena-card,#tournamentClubs,[data-page="teams"]' });
+  window.ArenaDOMEvents?.subscribe?.(scheduleSimplify, { selector: '#arenaDetail,#giManager,.gi-game,.stand-group,.arena-card,#tournamentClubs,[data-page="teams"]' });
 })();
 
 ;

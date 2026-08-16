@@ -4,7 +4,7 @@
   const TABLE_EXPORT_SRC = './exportar-tabela-copa-facil.js?v=20260726-2';
   const BUNDLES = Object.freeze({
     home: [
-      './home-campeonato-atual-v2.js?v=20260814-2'
+      './home-campeonato-atual-v2.js?v=20260816-3'
     ],
     champions: [
       './champion-banners.js?v=20260808-2',
@@ -16,7 +16,7 @@
     history: [
       './arena-editor-pro.js',
       './historia-cla.js?v=20260727-2',
-      './galeria-historica-v2.js?v=20260727-2'
+      './galeria-historica-v2.js?v=20260816-3'
     ],
     season: [
       './temporada-bda.js?v=20260801-2'
@@ -31,23 +31,23 @@
       './feedback-bda.js?v=20260803-1'
     ],
     teams: [
-      './perfis-clubes.js?v=20260808-1',
+      './perfis-clubes.js?v=20260816-2',
       './editor-perfis-times.js?v=20260726-2',
       './club-profile-router.js?v=20260726-2',
       './solicitacoes-edicao-times.js?v=20260726-1'
     ],
     news: [
       './noticias-bootstrap.js?v=20260727-1',
-      './noticias-bda.js?v=20260801-3'
+      './noticias-bda.js?v=20260816-4'
     ],
     tournament: [
       './cores-automaticas-campeonatos.js?v=20260802-2'
     ],
     tournamentDetail: [
       './confrontos-copa-grifo.js',
-      './gestor-inteligente.js?v=20260816-3',
-      './classificacao-automatica.js?v=20260816-2',
-      './resultados-cards-pro.js?v=20260803-1',
+      './gestor-inteligente.js?v=20260816-4',
+      './classificacao-automatica.js?v=20260816-3',
+      './resultados-cards-pro.js?v=20260816-2',
       './placar-mobile-stability.js?v=20260803-1'
     ],
     tournamentEnhancements: [
@@ -55,14 +55,14 @@
       './midia-campeonato-refresh.js?v=20260726-1',
       './copa-francos-design-lite.js?v=20260726-2',
       './captura-confrontos-simples.js?v=20260816-2',
-      './match-center-bda.js?v=20260814-1',
+      './match-center-bda.js?v=20260816-2',
       './regulamento-interativo.js?v=20260814-1'
     ],
     tournamentAdmin: [
       './sorteio-campeonatos.js?v=20260730-1',
       './arena-editor-pro.js',
-      './gerador-grupos-ligas.js',
-      './confronto-editor-v2.js?v=20260816-1'
+      './gerador-grupos-ligas.js?v=20260816-1',
+      './confronto-editor-v2.js?v=20260816-2'
     ]
   });
   const PAGE_BUNDLE = Object.freeze({

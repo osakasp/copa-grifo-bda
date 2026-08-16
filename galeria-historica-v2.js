@@ -587,7 +587,11 @@
         cacheLocal();
         render();
       }
-    }, error => console.error('Falha ao carregar a galeria histórica', error));
+    }, error => {
+      if (!String(error?.code || '').includes('permission-denied') || admin()) {
+        console.error('Falha ao carregar a galeria histórica', error);
+      }
+    });
   }
 
   window.ArenaDOMEvents.subscribe(() => {

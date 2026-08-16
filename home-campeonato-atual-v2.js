@@ -9,7 +9,7 @@ const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim
 function read(k,f){try{return JSON.parse(localStorage.getItem(k))??f}catch{return f}}
 function tours(){const x=read(TK,[]);return Array.isArray(x)?x:[]}
 function store(){const x=read(MK,{});return x&&typeof x==='object'?x:{}}
-function games(id){const x=store()[id];return Array.isArray(x)?x:[]}
+function games(id){const x=store()[id],list=Array.isArray(x)?x:[],t=tours().find(item=>String(item?.id)===String(id));return window.ArenaBDAValidMatches?.forTournament(t,list)||list}
 function clubs(){const x=read(TEAM,[]);return Array.isArray(x)?x:[]}
 function priority(s){s=norm(s);return s==='em andamento'?50:s==='inscricoes abertas'?40:s==='planejado'?25:s==='finalizado'?10:20}
 function activity(t,i){return Math.max(Number(t?.updatedAt||t?.createdAt||0),...games(t?.id).map(g=>Number(g?.updated||g?.created||0)),1000000-i)}

@@ -99,7 +99,9 @@
 
   function rawGames(id = tournamentId) {
     const value = matchStore()[id];
-    return Array.isArray(value) ? value : [];
+    const list = Array.isArray(value) ? value : [];
+    const item = tournaments().find(entry => String(entry?.id) === String(id)) || null;
+    return window.ArenaBDAValidMatches?.forTournament(item, list) || list;
   }
 
   function shape(game, index = 0) {

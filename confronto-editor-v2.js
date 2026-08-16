@@ -72,7 +72,8 @@
 
   function games(tid = tournamentId()) {
     const list = matchStore()[tid];
-    return Array.isArray(list) ? list : [];
+    const raw = Array.isArray(list) ? list : [];
+    return window.ArenaBDAValidMatches?.forTournament(tournament(tid), raw) || raw;
   }
 
   function gameById(tid, id) {

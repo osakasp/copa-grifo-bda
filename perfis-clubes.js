@@ -192,7 +192,8 @@
         }
       });
 
-      const raw = Array.isArray(store[tournament.id]) ? store[tournament.id] : [];
+      const stored = Array.isArray(store[tournament.id]) ? store[tournament.id] : [];
+      const raw = window.ArenaBDAValidMatches?.forTournament(tournament, stored) || stored;
       const resolver = makeResolver(raw);
       raw.forEach(game => {
         if (!finished(game)) return;

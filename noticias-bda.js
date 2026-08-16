@@ -412,7 +412,10 @@
         news = [...map.values()]; saveLocal(); render();
       }
       openDeepLink();
-    }, error => { console.error(error); openDeepLink(); });
+    }, error => {
+      if (!String(error?.code || '').includes('permission-denied') || isAdmin()) console.error(error);
+      openDeepLink();
+    });
   }
 
   function openDeepLink() {

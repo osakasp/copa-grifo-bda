@@ -1,4 +1,4 @@
-const VERSION = 'v65-minimal-copa-facil';
+const VERSION = 'v66-valid-matches';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,

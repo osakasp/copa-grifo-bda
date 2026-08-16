@@ -82,7 +82,8 @@
 
   function games(tid) {
     const value = matchStore()[tid];
-    return Array.isArray(value) ? value : [];
+    const list = Array.isArray(value) ? value : [];
+    return window.ArenaBDAValidMatches?.forTournament(tournament(tid), list) || list;
   }
 
   function game(tid, id) {
@@ -115,7 +116,7 @@
   function allFinished() {
     const store = matchStore();
     const competitionMap = new Map(tournaments().map(item => [String(item.id), item.name]));
-    return Object.entries(store).flatMap(([tid, list]) => (Array.isArray(list) ? list : []).filter(finished).map(item => ({
+    return Object.entries(store).flatMap(([tid, list]) => games(tid).filter(finished).map(item => ({
       ...item,
       tournamentId: tid,
       tournamentName: competitionMap.get(tid) || 'Campeonato BDA',
