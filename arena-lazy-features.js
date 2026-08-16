@@ -62,7 +62,7 @@
       './sorteio-campeonatos.js?v=20260730-1',
       './arena-editor-pro.js',
       './gerador-grupos-ligas.js',
-      './confronto-editor-v2.js?v=20260802-2'
+      './confronto-editor-v2.js?v=20260816-1'
     ]
   });
   const PAGE_BUNDLE = Object.freeze({
