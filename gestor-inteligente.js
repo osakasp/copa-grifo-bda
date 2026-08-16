@@ -462,7 +462,14 @@
 
   function gamesView(list, grouped) {
     if (!list.length) {
-      return `<div class="gi-empty"><b>Nenhum jogo criado</b><span>Adicione o primeiro confronto.</span>${adminActive() ? '<button class="primary" data-add>Adicionar jogo</button>' : ''}</div>`;
+      const closed = normalize(tournament()?.status).includes('finalizado');
+      const title = adminActive() ? 'Nenhum jogo criado' : closed ? 'Resultados não publicados' : 'Tabela de jogos em preparação';
+      const message = adminActive()
+        ? 'Adicione o primeiro confronto para iniciar a competição.'
+        : closed
+          ? 'O histórico completo desta edição ainda não está disponível.'
+          : 'Os confrontos aparecerão aqui quando a organização publicar a tabela.';
+      return `<div class="gi-empty"><span class="gi-empty-icon" aria-hidden="true">⚽</span><b>${title}</b><span>${message}</span>${adminActive() ? '<button class="primary" data-add>Adicionar jogo</button>' : ''}</div>`;
     }
 
     const phases = new Map();
@@ -481,9 +488,24 @@
     const columns = new Map();
     grouped.forEach(tie => {
       const phase = tie[0]?.phase || 'Confrontos';
+      const groupStage = /(^|\s)grupo\s+[a-z0-9]+|rodada\s+\d+/i.test(String(phase));
+      if (groupStage) return;
       if (!columns.has(phase)) columns.set(phase, []);
       columns.get(phase).push(tie);
     });
+
+    if (!columns.size) {
+      const format = normalize(tournament()?.format);
+      const hasGroups = format.includes('grupo') || list.some(game => /(^|\s)grupo\s+[a-z0-9]+|rodada\s+\d+/i.test(String(game.phase || '')));
+      const leagueOnly = format.includes('pontos corridos');
+      const title = leagueOnly ? 'Esta liga não usa chaveamento' : hasGroups ? 'Mata-mata ainda não iniciado' : 'Chaveamento não publicado';
+      const message = leagueOnly
+        ? 'Acompanhe a disputa pela aba Classificação.'
+        : hasGroups
+          ? 'Os confrontos eliminatórios aparecerão aqui após a fase de grupos.'
+          : 'Os duelos aparecerão aqui quando a organização publicar a chave.';
+      return `<div class="gi-empty gi-bracket-empty"><span class="gi-empty-icon" aria-hidden="true">🏆</span><b>${title}</b><span>${message}</span>${leagueOnly || hasGroups ? '<button type="button" class="primary" data-tab="standings" data-standings-tab="true">Ver classificação</button>' : ''}</div>`;
+    }
 
     const phaseSummary = [...columns]
       .sort(([a], [b]) => phaseOrder(a) - phaseOrder(b))
@@ -525,7 +547,9 @@
     const completed = list.filter(finished).length;
     const progress = list.length ? Math.round((completed / list.length) * 100) : 0;
     const goals = list.reduce((total, game) => total + (score(game, 'a') ?? 0) + (score(game, 'b') ?? 0), 0);
-    const content = activeTab === 'bracket'
+    const content = activeTab === 'standings'
+      ? ''
+      : activeTab === 'bracket'
       ? bracketView(list, grouped)
       : activeTab === 'config'
         ? configView(config, list)
@@ -535,7 +559,7 @@
       <div class="gi-head"><div><span class="eyebrow">Competição</span><h2>${escapeHtml(tournament()?.name || 'Campeonato')}</h2><p>${canManage ? 'Atualize placares e controle o formato da competição.' : 'Jogos, resultados e chaveamento.'}</p></div>${canManage ? `<div><span id="giCloud">${db ? 'Sincronizado' : 'Modo local'}</span><button class="primary" data-add>+ Novo jogo</button></div>` : ''}</div>
       <div class="gi-metrics">${canManage ? `<div><b>${list.length}</b><span>Jogos</span></div><div><b>${completed}</b><span>Finalizados</span></div><div><b>${goals}</b><span>Gols</span></div><div><b>${progress}%</b><span>Progresso</span></div>` : `<div><b>${list.length}</b><span>Jogos</span></div><div><b>${completed}</b><span>Finalizados</span></div>`}</div>
       <div class="gi-progress" aria-label="${progress}% do campeonato concluído"><span style="width:${progress}%"></span></div>
-      <nav><button data-tab="games" class="${activeTab === 'games' ? 'active' : ''}">Jogos</button><button data-tab="bracket" class="${activeTab === 'bracket' ? 'active' : ''}">Chaveamento</button>${canManage ? `<button data-tab="config" class="${activeTab === 'config' ? 'active' : ''}">Configuração</button>` : ''}</nav>
+      <nav aria-label="Navegação da competição"><button data-tab="games" class="${activeTab === 'games' ? 'active' : ''}" aria-selected="${activeTab === 'games'}">Jogos</button><button data-tab="bracket" class="${activeTab === 'bracket' ? 'active' : ''}" aria-selected="${activeTab === 'bracket'}">Chaveamento</button><button data-tab="standings" data-standings-tab="true" class="${activeTab === 'standings' ? 'active' : ''}" aria-selected="${activeTab === 'standings'}">Classificação</button>${canManage ? `<button data-tab="config" class="${activeTab === 'config' ? 'active' : ''}" aria-selected="${activeTab === 'config'}">Configuração</button>` : ''}</nav>
       <div class="gi-content">${content}</div>
     </section>`;
   }
