@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '2026.08.16-copa-facil-championships-v2';
+  const VERSION = '2026.08.16-copa-facil-championships-v3';
   const STYLE_ID = 'arenaCopaFacilInterfaceStyles';
   const THEME_COLOR = '#07100c';
 
@@ -44,6 +44,7 @@
       color:var(--cf-text);
       background:var(--cf-bg);
       color-scheme:dark;
+      overflow-x:clip;
     }
 
     body.arena-copa-facil>.app-shell{background:var(--cf-bg)}
