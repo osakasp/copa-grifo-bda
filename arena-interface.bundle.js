@@ -1858,7 +1858,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '2026.08.16-copa-facil-interface-clean';
+  const VERSION = '2026.08.16-copa-facil-championships-v2';
   const STYLE_ID = 'arenaCopaFacilInterfaceStyles';
   const THEME_COLOR = '#07100c';
 
@@ -2379,6 +2379,240 @@
     body.arena-copa-facil .stand-group tbody tr:hover td{background:var(--cf-surface-alt)}
     body.arena-copa-facil .stand-points{color:var(--cf-green)!important}
 
+    /* Campeonatos: visual compacto, escuro e inspirado no fluxo do Copa Fácil. */
+    body.arena-copa-facil [data-page="tournament"]{--champ-ease:cubic-bezier(.2,.75,.25,1)}
+    body.arena-copa-facil [data-page="tournament"] .arena-page-hero{
+      min-height:184px;
+      padding:28px 30px;
+      border-radius:18px;
+      background:
+        radial-gradient(circle at 84% 14%,rgba(53,201,121,.28),transparent 26%),
+        linear-gradient(135deg,#105c38,#082c1d 76%);
+      isolation:isolate;
+    }
+    body.arena-copa-facil [data-page="tournament"] .arena-page-hero:before{
+      content:"";
+      position:absolute;
+      z-index:-1;
+      width:260px;
+      height:260px;
+      right:-80px;
+      top:-110px;
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:50%;
+      box-shadow:0 0 0 34px rgba(255,255,255,.025),0 0 0 68px rgba(255,255,255,.018);
+      animation:champ-orbit 9s ease-in-out infinite;
+    }
+    body.arena-copa-facil [data-page="tournament"] .arena-page-hero aside{
+      min-width:150px;
+      border-color:rgba(255,255,255,.16);
+      background:rgba(2,20,12,.24);
+      backdrop-filter:blur(8px);
+    }
+    body.arena-copa-facil [data-page="tournament"] .arena-page-hero aside b{color:#fff}
+    body.arena-copa-facil [data-page="tournament"] .arena-page-hero aside span{color:rgba(255,255,255,.7)}
+    body.arena-copa-facil .arena-catalog-head{align-items:end;margin:22px 0 12px}
+    body.arena-copa-facil .arena-catalog-head .arena-toolbar{
+      gap:6px;
+      margin:0;
+      padding:5px;
+      border-radius:10px;
+    }
+    body.arena-copa-facil .arena-filter{
+      min-height:38px;
+      padding:0 11px;
+      border:0;
+      border-radius:7px;
+      transition:color .2s var(--champ-ease),background .2s var(--champ-ease),transform .2s var(--champ-ease);
+    }
+    body.arena-copa-facil .arena-filter:after{
+      content:attr(data-count);
+      display:inline-grid;
+      place-items:center;
+      min-width:20px;
+      height:20px;
+      margin-left:7px;
+      padding:0 5px;
+      border-radius:6px;
+      color:var(--cf-muted);
+      background:var(--cf-surface-alt);
+      font-size:8px;
+    }
+    body.arena-copa-facil .arena-filter.active{color:#fff;background:#146c42}
+    body.arena-copa-facil .arena-filter.active:after{color:#0a3d27;background:#73e2a7}
+    body.arena-copa-facil .arena-filter:active{transform:scale(.97)}
+    body.arena-copa-facil .arena-grid{gap:12px}
+    body.arena-copa-facil .arena-card{
+      position:relative;
+      min-height:0;
+      overflow:hidden;
+      border-radius:14px;
+      background:linear-gradient(155deg,#102017,#0b1710 72%);
+      transition:transform .24s var(--champ-ease),border-color .24s var(--champ-ease),box-shadow .24s var(--champ-ease);
+      animation:champ-rise .48s var(--champ-ease) both;
+    }
+    body.arena-copa-facil .arena-card:nth-child(2){animation-delay:.04s}
+    body.arena-copa-facil .arena-card:nth-child(3){animation-delay:.08s}
+    body.arena-copa-facil .arena-card:nth-child(4){animation-delay:.12s}
+    body.arena-copa-facil .arena-card:nth-child(5){animation-delay:.16s}
+    body.arena-copa-facil .arena-card:nth-child(6){animation-delay:.2s}
+    body.arena-copa-facil .arena-card:before{
+      content:"";
+      position:absolute;
+      inset:0 auto 0 0;
+      width:3px;
+      background:#3a5947;
+      transition:width .24s var(--champ-ease),background .24s var(--champ-ease);
+    }
+    body.arena-copa-facil .arena-card:hover{
+      transform:translateY(-3px);
+      border-color:#39614a;
+      background:linear-gradient(155deg,#14271c,#0d1b13 72%);
+      box-shadow:0 14px 34px rgba(0,0,0,.22);
+    }
+    body.arena-copa-facil .arena-card:hover:before,
+    body.arena-copa-facil .arena-card[data-selected="true"]:before{width:5px;background:var(--cf-green)}
+    body.arena-copa-facil .arena-card[data-selected="true"]{border-color:#32724e;box-shadow:0 0 0 1px rgba(53,201,121,.12),0 12px 28px rgba(0,0,0,.2)}
+    body.arena-copa-facil .arena-card .arena-cover{display:none}
+    body.arena-copa-facil .arena-card .arena-body{
+      display:grid;
+      grid-template-columns:minmax(0,1fr);
+      gap:11px;
+      padding:15px 15px 15px 18px;
+      color:var(--cf-text);
+      background:transparent;
+    }
+    body.arena-copa-facil .arena-card .arena-card-top,
+    body.arena-copa-facil .arena-card .arena-card-title,
+    body.arena-copa-facil .arena-card .arena-card-progress{display:flex;align-items:center}
+    body.arena-copa-facil .arena-card .arena-card-top{justify-content:space-between;gap:8px}
+    body.arena-copa-facil .arena-card-status{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      color:#75dda5;
+      font-size:8px;
+      font-weight:900;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+    body.arena-copa-facil .arena-card-status i{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 0 4px rgba(53,201,121,.08)}
+    body.arena-copa-facil .arena-card[data-state="em-andamento"] .arena-card-status i,
+    body.arena-copa-facil .arena-card[data-state="inscricoes-abertas"] .arena-card-status i{animation:champ-pulse 1.8s ease-out infinite}
+    body.arena-copa-facil .arena-card[data-state="finalizado"] .arena-card-status{color:#8da095}
+    body.arena-copa-facil .arena-card[data-state="planejado"] .arena-card-status{color:#e1c46e}
+    body.arena-copa-facil .arena-card-edition{overflow:hidden;color:var(--cf-muted);font-size:8px;text-overflow:ellipsis;white-space:nowrap;text-transform:uppercase}
+    body.arena-copa-facil .arena-card .arena-card-title{gap:10px;min-width:0}
+    body.arena-copa-facil .arena-card-badge{
+      display:grid;
+      place-items:center;
+      width:42px;
+      height:42px;
+      flex:0 0 auto;
+      border:1px solid #2e4938;
+      border-radius:11px;
+      background:#13271b;
+      font-size:21px;
+      transition:transform .3s var(--champ-ease);
+    }
+    body.arena-copa-facil .arena-card:hover .arena-card-badge{transform:rotate(-4deg) scale(1.06)}
+    body.arena-copa-facil .arena-card .arena-body h3{grid-column:auto;margin:0;font-size:20px;line-height:1}
+    body.arena-copa-facil .arena-card .arena-body>p{display:none}
+    body.arena-copa-facil .arena-card .arena-meta{grid-column:auto;display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:0}
+    body.arena-copa-facil .arena-card .arena-meta span{display:grid;gap:3px;padding:9px 10px;border:1px solid #21362a;border-radius:9px;background:#0b160f}
+    body.arena-copa-facil .arena-card .arena-meta b{overflow:hidden;color:var(--cf-text);font-size:10px;text-overflow:ellipsis;white-space:nowrap}
+    body.arena-copa-facil .arena-card .arena-meta small{color:var(--cf-muted);font-size:7px;text-transform:uppercase}
+    body.arena-copa-facil .arena-card-progress{gap:9px}
+    body.arena-copa-facil .arena-card-progress>span{overflow:hidden;height:5px;flex:1;border-radius:99px;background:#1b2c21}
+    body.arena-copa-facil .arena-card-progress>span i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#1b9e59,#55dc91);transition:width .6s var(--champ-ease)}
+    body.arena-copa-facil .arena-card-progress small{min-width:66px;color:var(--cf-muted);font-size:7px;text-align:right;text-transform:uppercase}
+    body.arena-copa-facil .arena-card .arena-open{
+      grid-column:auto;
+      grid-row:auto;
+      min-height:42px;
+      margin:0;
+      border-color:#2c4a38;
+      border-radius:9px;
+      background:#10271a;
+      transition:color .2s var(--champ-ease),background .2s var(--champ-ease),border-color .2s var(--champ-ease);
+    }
+    body.arena-copa-facil .arena-card .arena-open:hover{color:#07100c;border-color:#48d486;background:#48d486}
+    body.arena-copa-facil .arena-card .arena-open b{display:inline-block;margin-left:5px;transition:transform .2s var(--champ-ease)}
+    body.arena-copa-facil .arena-card .arena-open:hover b{transform:translateX(3px)}
+
+    body.arena-copa-facil .arena-detail{margin-top:26px;scroll-margin-top:76px}
+    body.arena-copa-facil .arena-detail-nav{position:sticky;top:8px;z-index:20;border-radius:10px;backdrop-filter:blur(14px);background:rgba(13,24,18,.9)}
+    body.arena-copa-facil #arenaDetail .arena-hero{
+      min-height:210px;
+      border-radius:16px;
+      background:
+        radial-gradient(circle at 84% 18%,rgba(72,212,134,.24),transparent 24%),
+        linear-gradient(135deg,#104f32,#082b1c 76%);
+    }
+    body.arena-copa-facil #arenaDetail .arena-hero:before{
+      content:"";
+      position:absolute;
+      width:220px;
+      height:220px;
+      right:-56px;
+      top:-86px;
+      border:1px solid rgba(255,255,255,.1);
+      border-radius:50%;
+      box-shadow:0 0 0 30px rgba(255,255,255,.02),0 0 0 60px rgba(255,255,255,.015);
+    }
+    body.arena-copa-facil #arenaDetail .arena-hero-symbol{animation:champ-float 3.6s ease-in-out infinite}
+    body.arena-copa-facil #arenaDetail .arena-stats{gap:8px;margin-top:10px}
+    body.arena-copa-facil #arenaDetail .arena-stat{position:relative;overflow:hidden;border-radius:10px;background:linear-gradient(145deg,#101f17,#0c1811)}
+    body.arena-copa-facil #arenaDetail .arena-stat:after{content:"";position:absolute;inset:auto 0 0;height:2px;background:linear-gradient(90deg,var(--cf-green),transparent)}
+    body.arena-copa-facil #arenaDetail .arena-stat b{font-size:16px}
+    body.arena-copa-facil #tournamentCompetition:has(.arena-competition-anchor){display:none}
+    body.arena-copa-facil #tournamentClubs{margin-top:20px}
+    body.arena-copa-facil .arena-club{transition:color .2s var(--champ-ease),border-color .2s var(--champ-ease),transform .2s var(--champ-ease)}
+    body.arena-copa-facil .arena-club:hover{color:#fff;border-color:#3a6b50;transform:translateY(-2px)}
+
+    body.arena-copa-facil #giManager{scroll-margin-top:76px}
+    body.arena-copa-facil #giManager>nav{
+      position:sticky;
+      top:8px;
+      z-index:18;
+      gap:5px;
+      padding:5px;
+      border-radius:10px!important;
+      background:rgba(13,24,18,.92)!important;
+      backdrop-filter:blur(14px)!important;
+    }
+    body.arena-copa-facil #giManager>nav button{
+      min-height:42px;
+      border-radius:8px!important;
+      transition:color .2s var(--champ-ease),background .2s var(--champ-ease),transform .2s var(--champ-ease);
+    }
+    body.arena-copa-facil #giManager>nav button.active{color:#08130d!important;background:#49d487!important;box-shadow:0 5px 14px rgba(53,201,121,.16)}
+    body.arena-copa-facil #giManager>nav button:active{transform:scale(.98)}
+    body.arena-copa-facil #giManager .gi-empty{
+      min-height:180px;
+      border:1px dashed #335542;
+      border-radius:14px;
+      background:radial-gradient(circle at 50% 0,rgba(53,201,121,.09),transparent 40%),#0c1811;
+      animation:champ-rise .4s var(--champ-ease) both;
+    }
+    body.arena-copa-facil #giManager .gi-empty-icon{display:grid;place-items:center;width:48px;height:48px;border:1px solid #30523f;border-radius:14px;background:#13271b;font-size:24px}
+    body.arena-copa-facil #giManager .gi-empty b{color:var(--cf-text);font-size:15px}
+    body.arena-copa-facil #giManager .gi-empty span:not(.gi-empty-icon){max-width:430px;color:var(--cf-muted);font-size:10px;line-height:1.5}
+    body.arena-copa-facil #giManager .gi-empty .primary{min-height:42px;padding:0 16px;border-radius:8px}
+    body.arena-copa-facil #giManager .gi-phase{animation:champ-rise .42s var(--champ-ease) both}
+    body.arena-copa-facil #giManager .gip-card{transition:transform .22s var(--champ-ease),border-color .22s var(--champ-ease),box-shadow .22s var(--champ-ease)}
+    body.arena-copa-facil #giManager .gip-card:hover{transform:translateY(-2px);border-color:#315943!important;box-shadow:0 12px 28px rgba(0,0,0,.2)!important}
+    body.arena-copa-facil #autoStandings{animation:champ-rise .38s var(--champ-ease) both}
+    body.arena-copa-facil .stand-highlights article{border-radius:10px;background:linear-gradient(145deg,#102017,#0b1710)}
+    body.arena-copa-facil .stand-group{border-radius:12px;animation:champ-rise .42s var(--champ-ease) both}
+    body.arena-copa-facil .stand-group>header{background:linear-gradient(135deg,#0f5f39,#0a3925)}
+    body.arena-copa-facil .stand-group tbody tr{transition:background .18s ease}
+
+    @keyframes champ-rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes champ-pulse{0%{box-shadow:0 0 0 0 rgba(53,201,121,.36)}70%,100%{box-shadow:0 0 0 8px rgba(53,201,121,0)}}
+    @keyframes champ-float{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-6px) rotate(-3deg)}}
+    @keyframes champ-orbit{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(-12px,10px,0)}}
+
     @media(min-width:980px){
       body.arena-copa-facil .bottom-nav.arena-side-nav{border-color:var(--cf-border);background:var(--cf-surface);box-shadow:none}
       body.arena-copa-facil .arena-side-heading{color:#7f9286}
@@ -2396,6 +2630,26 @@
       body.arena-copa-facil #arenaStats .stat,
       body.arena-copa-facil .arena-nav-sheet,
       body.arena-copa-facil .arena-sheet-item{color:var(--cf-text);background:var(--cf-surface)}
+      body.arena-copa-facil [data-page="tournament"] .arena-page-hero{min-height:156px;padding:22px 18px;border-radius:14px}
+      body.arena-copa-facil [data-page="tournament"] .arena-page-hero aside{min-width:0}
+      body.arena-copa-facil .arena-catalog-head{align-items:stretch}
+      body.arena-copa-facil .arena-catalog-head .arena-toolbar{width:100%;overflow-x:auto}
+      body.arena-copa-facil .arena-detail-nav{top:4px}
+      body.arena-copa-facil #giManager>nav{top:4px;grid-template-columns:repeat(3,minmax(104px,1fr))!important;overflow-x:auto}
+      body.arena-copa-facil #giManager[data-can-manage="true"]>nav{grid-template-columns:repeat(4,minmax(104px,1fr))!important}
+      body.arena-copa-facil #arenaDetail .arena-hero{border-radius:14px}
+    }
+
+    @media(max-width:640px){
+      body.arena-copa-facil .arena-grid{grid-template-columns:1fr}
+      body.arena-copa-facil .arena-card .arena-body{padding:14px 14px 14px 17px}
+      body.arena-copa-facil #arenaDetail .arena-stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+      body.arena-copa-facil #arenaDetail .arena-stat{padding:10px 8px}
+      body.arena-copa-facil #arenaDetail .arena-stat b{font-size:13px}
+    }
+
+    @media(prefers-reduced-motion:reduce){
+      body.arena-copa-facil :is(.arena-card,.arena-page-hero:before,.arena-hero-symbol,.gi-phase,.gip-card,#autoStandings,.stand-group,.arena-card-status i){animation:none!important;transition:none!important}
     }
 
     @media(prefers-color-scheme:dark){
@@ -2449,8 +2703,10 @@
   function simplifyTournamentDetail() {
     const detail = document.querySelector('#arenaDetail');
     const stats = detail?.querySelector('.arena-stats');
+    const manager = detail?.querySelector('#giManager');
     const competition = detail?.querySelector('#tournamentCompetition');
-    if (stats && competition && stats.nextElementSibling !== competition) stats.after(competition);
+    if (stats && manager && stats.nextElementSibling !== manager) stats.after(manager);
+    if (manager && competition && manager.nextElementSibling !== competition) manager.after(competition);
   }
 
   let simplifyFrame = 0;
