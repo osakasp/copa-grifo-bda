@@ -11,6 +11,10 @@
   let busy = false;
   let timer = 0;
 
+  function adminActive() {
+    return Boolean(window.ArenaBDAAuth?.isAdmin?.() || document.documentElement.classList.contains('arena-admin-authenticated'));
+  }
+
   function loadCanvas() {
     if (window.html2canvas) return Promise.resolve(window.html2canvas);
     return new Promise((resolve, reject) => {
@@ -139,6 +143,10 @@
     const manager = $('#giManager');
     const head = $('.gi-head', manager || document);
     if (!manager || !head) return;
+    if (!adminActive()) {
+      $('.bda-capture-toolbar', manager)?.remove();
+      return;
+    }
     let bar = $('.bda-capture-toolbar', manager);
     if (!bar) {
       bar = document.createElement('section');

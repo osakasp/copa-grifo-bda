@@ -1196,23 +1196,7 @@
   function installCompetitionAppHome() {
     const home = $('[data-page="home"]');
     if (!home) return;
-    const hero = $('.hero', home);
-    const stats = $('#arenaStats', home);
-    let tabs = $('.arena-app-tabs', home);
-    if (!tabs) {
-      tabs = document.createElement('nav');
-      tabs.className = 'arena-app-tabs';
-      tabs.setAttribute('aria-label', 'Atalhos da competição');
-      tabs.innerHTML = [
-        ['home', 'home', 'Visão geral'],
-        ['tournament', 'tournament', 'Jogos'],
-        ['season', 'season', 'Tabela'],
-        ['teams', 'teams', 'Times'],
-        ['news', 'news', 'Notícias']
-      ].map(([page, icon, label], index) => `<button type="button" class="arena-app-tab${index === 0 ? ' active' : ''}" data-go="${page}">${interfaceIcon(icon)}<span>${label}</span></button>`).join('');
-    }
-    if (stats && tabs.nextElementSibling !== stats) home.insertBefore(tabs, stats);
-    else if (!stats && hero?.nextElementSibling !== tabs) hero?.after(tabs);
+    $('.arena-app-tabs', home)?.remove();
 
     const tournaments = $('.home-tournaments', home);
     const command = $('.home-command', home);

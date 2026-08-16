@@ -161,7 +161,7 @@
     body.arena-copa-facil .arena-app-tab:hover{color:var(--cf-green);background:#f5f8f6}
     body.arena-copa-facil .arena-app-tab.active{color:var(--cf-green-dark);background:#fff}
     body.arena-copa-facil .arena-app-tab.active:after{background:var(--cf-green)}
-    body.arena-copa-facil #arenaStats{border-color:var(--cf-border);background:#fff}
+    body.arena-copa-facil #arenaStats{grid-template-columns:repeat(4,minmax(0,1fr));border-color:var(--cf-border);background:#fff}
     body.arena-copa-facil #arenaStats .stat{border-color:var(--cf-border);background:#fff}
     body.arena-copa-facil #arenaStats .stat b{color:var(--cf-green)}
     body.arena-copa-facil #arenaStats .stat span{color:var(--cf-muted)}
@@ -180,6 +180,7 @@
       border-color:var(--cf-border);
       background:#fff;
     }
+    body.arena-copa-facil :is(.home-command,.arena-app-tabs){display:none!important}
     body.arena-copa-facil .home-command nav button{
       color:var(--cf-text);
       border-color:var(--cf-border);
@@ -205,6 +206,19 @@
     body.arena-copa-facil .arena-stat{border-color:var(--cf-border);background:#fff}
     body.arena-copa-facil .arena-stat b{color:var(--cf-green-dark)}
     body.arena-copa-facil .arena-club{color:var(--cf-text);border-color:var(--cf-border);background:#fff}
+    body.arena-copa-facil .arena-club-section-compact:not(.is-expanded) .arena-club:nth-child(n+7){display:none}
+    body.arena-copa-facil .copa-club-toggle,
+    body.arena-copa-facil .copa-team-register{
+      min-height:44px;
+      padding:0 14px;
+      color:var(--cf-green-dark);
+      border:1px solid #b9d0c0;
+      border-radius:6px;
+      background:#fff;
+      font-weight:800;
+    }
+    html:not(.arena-admin-authenticated) body.arena-copa-facil [data-page="teams"]>.form-card{display:none!important}
+    html.arena-admin-authenticated body.arena-copa-facil .copa-team-register{display:none}
 
     body.arena-copa-facil :is(input,select,textarea){
       color:var(--cf-text);
@@ -350,6 +364,10 @@
     body.arena-copa-facil #arenaBackToTop{color:#fff;border-color:var(--cf-green);background:var(--cf-green)}
 
     @media(max-width:720px){
+      body.arena-copa-facil button{min-height:44px}
+      body.arena-copa-facil :is(input:not([type="hidden"]),select,textarea){min-height:44px}
+      body.arena-copa-facil :is(.topbar button,.arena-sheet-close,.club-profile-close){min-width:44px}
+      body.arena-copa-facil .now-rotation button{min-height:7px}
       body.arena-copa-facil .topbar{background:var(--cf-green-dark);box-shadow:0 3px 10px rgba(20,67,39,.18)}
       body.arena-copa-facil .topbar :is(#arenaNotificationsBtn,#shareBtn,#cloudPanelBtn,#adminBtn,#memberLogoutBtn){color:#fff;background:rgba(255,255,255,.10)}
       body.arena-copa-facil .arena-page-back{color:#fff;border-color:rgba(255,255,255,.28);background:rgba(255,255,255,.10)}
@@ -369,6 +387,10 @@
       body.arena-copa-facil #giManager .gip-match-body{grid-template-columns:minmax(0,1fr) 91px minmax(0,1fr)}
     }
 
+    @media(max-width:900px){
+      body.arena-copa-facil #arenaStats{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+
     @media(prefers-color-scheme:dark){
       body.arena-visual-system.arena-copa-facil{color-scheme:light}
     }
@@ -379,8 +401,66 @@
     document.head.append(style);
   }
 
+  function simplifyTournamentClubs() {
+    const section = document.querySelector('#tournamentClubs');
+    if (!section) return;
+    const clubs = [...section.querySelectorAll('.arena-club')];
+    let toggle = section.querySelector('[data-copa-toggle-clubs]');
+
+    if (clubs.length <= 6) {
+      section.classList.remove('arena-club-section-compact', 'is-expanded');
+      toggle?.remove();
+      return;
+    }
+
+    section.classList.add('arena-club-section-compact');
+    if (!toggle) {
+      toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'copa-club-toggle';
+      toggle.dataset.copaToggleClubs = 'true';
+      section.querySelector('.section-head')?.append(toggle);
+    }
+
+    const expanded = section.classList.contains('is-expanded');
+    toggle.textContent = expanded ? 'Mostrar menos' : `Ver os ${clubs.length} clubes`;
+    toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+  }
+
+  function ensureTeamShortcut() {
+    const page = document.querySelector('[data-page="teams"]');
+    const heading = page?.querySelector(':scope > .section-head');
+    if (!page || !heading || heading.querySelector('.copa-team-register')) return;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'copa-team-register';
+    button.dataset.go = 'registrations';
+    button.textContent = 'Inscrever clube';
+    heading.append(button);
+  }
+
+  let simplifyFrame = 0;
+  function scheduleSimplify() {
+    if (simplifyFrame) return;
+    simplifyFrame = requestAnimationFrame(() => {
+      simplifyFrame = 0;
+      simplifyTournamentClubs();
+      ensureTeamShortcut();
+      keepLast();
+    });
+  }
+
   keepLast();
-  document.addEventListener('arena:bundle-loaded', () => requestAnimationFrame(keepLast));
-  window.addEventListener('arena:enhancements-ready', keepLast);
-  window.ArenaDOMEvents?.subscribe?.(keepLast, { selector: '#giManager,.gi-game,.stand-group,.arena-card' });
+  scheduleSimplify();
+  document.addEventListener('click', event => {
+    const toggle = event.target instanceof Element ? event.target.closest('[data-copa-toggle-clubs]') : null;
+    if (!toggle) return;
+    const section = toggle.closest('#tournamentClubs');
+    section?.classList.toggle('is-expanded');
+    simplifyTournamentClubs();
+  });
+  document.addEventListener('arena:bundle-loaded', scheduleSimplify);
+  window.addEventListener('arena:enhancements-ready', scheduleSimplify);
+  window.addEventListener('arena:permissions-updated', scheduleSimplify);
+  window.ArenaDOMEvents?.subscribe?.(scheduleSimplify, { selector: '#giManager,.gi-game,.stand-group,.arena-card,#tournamentClubs,[data-page="teams"]' });
 })();

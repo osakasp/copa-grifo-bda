@@ -515,6 +515,8 @@
   }
 
   function view() {
+    const canManage = adminActive();
+    if (!canManage && activeTab === 'config') activeTab = 'games';
     const list = games();
     const grouped = groups(list);
     const config = settings();
@@ -527,11 +529,11 @@
         ? configView(config, list)
         : gamesView(list, grouped);
 
-    return `<section id="giManager" data-tid="${escapeHtml(tournamentId)}">
-      <div class="gi-head"><div><span class="eyebrow">Central inteligente</span><h2>${escapeHtml(tournament()?.name || 'Campeonato')}</h2><p>Edite placares no próprio jogo e controle o formato da competição.</p></div><div><span id="giCloud">${db ? 'Sincronizado' : 'Modo local'}</span>${adminActive() ? '<button class="primary" data-add>+ Novo jogo</button>' : ''}</div></div>
+    return `<section id="giManager" data-tid="${escapeHtml(tournamentId)}" data-can-manage="${canManage ? 'true' : 'false'}">
+      <div class="gi-head"><div><span class="eyebrow">Competição</span><h2>${escapeHtml(tournament()?.name || 'Campeonato')}</h2><p>${canManage ? 'Atualize placares e controle o formato da competição.' : 'Jogos, resultados e chaveamento.'}</p></div>${canManage ? `<div><span id="giCloud">${db ? 'Sincronizado' : 'Modo local'}</span><button class="primary" data-add>+ Novo jogo</button></div>` : ''}</div>
       <div class="gi-metrics"><div><b>${list.length}</b><span>Jogos</span></div><div><b>${completed}</b><span>Finalizados</span></div><div><b>${goals}</b><span>Gols</span></div><div><b>${progress}%</b><span>Progresso</span></div></div>
       <div class="gi-progress" aria-label="${progress}% do campeonato concluído"><span style="width:${progress}%"></span></div>
-      <nav><button data-tab="games" class="${activeTab === 'games' ? 'active' : ''}">Jogos</button><button data-tab="bracket" class="${activeTab === 'bracket' ? 'active' : ''}">Chaveamento</button><button data-tab="config" class="${activeTab === 'config' ? 'active' : ''}">Configuração</button></nav>
+      <nav><button data-tab="games" class="${activeTab === 'games' ? 'active' : ''}">Jogos</button><button data-tab="bracket" class="${activeTab === 'bracket' ? 'active' : ''}">Chaveamento</button>${canManage ? `<button data-tab="config" class="${activeTab === 'config' ? 'active' : ''}">Configuração</button>` : ''}</nav>
       <div class="gi-content">${content}</div>
     </section>`;
   }

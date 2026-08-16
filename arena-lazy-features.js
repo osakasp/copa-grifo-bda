@@ -45,8 +45,8 @@
     ],
     tournamentDetail: [
       './confrontos-copa-grifo.js',
-      './gestor-inteligente.js?v=20260814-1',
-      './classificacao-automatica.js?v=20260730-1',
+      './gestor-inteligente.js?v=20260816-2',
+      './classificacao-automatica.js?v=20260816-2',
       './resultados-cards-pro.js?v=20260803-1',
       './placar-mobile-stability.js?v=20260803-1'
     ],
@@ -54,7 +54,7 @@
       './logo-liga.js',
       './midia-campeonato-refresh.js?v=20260726-1',
       './copa-francos-design-lite.js?v=20260726-2',
-      './captura-confrontos-simples.js?v=20260730-1',
+      './captura-confrontos-simples.js?v=20260816-2',
       './match-center-bda.js?v=20260814-1',
       './regulamento-interativo.js?v=20260814-1'
     ],
