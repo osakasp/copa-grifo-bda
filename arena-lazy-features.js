@@ -46,7 +46,7 @@
     tournamentDetail: [
       './confrontos-copa-grifo.js',
       './gestor-inteligente.js?v=20260816-4',
-      './classificacao-automatica.js?v=20260816-3',
+      './classificacao-automatica.js?v=20260816-4',
       './resultados-cards-pro.js?v=20260816-2',
       './placar-mobile-stability.js?v=20260803-1'
     ],
