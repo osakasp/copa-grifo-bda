@@ -62,7 +62,7 @@
     const item = tournament(tid);
     const id = norm(item?.id).replace(/[^a-z0-9]/g, '');
     const name = norm(item?.name).replace(/[^a-z0-9]/g, '');
-    return id === 'supercopa' || name.includes('supercopabda');
+    return id === 'supercopa' || id === 'supercopabda' || name.includes('supercopabda');
   }
 
   function matchStore() {
@@ -90,6 +90,9 @@
     store[tid] = list;
     localStorage.setItem(MATCH_KEY, JSON.stringify(store));
 
+    window.ArenaBDAMatchManager?.render?.();
+    window.dispatchEvent(new CustomEvent('arena:matches-updated', { detail: { tournamentId: tid } }));
+
     if (window.firebase && typeof firebase.firestore === 'function' && isAdmin()) {
       await firebase.firestore().collection('arenaData').doc(`confrontos-${tid}`).set({
         dataset: 'confrontos',
@@ -99,9 +102,6 @@
         updatedBy: currentEmail()
       });
     }
-
-    window.ArenaBDAMatchManager?.render?.();
-    window.dispatchEvent(new CustomEvent('arena:matches-updated', { detail: { tournamentId: tid } }));
   }
 
   function ensureModal() {
@@ -138,13 +138,17 @@
       </form>`;
 
     $('[data-aqs-close]', dialog)?.addEventListener('click', closeScore);
+    const form = $('[data-aqs-form]', dialog);
     $('[data-aqs-clear]', dialog)?.addEventListener('click', () => {
-      const form = $('[data-aqs-form]', dialog);
+      form.dataset.clearResult = 'true';
       form.elements.a.value = '';
       form.elements.b.value = '';
       form.elements.a.focus();
     });
-    $('[data-aqs-form]', dialog)?.addEventListener('submit', saveScore);
+    $$('.aqs-score input', dialog).forEach(input => {
+      input.addEventListener('input', () => { delete form.dataset.clearResult; });
+    });
+    form?.addEventListener('submit', saveScore);
   }
 
   function openScore(id, trigger) {
@@ -193,16 +197,25 @@
     const index = list.findIndex(game => String(game?.id) === id);
     if (index < 0) return notify('Jogo não encontrado');
 
-    list[index] = {
-      ...list[index],
-      a,
-      b,
-      pa: '',
-      pb: '',
-      wo: 'none',
-      status: a === '' ? 'Agendado' : 'Finalizado',
-      updated: Date.now()
-    };
+    const previous = list[index];
+    const previousA = numberOrEmpty(previous.a);
+    const previousB = numberOrEmpty(previous.b);
+    const explicitlyCleared = form.dataset.clearResult === 'true';
+    const scoreChanged = a !== previousA || b !== previousB;
+    const next = { ...previous, a, b, updated: Date.now() };
+
+    if (explicitlyCleared) {
+      Object.assign(next, { a: '', b: '', pa: '', pb: '', wo: 'none', status: 'Agendado' });
+    } else if (scoreChanged) {
+      next.wo = 'none';
+      next.status = a === '' ? 'Agendado' : 'Finalizado';
+      if (a === '' || a !== b) {
+        next.pa = '';
+        next.pb = '';
+      }
+    }
+
+    list[index] = next;
 
     const button = $('[data-aqs-save]', form);
     saving = true;
@@ -211,7 +224,7 @@
     try {
       window.ArenaBDAScoreSync?.begin?.(tid);
       await persistGames(tid, list);
-      notify(a === '' ? 'Placar limpo' : 'Resultado salvo');
+      notify(explicitlyCleared ? 'Placar limpo' : scoreChanged ? 'Resultado salvo' : 'Nenhuma alteração no placar');
       closeScore();
     } catch (error) {
       console.error(error);
@@ -350,16 +363,24 @@
       const buttons = $$(':scope > button', nav);
       buttons.forEach(button => {
         const tab = button.dataset.tab || '';
-        if (tab === 'games') button.textContent = 'Jogos';
-        else if (tab === 'bracket') button.textContent = 'Tabela';
-        else button.hidden = true;
+        const label = tab === 'games' ? 'Jogos' : tab === 'bracket' ? 'Tabela' : '';
+        if (label) {
+          if (button.textContent !== label) button.textContent = label;
+          if (button.hidden) button.hidden = false;
+        } else if (!button.hidden) {
+          button.hidden = true;
+        }
       });
     }
 
-    $$('#giManager [data-del]').forEach(button => { button.hidden = true; });
+    $$('#giManager [data-del]').forEach(button => {
+      if (!button.hidden) button.hidden = true;
+    });
     $$('#giManager [data-edit]').forEach(button => {
-      button.textContent = 'Resultado';
-      button.setAttribute('aria-label', 'Lançar resultado deste jogo');
+      if (button.textContent !== 'Resultado') button.textContent = 'Resultado';
+      if (button.getAttribute('aria-label') !== 'Lançar resultado deste jogo') {
+        button.setAttribute('aria-label', 'Lançar resultado deste jogo');
+      }
     });
 
     const head = $('.gi-head', manager);
