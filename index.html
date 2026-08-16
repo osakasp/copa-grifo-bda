@@ -18,66 +18,51 @@
   <link rel="apple-touch-icon" href="./favicon.svg">
   <link rel="manifest" href="./site.webmanifest">
   <title>Arena BDA | Campeonatos do Clã</title>
-  <style>
-    :root{--bg:#07100c;--surface:#101d16;--text:#f4f7f2;--muted:#9fb0a5;--gold:#d8b248;--gold-soft:#f2d77d;color-scheme:dark}
+  <style id="arenaBootStyles">
+    :root{--boot-bg:#07100c;--boot-text:#f4f7f2;--boot-muted:#9fb0a5;--boot-gold:#d8b248;--boot-gold-soft:#f2d77d;color-scheme:dark}
     *{box-sizing:border-box}
-    html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-    .stage{position:fixed;inset:0;background:var(--bg)}
-    #arenaFrame{position:absolute;inset:0;width:100%;height:100%;border:0;background:var(--bg);opacity:0;transition:opacity .22s ease}
-    #arenaFrame.ready{opacity:1}
-    .loading{position:absolute;inset:0;z-index:2;display:grid;place-items:center;padding:24px;text-align:center;background:var(--bg);transition:opacity .2s ease,visibility .2s ease}
-    .loading.hidden{opacity:0;visibility:hidden;pointer-events:none}
-    .loader-card{width:min(340px,92vw);padding:26px 22px;border:1px solid rgba(216,178,72,.22);border-radius:16px;background:#0b1710;box-shadow:none}
-    .griffin{width:68px;height:68px;margin:0 auto 15px;overflow:hidden;border:1px solid rgba(216,178,72,.30);border-radius:14px;background:#020503}
-    .griffin img{display:block;width:100%;height:100%;object-fit:cover}
-    h1{margin:0 0 8px;font-size:20px;line-height:1.15}
-    p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
-    .spinner{width:30px;height:30px;margin:18px auto 0;border:2px solid rgba(242,215,125,.12);border-top-color:var(--gold-soft);border-radius:50%;animation:spin .9s linear infinite}
-    .retry{display:none;width:100%;min-height:46px;margin-top:18px;border:0;border-radius:14px;color:#171107;background:linear-gradient(135deg,var(--gold-soft),var(--gold));font-weight:800;cursor:pointer}
-    .retry.show{display:block}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    @media(prefers-reduced-motion:reduce){#arenaFrame,.loading{transition:none}.spinner{animation-duration:1.6s}}
+    #arenaBoot{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;padding:24px;text-align:center;background:var(--boot-bg);color:var(--boot-text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;transition:opacity .2s ease,visibility .2s ease}
+    #arenaBoot.hidden{opacity:0;visibility:hidden;pointer-events:none}
+    #arenaBoot .loader-card{width:min(340px,92vw);padding:26px 22px;border:1px solid rgba(216,178,72,.22);border-radius:16px;background:#0b1710}
+    #arenaBoot .griffin{width:68px;height:68px;margin:0 auto 15px;overflow:hidden;border:1px solid rgba(216,178,72,.30);border-radius:14px;background:#020503}
+    #arenaBoot .griffin img{display:block;width:100%;height:100%;object-fit:cover}
+    #arenaBoot h1{margin:0 0 8px;font-size:20px;line-height:1.15}
+    #arenaBoot p{margin:0;color:var(--boot-muted);font-size:13px;line-height:1.5}
+    #arenaBoot .spinner{width:30px;height:30px;margin:18px auto 0;border:2px solid rgba(242,215,125,.12);border-top-color:var(--boot-gold-soft);border-radius:50%;animation:arenaBootSpin .9s linear infinite}
+    #arenaBoot .retry{display:none;width:100%;min-height:46px;margin-top:18px;border:0;border-radius:14px;color:#171107;background:linear-gradient(135deg,var(--boot-gold-soft),var(--boot-gold));font-weight:800;cursor:pointer}
+    #arenaBoot .retry.show{display:block}
+    @keyframes arenaBootSpin{to{transform:rotate(360deg)}}
+    @media(prefers-reduced-motion:reduce){#arenaBoot{transition:none}#arenaBoot .spinner{animation-duration:1.6s}}
   </style>
 </head>
 <body>
-  <main class="stage">
-    <section class="loading" id="loadingPanel" aria-live="polite">
-      <div class="loader-card">
-        <div class="griffin"><img src="./favicon.svg" alt="Escudo oficial Arena BDA" width="76" height="76" decoding="async" fetchpriority="high"></div>
-        <h1 id="loadingTitle">Carregando a Arena BDA</h1>
-        <p id="loadingMessage">Preparando campeonatos, clubes e resultados...</p>
-        <div class="spinner" id="spinner" aria-hidden="true"></div>
-        <button class="retry" id="retryButton" type="button">Tentar novamente</button>
-      </div>
-    </section>
-    <iframe id="arenaFrame" title="Arena BDA" src="about:blank" data-src="./preview-v2.html" allow="clipboard-write; fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe>
-  </main>
+  <section id="arenaBoot" aria-live="polite" aria-busy="true">
+    <div class="loader-card">
+      <div class="griffin"><img src="./favicon.svg" alt="Escudo oficial Arena BDA" width="68" height="68" decoding="async" fetchpriority="high"></div>
+      <h1 id="loadingTitle">Carregando a Arena BDA</h1>
+      <p id="loadingMessage">Preparando campeonatos, clubes e resultados...</p>
+      <div class="spinner" id="spinner" aria-hidden="true"></div>
+      <button class="retry" id="retryButton" type="button">Tentar novamente</button>
+    </div>
+  </section>
+
   <script>
     (() => {
       'use strict';
 
-      const frame = document.getElementById('arenaFrame');
-      const panel = document.getElementById('loadingPanel');
-      const title = document.getElementById('loadingTitle');
-      const message = document.getElementById('loadingMessage');
-      const spinner = document.getElementById('spinner');
-      const retryButton = document.getElementById('retryButton');
-      const frameSource = frame.dataset.src || './preview-v2.html';
-
+      const previewSource = './preview-v2.html?v=20260816-1';
       const firebaseScripts = [
         'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js',
         'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js',
         'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js',
         'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js'
       ];
-
       const coreScripts = [
         './arena-runtime.bundle.js?v=20260814-4',
         './arena-bda.js?v=20260814-1',
         './arena-lazy-features.js?v=20260815-1',
         './arena-interface.bundle.js?v=20260815-2'
       ];
-
       const cloudScripts = [
         './firebase-auth.js?v=20260805-2',
         './notificacoes-bda.js?v=20260801-2',
@@ -88,19 +73,28 @@
         './site-health.js?v=20260814-2'
       ];
 
-      let loadingTimeoutId = 0;
+      let bootTimeoutId = 0;
       let loadGeneration = 0;
-      let expectedToken = '';
+      let cloudPromise = null;
+      let cloudReady = false;
+      let lastInteractionAt = performance.now();
+      let cloudIdleTimer = 0;
+
+      const boot = document.getElementById('arenaBoot');
+      const title = document.getElementById('loadingTitle');
+      const message = document.getElementById('loadingMessage');
+      const spinner = document.getElementById('spinner');
+      const retryButton = document.getElementById('retryButton');
 
       function setLoadingState() {
-        panel.classList.remove('hidden');
-        frame.classList.remove('ready');
+        boot.classList.remove('hidden');
+        boot.setAttribute('aria-busy', 'true');
         retryButton.classList.remove('show');
         spinner.hidden = false;
         title.textContent = 'Carregando a Arena BDA';
         message.textContent = 'Preparando campeonatos, clubes e resultados...';
-        clearTimeout(loadingTimeoutId);
-        loadingTimeoutId = window.setTimeout(() => {
+        clearTimeout(bootTimeoutId);
+        bootTimeoutId = window.setTimeout(() => {
           title.textContent = 'A Arena está demorando para abrir';
           message.textContent = 'A conexão pode estar instável. Você pode tentar novamente sem fechar a página.';
           spinner.hidden = true;
@@ -109,9 +103,9 @@
       }
 
       function showLoadError(detail = 'Verifique sua conexão e tente novamente.') {
-        clearTimeout(loadingTimeoutId);
-        panel.classList.remove('hidden');
-        frame.classList.remove('ready');
+        clearTimeout(bootTimeoutId);
+        boot.classList.remove('hidden');
+        boot.setAttribute('aria-busy', 'false');
         title.textContent = 'Não foi possível abrir a Arena';
         message.textContent = detail;
         spinner.hidden = true;
@@ -121,19 +115,18 @@
       function queueScript(doc, src, timeoutMs = 15000, priority = 'auto') {
         return new Promise((resolve, reject) => {
           const absoluteSrc = new URL(src, doc.baseURI).href;
-          const existing = Array.from(doc.scripts).find(script => script.dataset.arenaSrc === absoluteSrc);
+          const existing = Array.from(doc.scripts).find(script => script.dataset.arenaSrc === absoluteSrc || script.src === absoluteSrc);
+
           if (existing) {
             if (existing.dataset.arenaLoaded === 'true') {
               resolve({ src, reused: true });
               return;
             }
 
-            const timeoutId = window.setTimeout(
-              () => reject(new Error(`Tempo esgotado ao aguardar ${src}`)),
-              timeoutMs
-            );
+            const timeoutId = window.setTimeout(() => reject(new Error(`Tempo esgotado ao aguardar ${src}`)), timeoutMs);
             existing.addEventListener('load', () => {
               clearTimeout(timeoutId);
+              existing.dataset.arenaLoaded = 'true';
               resolve({ src, reused: true });
             }, { once: true });
             existing.addEventListener('error', () => {
@@ -175,176 +168,259 @@
         });
       }
 
-      function yieldFrame(doc) {
+      function yieldFrame() {
         return new Promise(resolve => {
-          const targetWindow = doc.defaultView || window;
           let resolved = false;
           const finish = () => {
             if (resolved) return;
             resolved = true;
             resolve();
           };
-          targetWindow.requestAnimationFrame(() => targetWindow.requestAnimationFrame(finish));
-          targetWindow.setTimeout(finish, 120);
+          requestAnimationFrame(() => requestAnimationFrame(finish));
+          window.setTimeout(finish, 120);
         });
       }
 
-      async function loadOrderedBatch(doc, scripts, failures, timeoutMs) {
+      async function loadOrderedBatch(scripts, failures, timeoutMs) {
         for (let index = 0; index < scripts.length; index += 1) {
           const src = scripts[index];
-          await queueScript(doc, src, timeoutMs + (index * 250), index < 6 ? 'high' : 'auto').catch(error => {
+          await queueScript(document, src, timeoutMs + (index * 250), index < 6 ? 'high' : 'auto').catch(error => {
             failures.push({ src, error });
             console.error(`[Arena BDA] Falha no módulo ${src}`, error);
           });
-          if (index < scripts.length - 1) await yieldFrame(doc);
+          if (index < scripts.length - 1) await yieldFrame();
         }
       }
 
-      async function enhanceArena(generation) {
-        const win = frame.contentWindow;
-        const doc = frame.contentDocument;
-        if (!win || !doc || generation !== loadGeneration) return;
-        const startedAt = window.performance.now();
+      function clearPreviewHead() {
+        document.head.querySelectorAll('[data-arena-preview-head="true"]').forEach(node => node.remove());
+      }
 
-        doc.documentElement.dataset.theme = 'dark';
-        doc.documentElement.style.colorScheme = 'dark';
-        try { win.localStorage.removeItem('arena-bda-theme'); } catch {}
+      function copyPreviewHead(sourceDoc) {
+        clearPreviewHead();
+        const previewBase = new URL(previewSource, location.href);
 
-        const coreFailures = [];
+        sourceDoc.head.querySelectorAll('link[rel="stylesheet"],link[rel="preconnect"],style').forEach(node => {
+          const clone = node.cloneNode(true);
+          clone.dataset.arenaPreviewHead = 'true';
+
+          if (clone.tagName === 'LINK' && clone.hasAttribute('href')) {
+            clone.setAttribute('href', new URL(clone.getAttribute('href'), previewBase).href);
+          }
+
+          document.head.appendChild(clone);
+        });
+      }
+
+      function copyBodyAttributes(sourceBody) {
+        for (const name of document.body.getAttributeNames()) document.body.removeAttribute(name);
+        for (const name of sourceBody.getAttributeNames()) {
+          document.body.setAttribute(name, sourceBody.getAttribute(name));
+        }
+      }
+
+      async function executePreviewScripts(sourceScripts) {
+        const previewBase = new URL(previewSource, location.href);
+
+        for (const sourceScript of sourceScripts) {
+          const script = document.createElement('script');
+
+          for (const attr of sourceScript.attributes) {
+            script.setAttribute(attr.name, attr.value);
+          }
+
+          if (sourceScript.hasAttribute('src')) {
+            script.src = new URL(sourceScript.getAttribute('src'), previewBase).href;
+            script.async = false;
+
+            await new Promise((resolve, reject) => {
+              script.addEventListener('load', resolve, { once: true });
+              script.addEventListener('error', reject, { once: true });
+              document.body.appendChild(script);
+            });
+          } else {
+            script.textContent = sourceScript.textContent;
+            document.body.appendChild(script);
+          }
+        }
+      }
+
+      async function ensureCloud(reason = 'feature') {
+        if (cloudPromise) return cloudPromise;
+
+        const generation = loadGeneration;
         const cloudFailures = [];
-        let cloudPromise = null;
-        let cloudReady = false;
-        let lastInteractionAt = win.performance.now();
-        let cloudIdleTimer = 0;
 
-        const noteInteraction = () => { lastInteractionAt = win.performance.now(); };
+        cloudPromise = (async () => {
+          document.documentElement.dataset.arenaCloud = 'loading';
+          await loadOrderedBatch(firebaseScripts, cloudFailures, 12000);
+          if (generation !== loadGeneration) return;
+
+          await loadOrderedBatch(cloudScripts, cloudFailures, 15000);
+          if (generation !== loadGeneration) return;
+
+          cloudReady = true;
+          document.documentElement.dataset.arenaCloud = cloudFailures.length ? 'partial' : 'ready';
+          window.dispatchEvent(new CustomEvent('arena:cloud-ready', {
+            detail: { reason, failures: cloudFailures.map(item => item.src) }
+          }));
+        })();
+
+        return cloudPromise;
+      }
+
+      function installCloudTriggers() {
+        window.ArenaBDAEnsureCloud = reason => ensureCloud(reason || 'feature');
+
+        const noteInteraction = () => { lastInteractionAt = performance.now(); };
         ['pointerdown', 'touchstart', 'keydown', 'scroll'].forEach(type => {
-          doc.addEventListener(type, noteInteraction, { passive: true, capture: true });
+          document.addEventListener(type, noteInteraction, { passive: true, capture: true });
         });
 
-        const ensureCloud = reason => {
-          if (cloudPromise) return cloudPromise;
-          cloudPromise = (async () => {
-            doc.documentElement.dataset.arenaCloud = 'loading';
-            await loadOrderedBatch(doc, firebaseScripts, cloudFailures, 12000);
-            if (generation !== loadGeneration) return;
-            await loadOrderedBatch(doc, cloudScripts, cloudFailures, 15000);
-            if (generation !== loadGeneration) return;
-            cloudReady = true;
-            doc.documentElement.dataset.arenaCloud = cloudFailures.length ? 'partial' : 'ready';
-            win.dispatchEvent(new win.CustomEvent('arena:cloud-ready', {
-              detail: { reason, failures: cloudFailures.map(item => item.src) }
-            }));
-          })();
-          return cloudPromise;
-        };
+        document.addEventListener('click', event => {
+          const element = event.target instanceof Element ? event.target : null;
+          const cloudFeature = element?.closest(
+            '[data-go="community"],[data-mobile-go="community"],[data-sheet-go="community"],' +
+            '[data-go="feedback"],[data-mobile-go="feedback"],[data-sheet-go="feedback"]'
+          );
 
-        win.ArenaBDAEnsureCloud = reason => ensureCloud(reason || 'feature');
+          if (cloudFeature && !cloudReady) {
+            ensureCloud(
+              cloudFeature.dataset.go ||
+              cloudFeature.dataset.mobileGo ||
+              cloudFeature.dataset.sheetGo ||
+              'feature'
+            ).catch(error => {
+              console.error('[Arena BDA] Falha ao preparar recurso online', error);
+            });
+          }
 
-        doc.addEventListener('click', event => {
-          const cloudFeature = event.target instanceof win.Element
-            && event.target.closest('[data-go="community"],[data-mobile-go="community"],[data-sheet-go="community"],[data-go="feedback"],[data-mobile-go="feedback"],[data-sheet-go="feedback"]');
-          if (cloudFeature && !cloudReady) ensureCloud(cloudFeature.dataset.go || cloudFeature.dataset.mobileGo || cloudFeature.dataset.sheetGo || 'feature').catch(error => {
-            console.error('[Arena BDA] Falha ao preparar recurso online', error);
-          });
-
-          const adminButton = event.target instanceof win.Element && event.target.closest('#adminBtn');
+          const adminButton = element?.closest('#adminBtn');
           if (!adminButton || cloudReady) return;
+
           event.preventDefault();
           event.stopImmediatePropagation();
           adminButton.setAttribute('aria-busy', 'true');
           adminButton.textContent = 'CARREGANDO...';
-          ensureCloud('admin').then(() => doc.getElementById('adminBtn')?.click()).catch(error => {
-            console.error('[Arena BDA] Falha ao preparar login', error);
-          });
+
+          ensureCloud('admin')
+            .then(() => document.getElementById('adminBtn')?.click())
+            .catch(error => console.error('[Arena BDA] Falha ao preparar login', error));
         }, true);
+      }
 
-        await loadOrderedBatch(doc, coreScripts, coreFailures, 15000);
+      function scheduleCloudWhenQuiet(delay = 8000) {
+        clearTimeout(cloudIdleTimer);
 
+        cloudIdleTimer = window.setTimeout(() => {
+          if (cloudPromise) return;
+
+          const quietFor = performance.now() - lastInteractionAt;
+          if (document.hidden || quietFor < 4000) {
+            scheduleCloudWhenQuiet(Math.max(1200, 4000 - quietFor));
+            return;
+          }
+
+          const startCloudWhenIdle = () => {
+            if (performance.now() - lastInteractionAt < 3000) {
+              scheduleCloudWhenQuiet(1800);
+              return;
+            }
+
+            ensureCloud('idle').catch(error => {
+              console.error('[Arena BDA] Recursos online não carregaram', error);
+            });
+          };
+
+          if ('requestIdleCallback' in window) {
+            window.requestIdleCallback(startCloudWhenIdle, { timeout: 8000 });
+          } else {
+            startCloudWhenIdle();
+          }
+        }, delay);
+      }
+
+      async function mountArena(generation) {
+        setLoadingState();
+
+        const response = await fetch(previewSource, { cache: 'no-cache' });
+        if (!response.ok) throw new Error(`Falha HTTP ${response.status} ao carregar a Arena`);
+
+        const previewHtml = await response.text();
         if (generation !== loadGeneration) return;
 
-        doc.documentElement.dataset.arenaEnhanced = coreFailures.length ? 'partial' : 'true';
-        doc.documentElement.dataset.arenaLoadMs = String(Math.round(window.performance.now() - startedAt));
-        win.dispatchEvent(new win.CustomEvent('arena:enhanced', {
-          detail: {
-            failures: coreFailures.map(item => item.src),
-            loadMs: Number(doc.documentElement.dataset.arenaLoadMs)
-          }
-        }));
-        if (coreFailures.length && typeof win.toast === 'function') {
-          win.toast('A Arena abriu, mas alguns recursos não carregaram');
+        const sourceDoc = new DOMParser().parseFromString(previewHtml, 'text/html');
+        if (!sourceDoc.querySelector('.app-shell')) {
+          throw new Error('A página principal não respondeu corretamente.');
         }
 
-        doc.documentElement.dataset.arenaEnhancements = 'ready';
-        win.dispatchEvent(new win.CustomEvent('arena:enhancements-ready', {
+        const sourceScripts = Array.from(sourceDoc.querySelectorAll('script'));
+        sourceScripts.forEach(script => script.remove());
+
+        copyPreviewHead(sourceDoc);
+        copyBodyAttributes(sourceDoc.body);
+
+        document.body.replaceChildren(
+          ...Array.from(sourceDoc.body.childNodes).map(node => node.cloneNode(true)),
+          boot
+        );
+
+        await executePreviewScripts(sourceScripts);
+        if (generation !== loadGeneration) return;
+
+        installCloudTriggers();
+
+        document.documentElement.dataset.theme = 'dark';
+        document.documentElement.style.colorScheme = 'dark';
+
+        clearTimeout(bootTimeoutId);
+        boot.setAttribute('aria-busy', 'false');
+        boot.classList.add('hidden');
+        window.setTimeout(() => {
+          boot.remove();
+          document.getElementById('arenaBootStyles')?.remove();
+        }, 260);
+
+        const coreFailures = [];
+        const startedAt = performance.now();
+
+        await loadOrderedBatch(coreScripts, coreFailures, 15000);
+        if (generation !== loadGeneration) return;
+
+        document.documentElement.dataset.arenaEnhanced = coreFailures.length ? 'partial' : 'true';
+        document.documentElement.dataset.arenaLoadMs = String(Math.round(performance.now() - startedAt));
+
+        try { localStorage.removeItem('arena-bda-theme'); } catch {}
+
+        window.dispatchEvent(new CustomEvent('arena:enhanced', {
+          detail: {
+            failures: coreFailures.map(item => item.src),
+            loadMs: Number(document.documentElement.dataset.arenaLoadMs)
+          }
+        }));
+
+        document.documentElement.dataset.arenaEnhancements = 'ready';
+        window.dispatchEvent(new CustomEvent('arena:enhancements-ready', {
           detail: { failures: [] }
         }));
 
-        const scheduleCloudWhenQuiet = (delay = 1200) => {
-          clearTimeout(cloudIdleTimer);
-          cloudIdleTimer = win.setTimeout(() => {
-            if (cloudPromise || generation !== loadGeneration) return;
-            const quietFor = win.performance.now() - lastInteractionAt;
-            if (doc.hidden || quietFor < 4000) {
-              scheduleCloudWhenQuiet(Math.max(1200, 4000 - quietFor));
-              return;
-            }
-            const startCloudWhenIdle = () => {
-              if (win.performance.now() - lastInteractionAt < 3000) {
-                scheduleCloudWhenQuiet(1800);
-                return;
-              }
-              ensureCloud('idle').catch(error => {
-                console.error('[Arena BDA] Recursos online não carregaram', error);
-              });
-            };
-            if ('requestIdleCallback' in win) win.requestIdleCallback(startCloudWhenIdle, { timeout: 8000 });
-            else startCloudWhenIdle();
-          }, delay);
-        };
-        scheduleCloudWhenQuiet(8000);
-      }
-
-      function validArenaDocument() {
-        try {
-          const win = frame.contentWindow;
-          const doc = frame.contentDocument;
-          if (!win || !doc || win.location.href === 'about:blank') return false;
-          const token = new URL(win.location.href).searchParams.get('arenaLoad');
-          return token === expectedToken && Boolean(doc.querySelector('.app-shell'));
-        } catch (error) {
-          console.error('[Arena BDA] Não foi possível validar o conteúdo carregado', error);
-          return false;
+        if (coreFailures.length && typeof window.toast === 'function') {
+          window.toast('A Arena abriu, mas alguns recursos não carregaram');
         }
+
+        scheduleCloudWhenQuiet();
       }
 
       function startLoad() {
         loadGeneration += 1;
-        expectedToken = `${Date.now()}-${loadGeneration}`;
-        setLoadingState();
-        const url = new URL(frameSource, window.location.href);
-        url.searchParams.set('arenaLoad', expectedToken);
-        frame.src = url.href;
+        cloudPromise = null;
+        cloudReady = false;
+
+        mountArena(loadGeneration).catch(error => {
+          console.error('[Arena BDA] Falha ao iniciar a aplicação', error);
+          showLoadError(error?.message || 'Verifique sua conexão e tente novamente.');
+        });
       }
-
-      frame.addEventListener('load', () => {
-        if (!validArenaDocument()) {
-          let isBlank = false;
-          try { isBlank = frame.contentWindow?.location?.href === 'about:blank'; } catch {}
-          if (!isBlank) showLoadError('A página principal não respondeu corretamente. Tente carregar outra vez.');
-          return;
-        }
-
-        const generation = loadGeneration;
-        clearTimeout(loadingTimeoutId);
-        frame.classList.add('ready');
-        panel.classList.add('hidden');
-        enhanceArena(generation);
-      });
-
-      frame.addEventListener('error', () => {
-        showLoadError();
-      });
 
       retryButton.addEventListener('click', startLoad);
       startLoad();
