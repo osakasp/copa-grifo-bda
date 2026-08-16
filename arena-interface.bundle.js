@@ -1858,13 +1858,13 @@
 (() => {
   'use strict';
 
-  const VERSION = '2026.08.16-copa-facil-interface-simple-home';
+  const VERSION = '2026.08.16-copa-facil-interface-dark';
   const STYLE_ID = 'arenaCopaFacilInterfaceStyles';
-  const THEME_COLOR = '#176b3d';
+  const THEME_COLOR = '#07100c';
 
   document.documentElement.dataset.arenaInterface = VERSION;
-  document.documentElement.dataset.theme = 'light';
-  document.documentElement.style.colorScheme = 'light';
+  document.documentElement.dataset.theme = 'dark';
+  document.documentElement.style.colorScheme = 'dark';
   document.body.classList.add('arena-copa-facil');
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLOR);
 
@@ -1872,34 +1872,35 @@
   style.id = STYLE_ID;
   style.textContent = `
     body.arena-visual-system.arena-copa-facil{
-      --cf-green:#197847;
-      --cf-green-dark:#0f5f35;
-      --cf-green-soft:#e5f2e9;
-      --cf-gold:#c49322;
-      --cf-bg:#edf2ee;
-      --cf-surface:#ffffff;
-      --cf-surface-alt:#f6f8f6;
-      --cf-border:#d8e1da;
-      --cf-border-strong:#bccbc0;
-      --cf-text:#1b2720;
-      --cf-muted:#68766d;
+      --cf-green:#35c979;
+      --cf-green-dark:#2fbd70;
+      --cf-green-soft:#143426;
+      --cf-gold:#d8b248;
+      --cf-bg:#07100c;
+      --cf-surface:#0d1812;
+      --cf-surface-alt:#122119;
+      --cf-border:#26392d;
+      --cf-border-strong:#3b5545;
+      --cf-text:#f2f6f3;
+      --cf-muted:#9eafa3;
       --arena-accent:var(--cf-green)!important;
-      --arena-accent-rgb:25,120,71!important;
+      --arena-accent-rgb:53,201,121!important;
       --bg:var(--cf-bg)!important;
-      --bg-soft:#e7ede8!important;
+      --bg-soft:#0a1510!important;
       --surface:var(--cf-surface)!important;
       --surface-2:var(--cf-surface-alt)!important;
-      --surface-3:#edf3ef!important;
+      --surface-3:#17281e!important;
       --line:var(--cf-border)!important;
       --line-strong:var(--cf-border-strong)!important;
       --text:var(--cf-text)!important;
       --muted:var(--cf-muted)!important;
-      --gold:var(--cf-green)!important;
-      --gold-soft:var(--cf-green)!important;
-      --green:#16844a!important;
-      --red:#c8444f!important;
+      --gold:var(--cf-gold)!important;
+      --gold-soft:#f0ce70!important;
+      --green:var(--cf-green)!important;
+      --red:#ff6978!important;
       color:var(--cf-text);
       background:var(--cf-bg);
+      color-scheme:dark;
     }
 
     body.arena-copa-facil>.app-shell{background:var(--cf-bg)}
@@ -2271,8 +2272,130 @@
       body.arena-copa-facil .arena-card .arena-open{grid-column:1;grid-row:auto;min-height:44px}
     }
 
+    /* Tema escuro: mantém a interface simples e remove superfícies claras residuais. */
+    body.arena-copa-facil .topbar,
+    body.arena-copa-facil .pro-admin-bar,
+    body.arena-copa-facil .stand-group>header,
+    body.arena-copa-facil .aqs-head,
+    body.arena-copa-facil .asmgr-sheet>header{background:#0a3d27}
+    body.arena-copa-facil [data-page="home"] .hero,
+    body.arena-copa-facil .arena-page-hero,
+    body.arena-copa-facil #arenaDetail .arena-hero{
+      border-color:#1a7046;
+      background:linear-gradient(135deg,#125b38,#0a3d27 72%);
+    }
+    body.arena-copa-facil .brand-mark{background:#fff}
+    body.arena-copa-facil .topbar .admin-btn.active{color:#07100c;background:#fff}
+    body.arena-copa-facil .secondary,
+    body.arena-copa-facil .danger{
+      color:var(--cf-text);
+      border-color:var(--cf-border-strong);
+      background:var(--cf-surface-alt);
+    }
+    body.arena-copa-facil .ghost{color:var(--cf-green);border-color:var(--cf-border-strong)}
+    body.arena-copa-facil .danger{color:#ff8994}
+    body.arena-copa-facil :where(.card,.form-card,.admin-panel,.arena-card,.champion-card,.team-card,.stat,.arena-stat,.rank-podium-card,.rank-hall article,.rank-rules article,.league-groups-preview article,.history-values article,.history-timeline article,.history-gallery-card,.registration-card,.registration-admin-card,.auto-standing-card,.champion-ranking-row,.champion-ranking-podium-card),
+    body.arena-copa-facil :is(.arena-app-tabs,#arenaStats,#arenaStats .stat,.arena-home-card,.home-command,.now-feature,.now-list,.arena-catalog-head .arena-toolbar,.arena-detail-nav,.arena-card,.arena-card .arena-body,.arena-stat,.arena-club),
+    body.arena-copa-facil :is(.modal,.arena-notification-panel,.arena-notification-editor,.arena-nav-sheet,.arena-command-panel),
+    body.arena-copa-facil :is(.stand-highlights article,.stand-group,.aqs-dialog,.asmgr-sheet){
+      color:var(--cf-text);
+      border-color:var(--cf-border);
+      background:var(--cf-surface);
+      box-shadow:none;
+    }
+    body.arena-copa-facil :where(.card,.arena-card,.champion-card,.team-card,.stat,.arena-stat):hover{
+      border-color:var(--cf-border-strong);
+      background:var(--cf-surface-alt);
+    }
+    body.arena-copa-facil :is(.arena-cover,.champion-banner-frame,.history-gallery-media){background:#13231a}
+    body.arena-copa-facil .live-top,
+    body.arena-copa-facil .arena-home-card button,
+    body.arena-copa-facil .home-command nav button,
+    body.arena-copa-facil .arena-command-search input,
+    body.arena-copa-facil .asmgr-card{
+      color:var(--cf-text);
+      border-color:var(--cf-border);
+      background:var(--cf-surface-alt);
+    }
+    body.arena-copa-facil .arena-app-tab{color:var(--cf-muted);background:var(--cf-surface)}
+    body.arena-copa-facil .arena-app-tab:hover{color:var(--cf-green);background:var(--cf-surface-alt)}
+    body.arena-copa-facil .arena-app-tab.active{color:var(--cf-green);background:var(--cf-surface)}
+    body.arena-copa-facil .arena-filter{color:var(--cf-muted)}
+    body.arena-copa-facil .arena-detail-nav button:hover{color:var(--cf-green);background:var(--cf-green-soft)}
+    body.arena-copa-facil .arena-card .arena-open,
+    body.arena-copa-facil .copa-club-toggle,
+    body.arena-copa-facil .copa-team-register,
+    body.arena-copa-facil .asmgr-options button{
+      color:var(--cf-green);
+      border-color:var(--cf-border-strong);
+      background:var(--cf-surface-alt);
+    }
+    body.arena-copa-facil :is(input,select,textarea),
+    body.arena-copa-facil .aqs-score input{
+      color:var(--cf-text);
+      border-color:var(--cf-border-strong);
+      background:var(--cf-surface-alt);
+    }
+    body.arena-copa-facil :is(input,select,textarea)::placeholder{color:#7f9286}
+    body.arena-copa-facil .arena-command-item:hover{border-color:var(--cf-border-strong);background:var(--cf-green-soft)}
+    body.arena-copa-facil #giManager .gi-metrics>div,
+    body.arena-copa-facil #giManager>nav,
+    body.arena-copa-facil #giManager .gip-card,
+    body.arena-copa-facil #giManager .gi-game,
+    body.arena-copa-facil #giManager .gip-team,
+    body.arena-copa-facil #giManager .gip-actions,
+    body.arena-copa-facil #giManager .gi-bracket-progress>span,
+    body.arena-copa-facil #giManager .gi-bracket article,
+    body.arena-copa-facil #giManager .gi-config section{
+      color:var(--cf-text)!important;
+      border-color:var(--cf-border)!important;
+      background:var(--cf-surface)!important;
+    }
+    body.arena-copa-facil #giManager .gip-card-head,
+    body.arena-copa-facil #giManager .gip-scoreboard,
+    body.arena-copa-facil #giManager .gip-aggregate,
+    body.arena-copa-facil #giManager .gip-note,
+    body.arena-copa-facil #giManager .gip-actions button,
+    body.arena-copa-facil #giManager .gi-editor{
+      color:var(--cf-text)!important;
+      border-color:var(--cf-border)!important;
+      background:var(--cf-surface-alt)!important;
+    }
+    body.arena-copa-facil #giManager .gip-scoreboard .gi-score,
+    body.arena-copa-facil #giManager .gip-scoreboard .gi-score-input,
+    body.arena-copa-facil #giManager .gip-actions button,
+    body.arena-copa-facil #giManager .gi-phase h3,
+    body.arena-copa-facil #giManager .gi-bracket section>h3{color:var(--cf-green)!important}
+    body.arena-copa-facil #giManager .gip-scoreboard .gi-score-input,
+    body.arena-copa-facil #giManager .gi-editor :is(input,select,textarea){
+      border-color:var(--cf-border-strong)!important;
+      background:var(--cf-surface)!important;
+    }
+    body.arena-copa-facil .stand-group th{border-color:#2d754c;background:#135c39}
+    body.arena-copa-facil .stand-group td{color:var(--cf-text);border-color:var(--cf-border);background:var(--cf-surface)}
+    body.arena-copa-facil .stand-group tbody tr:hover td{background:var(--cf-surface-alt)}
+    body.arena-copa-facil .stand-points{color:var(--cf-green)!important}
+
+    @media(min-width:980px){
+      body.arena-copa-facil .bottom-nav.arena-side-nav{border-color:var(--cf-border);background:var(--cf-surface);box-shadow:none}
+      body.arena-copa-facil .arena-side-heading{color:#7f9286}
+      body.arena-copa-facil .arena-side-nav .nav-btn{color:var(--cf-muted)}
+      body.arena-copa-facil .arena-side-nav .nav-btn i{color:var(--cf-muted);background:var(--cf-surface-alt)}
+      body.arena-copa-facil .arena-side-nav .nav-btn.active{color:var(--cf-green);border-color:var(--cf-border-strong);border-left-color:var(--cf-green);background:var(--cf-green-soft)}
+      body.arena-copa-facil .arena-side-nav .nav-btn.active .arena-nav-copy small{color:var(--cf-muted)}
+    }
+
+    @media(max-width:720px){
+      body.arena-copa-facil .arena-mobile-nav{border-color:var(--cf-border);background:var(--cf-surface);box-shadow:0 -4px 16px rgba(0,0,0,.28)}
+      body.arena-copa-facil .arena-mobile-item{color:var(--cf-muted)}
+      body.arena-copa-facil .arena-mobile-item.active{color:var(--cf-green)}
+      body.arena-copa-facil #arenaStats .stat,
+      body.arena-copa-facil .arena-nav-sheet,
+      body.arena-copa-facil .arena-sheet-item{color:var(--cf-text);background:var(--cf-surface)}
+    }
+
     @media(prefers-color-scheme:dark){
-      body.arena-visual-system.arena-copa-facil{color-scheme:light}
+      body.arena-visual-system.arena-copa-facil{color-scheme:dark}
     }
   `;
 
