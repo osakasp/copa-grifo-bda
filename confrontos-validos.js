@@ -19,7 +19,9 @@
     if (groupName(game)) return 'group';
     if (
       id.startsWith('liga-')
+      || /^l\d+$/.test(id)
       || phase.startsWith('liga')
+      || /^rodada\s+\d+$/.test(phase)
       || phase.includes('classificacao geral')
       || note.includes('classificacao geral')
     ) return 'league';
@@ -39,6 +41,36 @@
       if (name && teams.size) map.set(name, teams);
     });
     return map;
+  }
+
+  function displayGroupName(name) {
+    const match = String(name || '').match(/^grupo\s+(.+)$/i);
+    return match ? `Grupo ${match[1].toUpperCase()}` : String(name || 'Grupo');
+  }
+
+  function configuredGroupForGame(game, groups) {
+    const home = normalize(game?.ta);
+    const away = normalize(game?.tb);
+    if (!home || !away) return '';
+    for (const [name, teams] of groups) {
+      if (teams.has(home) && teams.has(away)) return name;
+    }
+    return '';
+  }
+
+  function adaptLeagueScheduleToGroups(list, groups) {
+    return list.flatMap(game => {
+      const group = configuredGroupForGame(game, groups);
+      if (!group) return [];
+      const label = displayGroupName(group);
+      const round = `${game?.phase || ''} ${game?.note || ''}`.match(/Rodada\s+(\d+)/i)?.[1] || '';
+      return [{
+        ...game,
+        group: label,
+        phase: round ? `${label} • Rodada ${round}` : label,
+        note: `${label} • Jogo único`
+      }];
+    });
   }
 
   function preferGame(current, candidate) {
@@ -70,14 +102,22 @@
   function forTournament(tournament, games) {
     const list = Array.isArray(games) ? games : [];
     const format = normalize(tournament?.format);
-    const groupFormat = format.includes('grupo') || configuredGroups(tournament).size > 1;
+    const groups = configuredGroups(tournament);
+    const groupFormat = format.includes('grupo') || groups.size > 1;
     if (!groupFormat) return list;
 
     const hasGroupSchedule = list.some(game => kind(game) === 'group');
     const hasLeagueSchedule = list.some(game => kind(game) === 'league');
-    if (!hasGroupSchedule || !hasLeagueSchedule) return list;
+    if (!hasLeagueSchedule) return dedupeGroups(list);
 
-    const groups = configuredGroups(tournament);
+    if (!hasGroupSchedule) {
+      const compatible = groups.size > 1
+        ? adaptLeagueScheduleToGroups(list.filter(game => kind(game) === 'league'), groups)
+        : [];
+      const knockout = list.filter(game => kind(game) === 'other');
+      return dedupeGroups([...knockout, ...compatible]);
+    }
+
     const filtered = list.filter(game => {
       const type = kind(game);
       if (type === 'league') return false;

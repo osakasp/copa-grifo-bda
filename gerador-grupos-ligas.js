@@ -225,8 +225,11 @@
   }
 
   function isGeneratedGame(game) {
+    const id = String(game?.id || '');
     const text = `${game?.phase || ''} ${game?.note || ''}`;
-    return /^(grupo|liga|mata)-/.test(String(game?.id || ''))
+    return /^(grupo|liga|mata)-/.test(id)
+      || /^L\d+$/i.test(id)
+      || /^Rodada\s+\d+$/i.test(String(game?.phase || '').trim())
       || /Grupo\s+[A-Z0-9]+|Classifica[cç][aã]o geral|Liga\s*•/i.test(text);
   }
 

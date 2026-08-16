@@ -61,7 +61,7 @@
     tournamentAdmin: [
       './sorteio-campeonatos.js?v=20260730-1',
       './arena-editor-pro.js',
-      './gerador-grupos-ligas.js?v=20260816-1',
+      './gerador-grupos-ligas.js?v=20260816-2',
       './confronto-editor-v2.js?v=20260816-2'
     ]
   });
