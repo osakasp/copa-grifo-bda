@@ -17,6 +17,9 @@
   <link rel="shortcut icon" href="./favicon.svg">
   <link rel="apple-touch-icon" href="./favicon.svg">
   <link rel="manifest" href="./site.webmanifest">
+  <link rel="preload" href="./arena-runtime.bundle.js?v=20260814-4" as="script">
+  <link rel="preload" href="./arena-bda.js?v=20260816-3" as="script">
+  <link rel="preload" href="./arena-interface.bundle.js?v=20260816-7" as="script">
   <title>Arena BDA | Campeonatos do Clã</title>
   <style>
     :root{--bg:#07100c;--surface:#0d1812;--text:#f2f6f3;--muted:#9eafa3;--gold:#35c979;--gold-soft:#f0ce70;color-scheme:dark}
@@ -50,7 +53,7 @@
         <button class="retry" id="retryButton" type="button">Tentar novamente</button>
       </div>
     </section>
-    <iframe id="arenaFrame" title="Arena BDA" src="about:blank" data-src="./preview-v2.html" allow="clipboard-write; fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+    <iframe id="arenaFrame" title="Arena BDA" src="about:blank" data-src="./preview-v2.html?v=20260816-2" allow="clipboard-write; fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe>
   </main>
   <script>
     (() => {
@@ -64,6 +67,14 @@
       const retryButton = document.getElementById('retryButton');
       const frameSource = frame.dataset.src || './preview-v2.html';
 
+      if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js', { scope: './', updateViaCache: 'none' })
+            .then(registration => registration.update())
+            .catch(() => {});
+        }, { once: true });
+      }
+
       const firebaseScripts = [
         'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js',
         'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js',
@@ -73,10 +84,10 @@
 
       const coreScripts = [
         './arena-runtime.bundle.js?v=20260814-4',
-        './confrontos-validos.js?v=20260816-2',
         './arena-bda.js?v=20260816-3',
+        './arena-interface.bundle.js?v=20260816-7',
+        './confrontos-validos.js?v=20260816-2',
         './arena-lazy-features.js?v=20260816-7',
-        './arena-interface.bundle.js?v=20260816-6'
       ];
 
       const cloudScripts = [

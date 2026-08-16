@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '2026.08.16-copa-facil-interface-dark';
+  const VERSION = '2026.08.16-copa-facil-interface-clean';
   const STYLE_ID = 'arenaCopaFacilInterfaceStyles';
   const THEME_COLOR = '#07100c';
 
@@ -119,7 +119,7 @@
     body.arena-copa-facil .arena-page-hero p,
     body.arena-copa-facil #arenaDetail .arena-hero p{color:rgba(255,255,255,.82)}
     body.arena-copa-facil :is([data-page="home"] .hero,.arena-page-hero,#arenaDetail .arena-hero) .eyebrow{color:#f3d272}
-    body.arena-copa-facil .arena-home-watermark{opacity:.14;filter:brightness(0) invert(1)}
+    body.arena-copa-facil .arena-home-watermark{display:none!important}
 
     body.arena-copa-facil :is(.primary,.secondary,.ghost,.danger){border-radius:6px}
     body.arena-copa-facil .primary{color:#fff;border-color:var(--cf-green);background:var(--cf-green)}
@@ -427,6 +427,9 @@
       border-color:#1a7046;
       background:linear-gradient(135deg,#125b38,#0a3d27 72%);
     }
+    body.arena-copa-facil [data-page="home"] .hero{min-height:190px;padding:26px 30px}
+    body.arena-copa-facil [data-page="home"] .hero-content{width:100%;max-width:720px}
+    body.arena-copa-facil [data-page="home"] .hero h1{max-width:720px;font-size:clamp(36px,5vw,48px)}
     body.arena-copa-facil .brand-mark{background:#fff}
     body.arena-copa-facil .topbar .admin-btn.active{color:#07100c;background:#fff}
     body.arena-copa-facil .secondary,
@@ -532,6 +535,7 @@
       body.arena-copa-facil .arena-mobile-nav{border-color:var(--cf-border);background:var(--cf-surface);box-shadow:0 -4px 16px rgba(0,0,0,.28)}
       body.arena-copa-facil .arena-mobile-item{color:var(--cf-muted)}
       body.arena-copa-facil .arena-mobile-item.active{color:var(--cf-green)}
+      body.arena-copa-facil [data-page="home"] .hero{min-height:176px;padding:22px 18px}
       body.arena-copa-facil #arenaStats .stat,
       body.arena-copa-facil .arena-nav-sheet,
       body.arena-copa-facil .arena-sheet-item{color:var(--cf-text);background:var(--cf-surface)}
