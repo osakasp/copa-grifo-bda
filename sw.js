@@ -1,4 +1,4 @@
-const VERSION = 'v72-championships-copa-facil';
+const VERSION = 'v73-championships-overflow-fix';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
