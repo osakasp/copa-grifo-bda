@@ -1,10 +1,10 @@
 (() => {
   'use strict';
 
-  const PRIMARY_PAGES = ['home', 'tournament', 'registrations', 'champions', 'teams', 'community'];
-  const SECONDARY_PAGES = ['news', 'history', 'flash', 'season', 'feedback'];
-  const MOBILE_PRIMARY_PAGES = ['home', 'tournament', 'registrations', 'champions'];
-  const MOBILE_SECONDARY_PAGES = ['news', 'history', 'flash', 'season', 'teams', 'community', 'feedback'];
+  const PRIMARY_PAGES = ['home', 'tournament', 'teams'];
+  const SECONDARY_PAGES = ['champions', 'registrations', 'community', 'news', 'history', 'flash', 'season', 'feedback'];
+  const MOBILE_PRIMARY_PAGES = ['home', 'tournament', 'teams'];
+  const MOBILE_SECONDARY_PAGES = ['champions', 'registrations', 'community', 'news', 'history', 'flash', 'season', 'feedback'];
   const ORDER = [...PRIMARY_PAGES, ...SECONDARY_PAGES];
   const HISTORY_PAGE_KEY = 'arenaNavigationPage';
   const HISTORY_DEPTH_KEY = 'arenaNavigationDepth';
@@ -217,7 +217,7 @@
       more = document.createElement('button');
       more.type = 'button';
       more.className = 'nav-btn arena-nav-item arena-side-more-toggle';
-      more.innerHTML = `<i aria-hidden="true">${navIcon('more')}</i><span class="arena-nav-copy"><b>Mais</b><small>5 áreas</small></span>`;
+      more.innerHTML = `<i aria-hidden="true">${navIcon('more')}</i><span class="arena-nav-copy"><b>Mais</b><small>${SECONDARY_PAGES.length} áreas</small></span>`;
       more.addEventListener('click', () => setSidebarMore(!nav.classList.contains('arena-side-more-open')));
     }
     more.setAttribute('aria-label', 'Mostrar mais áreas');

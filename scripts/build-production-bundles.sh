@@ -28,4 +28,5 @@ bundle "$repo_dir/arena-runtime.bundle.js" \
 
 bundle "$repo_dir/arena-interface.bundle.js" \
   navegacao-arena-v2.js \
-  arena-visual-system.js
+  arena-visual-system.js \
+  copa-facil-interface.js

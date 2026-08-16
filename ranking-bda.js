@@ -106,7 +106,8 @@ function calculate(filterMonth=''){
   const allMatches=[];
 
   tournaments().forEach(tournament=>{
-    const raw=Array.isArray(matchStore()[tournament.id])?matchStore()[tournament.id]:[];
+    const stored=Array.isArray(matchStore()[tournament.id])?matchStore()[tournament.id]:[];
+    const raw=window.ArenaBDAValidMatches?.forTournament(tournament,stored)||stored;
     const solve=resolver(raw);
     const historical=!filterMonth;
     if(historical)(tournament.participants||[]).forEach(name=>{const s=get(name);if(s){s.points+=POINTS.participation;s.participations++}});

@@ -346,7 +346,16 @@
 
     const card = input.closest('.gi-game');
     markCard(card, 'Aguardando...', 'pending');
-    updateMetrics(list);
+    const tournaments = (() => {
+      try {
+        const value = JSON.parse(localStorage.getItem('bda-v3-tournaments') || '[]');
+        return Array.isArray(value) ? value : [];
+      } catch {
+        return [];
+      }
+    })();
+    const tournament = tournaments.find(item => String(item?.id) === String(tid)) || null;
+    updateMetrics(window.ArenaBDAValidMatches?.forTournament(tournament, list) || list);
     updateCards(list, game.tieId || game.id);
     queueCloudSave(tid, gameId);
   }
