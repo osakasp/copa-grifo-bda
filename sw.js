@@ -1,4 +1,4 @@
-const VERSION = 'v69-standings-fix';
+const VERSION = 'v70-dark-theme';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
