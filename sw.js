@@ -1,4 +1,4 @@
-const VERSION = 'v78-cloud-sync-auth-loop';
+const VERSION = 'v79-auth-loop-redeploy';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
