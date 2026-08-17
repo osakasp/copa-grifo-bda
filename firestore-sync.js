@@ -61,6 +61,14 @@
     if (!Array.isArray(values) || values.some(isSupercopa)) return values;
     return [clone(DEFAULT_TOURNAMENTS.find(isSupercopa)), ...values];
   };
+  const isSuperLeague = item => String(item?.id || '').toLowerCase() === 'bda-super-league';
+  const preserveRequiredTournaments = values => {
+    const next = restoreSupercopa(Array.isArray(values) ? clone(values) : []);
+    if (next.some(isSuperLeague)) return next;
+    const local = readStored(DATASETS.tournaments.key, []);
+    const superLeague = local.find(isSuperLeague);
+    return superLeague ? [...next, clone(superLeague)] : next;
+  };
 
   function stable(value) {
     if (Array.isArray(value)) return value.map(stable);
@@ -243,7 +251,7 @@
     try {
       Object.entries(remote).forEach(([name, values]) => {
         const config = DATASETS[name];
-        const nextValues = name === 'tournaments' ? restoreSupercopa(values) : values;
+        const nextValues = name === 'tournaments' ? preserveRequiredTournaments(values) : values;
         const localValues = readLocal(name);
         if (stableStringify(localValues) === stableStringify(nextValues)) return;
         nativeSetItem.call(localStorage, config.key, JSON.stringify(nextValues));
