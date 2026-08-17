@@ -161,6 +161,7 @@
         <div class="member-auth-brand"><span>⚽</span><div><span class="eyebrow">Rede oficial do clã</span><h2 id="adminModalTitle">Comunidade BDA</h2></div></div>
         <p id="memberAuthDescription">Entre para publicar, comentar, seguir membros e conversar em particular.</p>
         <nav class="member-auth-tabs" aria-label="Acesso à comunidade"><button type="button" class="active" data-auth-mode="login">Entrar</button><button type="button" data-auth-mode="register">Criar conta</button></nav>
+        <p id="memberAuthStatus" class="member-auth-status" hidden aria-live="polite">Conectando...</p>
         <form id="memberAuthForm">
           <div class="form-grid">
             <label id="memberNameLabel" hidden>Nome no clã
@@ -189,14 +190,16 @@
   const authStyle = document.createElement('style');
   authStyle.id = 'memberAuthStyles';
   authStyle.textContent = `
-    .member-auth-modal{width:min(100%,470px)!important}.member-auth-brand{display:flex;align-items:center;gap:11px}.member-auth-brand>span{display:grid;place-items:center;width:48px;height:48px;border:1px solid rgba(242,215,125,.35);border-radius:15px;background:rgba(216,178,72,.09);font-size:23px}.member-auth-brand h2{margin:3px 0 0}.member-auth-modal>p{margin:12px 0;color:var(--muted);font-size:10px;line-height:1.55}.member-auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:13px;padding:5px;border:1px solid var(--line);border-radius:13px;background:#07100c}.member-auth-tabs button{min-height:38px;border:0;border-radius:9px;color:var(--muted);background:transparent;font-size:9px;font-weight:900;text-transform:uppercase}.member-auth-tabs button.active{color:#171107;background:linear-gradient(135deg,var(--gold-soft),var(--gold))}.member-auth-modal #adminResetBtn{width:100%;min-height:39px;margin-top:8px}.member-auth-note{display:block;margin-top:11px;color:var(--muted);font-size:7px;line-height:1.5;text-align:center}.admin-btn[data-account-state=member]{color:var(--green);border-color:rgba(79,223,143,.35)}
+    .member-auth-modal{width:min(100%,470px)!important}.member-auth-modal [hidden]{display:none!important}.member-auth-brand{display:flex;align-items:center;gap:11px}.member-auth-brand>span{display:grid;place-items:center;width:48px;height:48px;border:1px solid rgba(242,215,125,.35);border-radius:15px;background:rgba(216,178,72,.09);font-size:23px}.member-auth-brand h2{margin:3px 0 0}.member-auth-modal>p{margin:12px 0;color:var(--muted);font-size:10px;line-height:1.55}.member-auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:13px;padding:5px;border:1px solid var(--line);border-radius:13px;background:#07100c}.member-auth-tabs button{min-height:38px;border:0;border-radius:9px;color:var(--muted);background:transparent;font-size:9px;font-weight:900;text-transform:uppercase}.member-auth-tabs button.active{color:#171107;background:linear-gradient(135deg,var(--gold-soft),var(--gold))}.member-auth-status{display:grid;place-items:center;min-height:112px;margin:8px 0!important;border:1px solid var(--line);border-radius:13px;background:#07100c;color:var(--text)!important;font-size:11px!important;font-weight:800}.member-auth-modal #adminResetBtn{width:100%;min-height:39px;margin-top:8px}.member-auth-note{display:block;margin-top:11px;color:var(--muted);font-size:7px;line-height:1.5;text-align:center}.admin-btn[data-account-state=member]{color:var(--green);border-color:rgba(79,223,143,.35)}
   `;
   document.head.append(authStyle);
 
   let authMode = 'login';
+  let authPending = false;
 
   function openAuthModal(mode = 'login') {
     setAuthMode(mode);
+    setAuthPending(false, mode);
     if (typeof openModal === 'function') openModal('adminModal');
     else document.getElementById('adminModal')?.classList.add('show');
     window.setTimeout(() => document.getElementById(mode === 'register' ? 'memberName' : 'adminEmail')?.focus(), 0);
@@ -205,6 +208,21 @@
   function closeAuthModal() {
     if (typeof closeModal === 'function') closeModal('adminModal');
     else document.getElementById('adminModal')?.classList.remove('show');
+  }
+
+  function setAuthPending(pending, mode = authMode) {
+    authPending = Boolean(pending);
+    const form = document.getElementById('memberAuthForm');
+    const tabs = document.querySelector('.member-auth-tabs');
+    const status = document.getElementById('memberAuthStatus');
+    const reset = document.getElementById('adminResetBtn');
+    if (form) form.hidden = authPending;
+    if (tabs) tabs.hidden = authPending;
+    if (status) {
+      status.hidden = !authPending;
+      status.textContent = mode === 'register' ? 'Criando sua conta...' : 'Conectando...';
+    }
+    if (reset) reset.hidden = authPending || mode === 'register';
   }
 
   function setAuthMode(mode) {
@@ -217,7 +235,7 @@
     document.getElementById('memberConfirmPassword').required = registering;
     document.getElementById('adminPassword').autocomplete = registering ? 'new-password' : 'current-password';
     document.getElementById('adminLoginBtn').textContent = registering ? 'Criar minha conta' : 'Entrar';
-    document.getElementById('adminResetBtn').hidden = registering;
+    document.getElementById('adminResetBtn').hidden = registering || authPending;
     document.getElementById('memberAuthDescription').textContent = registering
       ? 'Crie seu perfil para participar da comunidade do Clã BDA.'
       : 'Entre para publicar, comentar, seguir membros e conversar em particular.';
@@ -264,6 +282,8 @@
 
   async function submitAuth(event) {
     event?.preventDefault?.();
+    if (authPending) return;
+    const submittedMode = authMode;
     const emailInput = document.getElementById('adminEmail');
     const passwordInput = document.getElementById('adminPassword');
     const loginButton = document.getElementById('adminLoginBtn');
@@ -276,20 +296,21 @@
       showToast('Digite o e-mail e a senha');
       return;
     }
-    if (authMode === 'register' && name.length < 2) return showToast('Digite seu nome no clã');
+    if (submittedMode === 'register' && name.length < 2) return showToast('Digite seu nome no clã');
     if (password.length < 6) return showToast('Use uma senha com pelo menos 6 caracteres');
-    if (authMode === 'register' && password !== confirmation) return showToast('As senhas não coincidem');
+    if (submittedMode === 'register' && password !== confirmation) return showToast('As senhas não coincidem');
 
     if (loginButton) {
       loginButton.disabled = true;
-      loginButton.textContent = authMode === 'register' ? 'Criando conta...' : 'Entrando...';
+      loginButton.textContent = submittedMode === 'register' ? 'Criando conta...' : 'Entrando...';
     }
+    setAuthPending(true, submittedMode);
 
     try {
-      const credential = authMode === 'register'
+      const credential = submittedMode === 'register'
         ? await authApi.register(email, password, name)
         : await authApi.signIn(email, password);
-      if (authMode === 'register') {
+      if (submittedMode === 'register') {
         try { await createPublicProfile(credential.user, name); }
         catch (profileError) { console.error('Não foi possível criar o perfil inicial', profileError); }
       }
@@ -297,14 +318,15 @@
       const confirmInput = document.getElementById('memberConfirmPassword');
       if (confirmInput) confirmInput.value = '';
       closeAuthModal();
-      showToast(authMode === 'register' ? 'Conta criada. Bem-vindo à Comunidade BDA!' : 'Login confirmado');
+      showToast(submittedMode === 'register' ? 'Conta criada. Bem-vindo à Comunidade BDA!' : 'Login confirmado');
       if (typeof navigate === 'function') navigate('community');
     } catch (error) {
       showToast(authErrorMessage(error));
     } finally {
+      setAuthPending(false, submittedMode);
       if (loginButton) {
         loginButton.disabled = false;
-        loginButton.textContent = authMode === 'register' ? 'Criar minha conta' : 'Entrar';
+        loginButton.textContent = submittedMode === 'register' ? 'Criar minha conta' : 'Entrar';
       }
     }
   }
