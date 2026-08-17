@@ -1,4 +1,4 @@
-const VERSION = 'v74-championships-copy-fix';
+const VERSION = 'v75-super-league-21';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
