@@ -212,17 +212,25 @@
 
   function setAuthPending(pending, mode = authMode) {
     authPending = Boolean(pending);
+    const registering = mode === 'register';
     const form = document.getElementById('memberAuthForm');
     const tabs = document.querySelector('.member-auth-tabs');
     const status = document.getElementById('memberAuthStatus');
     const reset = document.getElementById('adminResetBtn');
+    const loginButton = document.getElementById('adminLoginBtn');
     if (form) form.hidden = authPending;
     if (tabs) tabs.hidden = authPending;
     if (status) {
       status.hidden = !authPending;
-      status.textContent = mode === 'register' ? 'Criando sua conta...' : 'Conectando...';
+      status.textContent = registering ? 'Criando sua conta...' : 'Conectando...';
     }
-    if (reset) reset.hidden = authPending || mode === 'register';
+    if (reset) reset.hidden = authPending || registering;
+    if (loginButton) {
+      loginButton.disabled = authPending;
+      loginButton.textContent = authPending
+        ? (registering ? 'Criando conta...' : 'Entrando...')
+        : (registering ? 'Criar minha conta' : 'Entrar');
+    }
   }
 
   function setAuthMode(mode) {
@@ -286,7 +294,6 @@
     const submittedMode = authMode;
     const emailInput = document.getElementById('adminEmail');
     const passwordInput = document.getElementById('adminPassword');
-    const loginButton = document.getElementById('adminLoginBtn');
     const email = normalizeEmail(emailInput?.value);
     const password = passwordInput?.value || '';
     const name = document.getElementById('memberName')?.value.trim() || '';
@@ -300,10 +307,6 @@
     if (password.length < 6) return showToast('Use uma senha com pelo menos 6 caracteres');
     if (submittedMode === 'register' && password !== confirmation) return showToast('As senhas não coincidem');
 
-    if (loginButton) {
-      loginButton.disabled = true;
-      loginButton.textContent = submittedMode === 'register' ? 'Criando conta...' : 'Entrando...';
-    }
     setAuthPending(true, submittedMode);
 
     try {
@@ -321,13 +324,8 @@
       showToast(submittedMode === 'register' ? 'Conta criada. Bem-vindo à Comunidade BDA!' : 'Login confirmado');
       if (typeof navigate === 'function') navigate('community');
     } catch (error) {
-      showToast(authErrorMessage(error));
-    } finally {
       setAuthPending(false, submittedMode);
-      if (loginButton) {
-        loginButton.disabled = false;
-        loginButton.textContent = submittedMode === 'register' ? 'Criar minha conta' : 'Entrar';
-      }
+      showToast(authErrorMessage(error));
     }
   }
 
