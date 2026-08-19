@@ -2,7 +2,6 @@
   'use strict';
 
   const SUPER_LEAGUE_ID = 'bda-super-league';
-  const TOURNAMENT_KEY = 'bda-v3-tournaments';
   const MATCH_KEY = 'bda-v3-confrontos';
 
   const FALLBACK_GROUPS = Object.freeze([
@@ -17,8 +16,6 @@
     .replace(/[\u0300-\u036f]/g, '')
     .trim()
     .toLowerCase();
-
-  const clone = value => JSON.parse(JSON.stringify(value));
 
   function groups() {
     const source = window.ArenaBDASuperLeagueGuard?.groups;
@@ -180,30 +177,11 @@
     const manager = document.getElementById('giManager');
     if (!manager || manager.dataset.tid !== SUPER_LEAGUE_ID) return;
     const panel = document.getElementById('autoStandings');
-    if (!panel || panel.hidden || panel.querySelectorAll('.stand-group').length >= 4) return;
-
-    const tournaments = (() => {
-      try {
-        const value = JSON.parse(localStorage.getItem(TOURNAMENT_KEY) || '[]');
-        return Array.isArray(value) ? value : [];
-      } catch {
-        return [];
-      }
-    })();
-    const index = tournaments.findIndex(item => String(item?.id) === SUPER_LEAGUE_ID);
-    if (index < 0 || hasConfiguredGroups(tournaments[index])) return;
-
-    const effective = withCanonicalGroups(tournaments[index]);
-    const patched = clone(tournaments);
-    patched[index] = effective;
-    try {
-      localStorage.setItem(TOURNAMENT_KEY, JSON.stringify(patched));
-      window.dispatchEvent(new CustomEvent('arena:tournaments-updated', {
-        detail: { tournamentId: SUPER_LEAGUE_ID, reason: 'groups-runtime-repair' }
-      }));
-    } catch (error) {
-      console.warn('[Arena BDA] Não foi possível reparar os grupos em memória', error);
-    }
+    const standingsButton = manager.querySelector('[data-standings-tab],[data-tab="standings"]');
+    if (!panel || !standingsButton || panel.hidden || panel.querySelectorAll('.stand-group').length >= 4) return;
+    if (panel.dataset.superLeagueRetry === 'true') return;
+    panel.dataset.superLeagueRetry = 'true';
+    setTimeout(() => standingsButton.click(), 0);
   }
 
   let refreshFrame = 0;
