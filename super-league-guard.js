@@ -3,7 +3,7 @@
 
   const TOURNAMENT_KEY = 'bda-v3-tournaments';
   const SUPER_LEAGUE_ID = 'bda-super-league';
-  const PROTECTION_VERSION = 4;
+  const PROTECTION_VERSION = 5;
   const COMMUNITY_SELECTORS = '[data-page="community"],[data-go="community"],[data-mobile-go="community"],[data-sheet-go="community"]';
 
   const GROUPS = Object.freeze([
@@ -16,7 +16,7 @@
       'Vera Cruz Do Oeste PR BDA'
     ]) }),
     Object.freeze({ name: 'Grupo B', teams: Object.freeze([
-      'Zombie BDA',
+      'Zombie FC BDA',
       'Sport Recife BDA',
       'São Paulo BDA',
       'Nacional AC BDA',
@@ -158,7 +158,28 @@
     const tournaments = readTournaments();
     const index = tournaments.findIndex(item => String(item?.id || '').toLowerCase() === SUPER_LEAGUE_ID);
 
-    if (index >= 0) return clone(tournaments[index]);
+    if (index >= 0) {
+      const current = tournaments[index] || {};
+      const canonical = canonicalTournament(current);
+      const currentGroups = current?.groupSettings?.groups || current?.groupGenerator?.groups || [];
+      const hasOldZombieName = (current.participants || []).some(name => normalizeToken(name) === 'zombiebda')
+        || currentGroups.some(group => (group?.teams || []).some(name => normalizeToken(name) === 'zombiebda'));
+      const needsMigration = Number(current.superLeagueProtectionVersion || 0) < PROTECTION_VERSION || hasOldZombieName;
+
+      if (!needsMigration) return clone(current);
+
+      const next = clone(tournaments);
+      next[index] = canonical;
+      try {
+        localStorage.setItem(TOURNAMENT_KEY, JSON.stringify(next));
+        window.dispatchEvent(new CustomEvent('arena:tournaments-updated', {
+          detail: { reason: 'super-league-canonical-name-migration', tournamentId: SUPER_LEAGUE_ID }
+        }));
+      } catch (error) {
+        console.warn('[Arena BDA] Não foi possível atualizar o nome oficial do Zombie FC BDA', error);
+      }
+      return clone(canonical);
+    }
 
     const next = clone(tournaments);
     next.push(canonicalTournament());
@@ -383,6 +404,7 @@
 
   window.addEventListener('arena:cloud-ready', () => {
     removeSupercopaFromStorage();
+    protectSuperLeague();
     makeAuthAdminOnly();
     scheduleCleanup();
     setTimeout(scheduleCleanup, 0);
