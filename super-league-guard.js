@@ -133,6 +133,7 @@
 
   function removeCommunityUI() {
     ensureCommunityRemovalStyle();
+    const communityWasActive = Boolean(document.querySelector('.page.active[data-page="community"]'));
     document.querySelectorAll(COMMUNITY_SELECTORS).forEach(node => node.remove());
 
     document.querySelectorAll('.bottom-nav,.arena-mobile-nav').forEach(nav => {
@@ -140,11 +141,16 @@
       if (visibleButtons.length > 0) nav.style.gridTemplateColumns = `repeat(${visibleButtons.length},minmax(0,1fr))`;
     });
 
-    const active = document.querySelector('.page.active[data-page="community"]');
-    if (active) {
-      active.classList.remove('active');
+    if (communityWasActive) {
+      document.querySelectorAll('.page.active').forEach(page => page.classList.remove('active'));
       const home = document.querySelector('[data-page="home"]');
       home?.classList.add('active');
+      document.querySelectorAll('.nav-btn').forEach(button => {
+        const homeButton = button.dataset.go === 'home';
+        button.classList.toggle('active', homeButton);
+        if (homeButton) button.setAttribute('aria-current', 'page');
+        else button.removeAttribute('aria-current');
+      });
     }
   }
 
