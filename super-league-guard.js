@@ -4,6 +4,7 @@
   const TOURNAMENT_KEY = 'bda-v3-tournaments';
   const SUPER_LEAGUE_ID = 'bda-super-league';
   const PROTECTION_VERSION = 2;
+  const COMMUNITY_SELECTORS = '[data-page="community"],[data-go="community"],[data-mobile-go="community"],[data-sheet-go="community"]';
 
   const GROUPS = Object.freeze([
     Object.freeze({ name: 'Grupo A', teams: Object.freeze([
@@ -119,7 +120,98 @@
     return clone(next[next.length - 1]);
   }
 
+  function ensureCommunityRemovalStyle() {
+    if (document.getElementById('arenaNoCommunityStyles')) return;
+    const style = document.createElement('style');
+    style.id = 'arenaNoCommunityStyles';
+    style.textContent = `
+      ${COMMUNITY_SELECTORS}{display:none!important}
+      #adminModal .member-auth-tabs{display:none!important}
+    `;
+    document.head.append(style);
+  }
+
+  function removeCommunityUI() {
+    ensureCommunityRemovalStyle();
+    document.querySelectorAll(COMMUNITY_SELECTORS).forEach(node => node.remove());
+
+    document.querySelectorAll('.bottom-nav,.arena-mobile-nav').forEach(nav => {
+      const visibleButtons = [...nav.querySelectorAll('button')].filter(button => !button.hidden && button.isConnected);
+      if (visibleButtons.length > 0) nav.style.gridTemplateColumns = `repeat(${visibleButtons.length},minmax(0,1fr))`;
+    });
+
+    const active = document.querySelector('.page.active[data-page="community"]');
+    if (active) {
+      active.classList.remove('active');
+      const home = document.querySelector('[data-page="home"]');
+      home?.classList.add('active');
+    }
+  }
+
+  function setText(selector, text) {
+    const element = document.querySelector(selector);
+    if (element && element.textContent !== text) element.textContent = text;
+  }
+
+  function makeAuthAdminOnly() {
+    const modal = document.getElementById('adminModal');
+    if (!modal) return;
+
+    const tabs = modal.querySelector('.member-auth-tabs');
+    if (tabs && tabs.style.display !== 'none') tabs.style.display = 'none';
+
+    setText('#adminModal .member-auth-brand .eyebrow', 'Gestão da Arena BDA');
+    setText('#adminModalTitle', 'Acesso administrativo');
+    setText('#memberAuthDescription', 'Entre para gerenciar campeonatos, times e placares.');
+    setText('#adminResetBtn', 'Esqueci minha senha');
+    setText('#adminModal .member-auth-note', 'Acesso restrito à administração da Arena BDA.');
+    setText('.brand-copy span', 'Arena competitiva • Campeonatos do Clã');
+
+    const adminButton = document.getElementById('adminBtn');
+    adminButton?.setAttribute('aria-label', 'Acesso administrativo');
+  }
+
+  let cleanupFrame = 0;
+  function scheduleCleanup() {
+    if (cleanupFrame) return;
+    cleanupFrame = requestAnimationFrame(() => {
+      cleanupFrame = 0;
+      removeCommunityUI();
+      makeAuthAdminOnly();
+    });
+  }
+
+  document.addEventListener('click', event => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target) return;
+
+    const communityTrigger = target.closest('[data-go="community"],[data-mobile-go="community"],[data-sheet-go="community"]');
+    if (communityTrigger) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (typeof window.navigate === 'function') window.navigate('home');
+      return;
+    }
+
+    const adminButton = target.closest('#adminBtn');
+    if (!adminButton || !window.ArenaBDAAuth?.isAdmin?.()) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (typeof window.navigate === 'function') window.navigate('tournament');
+  }, true);
+
+  window.addEventListener('arena:cloud-ready', scheduleCleanup);
+  window.addEventListener('arena:auth-changed', scheduleCleanup);
+  window.addEventListener('arena:bundle-loaded', scheduleCleanup);
+  window.addEventListener('arena:matches-updated', scheduleCleanup);
+
+  if (document.documentElement) {
+    new MutationObserver(scheduleCleanup).observe(document.documentElement, { childList: true, subtree: true });
+  }
+
   const protectedTournament = protectSuperLeague();
+  scheduleCleanup();
+
   window.ArenaBDASuperLeagueGuard = Object.freeze({
     version: PROTECTION_VERSION,
     id: SUPER_LEAGUE_ID,
