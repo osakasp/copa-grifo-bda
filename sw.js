@@ -1,4 +1,4 @@
-const VERSION = 'v84-remove-supercopa';
+const VERSION = 'v85-pro-design-motion';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
@@ -6,7 +6,7 @@ const CACHE = Object.freeze({
   images: `${CACHE_PREFIX}images-${VERSION}`
 });
 const ACTIVE_CACHES = new Set(Object.values(CACHE));
-const SHELL = ['./', './index.html', './preview-v2.html', './favicon.svg', './site.webmanifest'];
+const SHELL = ['./', './index.html', './preview-v2.html', './favicon.svg', './site.webmanifest', './arena-pro-motion.js?v=20260818-1'];
 
 self.addEventListener('install', event => {
   event.waitUntil(Promise.all([
