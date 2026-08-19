@@ -267,6 +267,7 @@
           showTransition(nextTitle, nextMessage);
           clearTimeout(transitionTimer);
           transitionTimer = window.setTimeout(() => {
+            if (!cloudReady) return;
             settleAndReveal(doc, generation, 80).catch(() => {});
           }, 360);
         };
