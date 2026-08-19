@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDASuperLeagueScheduleRepair) return;
+  if (window.ArenaBDASuperLeagueScheduleRepair?.version >= 2) return;
 
   const SUPER_LEAGUE_ID = 'bda-super-league';
   const MATCH_KEY = 'bda-v3-confrontos';
@@ -126,7 +126,12 @@
     }
   }
 
+  let repairing = false;
+  let frame = 0;
+
   function repair() {
+    if (repairing) return { changed:false, added:0, migrated:0, totalGroups:45, busy:true };
+
     const store = readStore();
     const current = Array.isArray(store[SUPER_LEAGUE_ID]) ? store[SUPER_LEAGUE_ID] : [];
     const expected = expectedGroups();
@@ -162,38 +167,53 @@
       const { __canonicalHome, __canonicalAway, ...source } = existing;
       const existingHomeCanonical = canonicalName(source.ta);
       const homeMatchesTemplate = token(existingHomeCanonical) === token(template.ta);
-      return {
+
+      const orientedSource = homeMatchesTemplate ? source : {
         ...source,
+        a: source.b,
+        b: source.a,
+        pa: source.pb,
+        pb: source.pa,
+        wo: source.wo === 'a' ? 'b' : source.wo === 'b' ? 'a' : source.wo
+      };
+
+      return {
+        ...orientedSource,
         id: source.id || template.id,
         tieId: source.tieId || source.id || template.tieId,
         leg: source.leg || 1,
         phase: template.phase,
         group: template.group,
         pos: template.pos,
-        ta: homeMatchesTemplate ? template.ta : template.tb,
-        tb: homeMatchesTemplate ? template.tb : template.ta,
+        ta: template.ta,
+        tb: template.tb,
         note: template.note,
         status: source.status || 'Agendado'
       };
     });
 
     const repaired = [...canonicalGames, ...keepOther];
-    const oldSignature = JSON.stringify(current.map(game => [game.id,game.phase,game.ta,game.tb,game.a,game.b,game.wo]));
-    const newSignature = JSON.stringify(repaired.map(game => [game.id,game.phase,game.ta,game.tb,game.a,game.b,game.wo]));
+    const oldSignature = JSON.stringify(current.map(game => [game.id,game.phase,game.ta,game.tb,game.a,game.b,game.pa,game.pb,game.wo]));
+    const newSignature = JSON.stringify(repaired.map(game => [game.id,game.phase,game.ta,game.tb,game.a,game.b,game.pa,game.pb,game.wo]));
     if (oldSignature === newSignature) return { changed:false, added:0, migrated:0, totalGroups:canonicalGames.length };
 
     store[SUPER_LEAGUE_ID] = repaired;
+    repairing = true;
     try {
       localStorage.setItem(MATCH_KEY, JSON.stringify(store));
-      window.dispatchEvent(new CustomEvent('arena:matches-updated', { detail:{ tournamentId:SUPER_LEAGUE_ID, reason:'super-league-schedule-repair', added, migrated, totalGroups:canonicalGames.length } }));
+      window.dispatchEvent(new CustomEvent('arena:matches-updated', {
+        detail:{ tournamentId:SUPER_LEAGUE_ID, reason:'super-league-schedule-repair', added, migrated, totalGroups:canonicalGames.length }
+      }));
+      requestAnimationFrame(() => window.ArenaBDAMatchManager?.render?.());
       return { changed:true, added, migrated, totalGroups:canonicalGames.length };
     } catch (error) {
       console.warn('[Arena BDA] Não foi possível completar os jogos da Super League', error);
       return { changed:false, added:0, migrated:0, totalGroups:canonicalGames.length, error:true };
+    } finally {
+      repairing = false;
     }
   }
 
-  let frame = 0;
   function scheduleRepair() {
     if (frame) return;
     frame = requestAnimationFrame(() => {
@@ -203,9 +223,38 @@
     });
   }
 
+  function installStorageGuard() {
+    const previous = Storage.prototype.setItem;
+    if (previous.__arenaSuperLeagueCompleteSchedule) return;
+
+    const guardedSetItem = function(key, value) {
+      const result = previous.call(this, key, value);
+      if (this === localStorage && key === MATCH_KEY && !repairing) {
+        queueMicrotask(scheduleRepair);
+      }
+      return result;
+    };
+
+    Object.defineProperty(guardedSetItem, '__arenaSuperLeagueCompleteSchedule', { value:true });
+    Storage.prototype.setItem = guardedSetItem;
+  }
+
   ['arena:cloud-ready','arena:bundle-loaded','arena:tournaments-updated'].forEach(type => window.addEventListener(type, scheduleRepair));
+  window.addEventListener('arena:matches-updated', event => {
+    if (String(event.detail?.tournamentId || '') !== SUPER_LEAGUE_ID) return;
+    if (event.detail?.reason === 'super-league-schedule-repair') return;
+    scheduleRepair();
+  });
   window.addEventListener('storage', event => { if (event.key === MATCH_KEY) scheduleRepair(); });
 
-  window.ArenaBDASuperLeagueScheduleRepair = Object.freeze({ version:1, repair, expectedGroupGames:45 });
+  installStorageGuard();
+
+  window.ArenaBDASuperLeagueScheduleRepair = Object.freeze({
+    version:2,
+    repair,
+    expectedGroupGames:45,
+    expectedByGroup:Object.freeze({ A:15, B:10, C:10, D:10 })
+  });
+
   scheduleRepair();
 })();
