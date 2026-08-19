@@ -2,14 +2,86 @@
   'use strict';
 
   const SELECTOR = '#giManager .gi-score-input';
+  const SCORE_NODE_SELECTOR = '.gi-score-input,.gi-score';
   let activeInput = null;
   let activeCard = null;
   let cleanupTimer = 0;
+  let refreshFrame = 0;
 
   function scoreInputFrom(event) {
     const target = event.target;
     if (!(target instanceof Element)) return null;
     return target.closest(SELECTOR);
+  }
+
+  function adminActive() {
+    if (window.ArenaBDAAuth?.isAdmin) return Boolean(window.ArenaBDAAuth.isAdmin());
+    const user = window.firebase?.auth?.()?.currentUser;
+    const email = String(user?.email || '').trim().toLowerCase();
+    return Boolean(user && (window.ARENA_ADMIN_EMAILS || []).includes(email));
+  }
+
+  function scoreValue(node) {
+    const raw = node instanceof HTMLInputElement ? node.value : node.textContent;
+    const text = String(raw ?? '').trim();
+    if (!text || text === '–' || text === '-') return '';
+    const number = Number(text);
+    return Number.isFinite(number) ? String(Math.max(0, Math.min(99, Math.trunc(number)))) : '';
+  }
+
+  function prepareInput(input, gameId, side) {
+    input.classList.add('gi-score-input');
+    input.dataset.id = String(gameId || '');
+    input.dataset.score = side;
+    input.type = 'number';
+    input.min = '0';
+    input.max = '99';
+    input.setAttribute('inputmode', 'numeric');
+    input.setAttribute('enterkeyhint', 'done');
+    input.setAttribute('autocomplete', 'off');
+    if (input.dataset.quickSavedValue == null) input.dataset.quickSavedValue = input.value;
+    return input;
+  }
+
+  function promoteReadOnlyScores(root = document) {
+    if (!adminActive()) return 0;
+    const cards = root instanceof Element && root.matches?.('#giManager .gi-game')
+      ? [root]
+      : [...(root.querySelectorAll?.('#giManager .gi-game') || [])];
+    let promoted = 0;
+
+    cards.forEach(card => {
+      const gameId = String(card.dataset.card || '');
+      if (!gameId) return;
+      const scoreNodes = [...card.querySelectorAll(SCORE_NODE_SELECTOR)].slice(0, 2);
+      if (scoreNodes.length !== 2) return;
+
+      scoreNodes.forEach((node, index) => {
+        const side = index === 0 ? 'a' : 'b';
+        if (node instanceof HTMLInputElement) {
+          prepareInput(node, gameId, side);
+          return;
+        }
+
+        const input = document.createElement('input');
+        input.value = scoreValue(node);
+        prepareInput(input, gameId, side);
+        input.dataset.quickSavedValue = input.value;
+        input.setAttribute('aria-label', node.getAttribute('aria-label') || `Placar do time ${index + 1}`);
+        node.replaceWith(input);
+        promoted += 1;
+      });
+    });
+
+    return promoted;
+  }
+
+  function scheduleAdminRefresh() {
+    if (refreshFrame) return;
+    refreshFrame = requestAnimationFrame(() => {
+      refreshFrame = 0;
+      promoteReadOnlyScores();
+    });
   }
 
   function begin(input) {
@@ -90,6 +162,19 @@
     input.blur();
   }, true);
 
+  window.addEventListener('arena:auth-changed', event => {
+    if (event.detail?.isAdmin) scheduleAdminRefresh();
+  });
+  window.addEventListener('arena:cloud-ready', scheduleAdminRefresh);
+  window.addEventListener('arena:matches-updated', scheduleAdminRefresh);
+  window.addEventListener('arena:bundle-loaded', event => {
+    if (event.detail?.name === 'tournamentDetail') scheduleAdminRefresh();
+  });
+
+  window.ArenaDOMEvents?.subscribe(scheduleAdminRefresh, {
+    selector: '#giManager,.gi-game,.gi-score,.gi-score-input'
+  });
+
   const style = document.createElement('style');
   style.id = 'placarMobileStabilityStyles';
   style.textContent = `
@@ -104,9 +189,12 @@
   `;
   document.head.append(style);
 
+  scheduleAdminRefresh();
+
   window.ArenaBDAScoreStability = Object.freeze({
     active: () => Boolean(activeInput?.isConnected),
     input: () => activeInput,
-    card: () => activeCard
+    card: () => activeCard,
+    refresh: promoteReadOnlyScores
   });
 })();

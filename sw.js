@@ -1,4 +1,4 @@
-const VERSION = 'v79-auth-loop-redeploy';
+const VERSION = 'v80-score-auth-race-fix';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
