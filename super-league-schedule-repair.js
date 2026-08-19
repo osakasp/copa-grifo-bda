@@ -1,14 +1,14 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDASuperLeagueScheduleRepair?.version >= 2) return;
+  if (window.ArenaBDASuperLeagueScheduleRepair?.version >= 3) return;
 
   const SUPER_LEAGUE_ID = 'bda-super-league';
   const MATCH_KEY = 'bda-v3-confrontos';
 
   const GROUPS = Object.freeze([
     Object.freeze({ name: 'Grupo A', teams: Object.freeze(['CV Cruz BDA','Hellyeah BDA','Imortais FC BDA','BDA Golden FC','CR Flamengo','Vera Cruz Do Oeste PR BDA']) }),
-    Object.freeze({ name: 'Grupo B', teams: Object.freeze(['Zombie BDA','Sport Recife BDA','São Paulo BDA','Nacional AC BDA','Imperial São Paulo BDA']) }),
+    Object.freeze({ name: 'Grupo B', teams: Object.freeze(['Zombie FC BDA','Sport Recife BDA','São Paulo BDA','Nacional AC BDA','Imperial São Paulo BDA']) }),
     Object.freeze({ name: 'Grupo C', teams: Object.freeze(['Red Bull BDA','Independente FC BDA','Vasco Da Gama BDA','Esperança BDA','Florence Real BDA']) }),
     Object.freeze({ name: 'Grupo D', teams: Object.freeze(['Boca Juniors','Praia Grande Jogobugado BDA','Flamestre BDA','BDA URDLS','Isaías 55-6-7']) })
   ]);
@@ -20,7 +20,7 @@
     'BDA Golden FC':['BDA GOLDEN','BDA GOLDEN FC'],
     'CR Flamengo':['CR FLAMENGO','CR FLAMENGO BDA'],
     'Vera Cruz Do Oeste PR BDA':['VERA CRUZ DO OESTE PR BDA'],
-    'Zombie BDA':['ZOMBIE BDA','ZOMBIE FC BDA','Zombie FC BDA'],
+    'Zombie FC BDA':['ZOMBIE FC BDA','Zombie FC BDA','ZOMBIE BDA','Zombie BDA'],
     'Sport Recife BDA':['SPORT RECIFE BDA'],
     'São Paulo BDA':['SAO PAULO BDA','SÃO PAULO FC BDA','SAO PAULO FC BDA'],
     'Nacional AC BDA':['NACIONAL AC BDA','NACIONAL FC BDA'],
@@ -250,7 +250,7 @@
   installStorageGuard();
 
   window.ArenaBDASuperLeagueScheduleRepair = Object.freeze({
-    version:2,
+    version:3,
     repair,
     expectedGroupGames:45,
     expectedByGroup:Object.freeze({ A:15, B:10, C:10, D:10 })

@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDASuperLeagueStandingsFix?.version >= 3) return;
+  if (window.ArenaBDASuperLeagueStandingsFix?.version >= 4) return;
 
   const SUPER_LEAGUE_ID = 'bda-super-league';
   const MATCH_KEY = 'bda-v3-confrontos';
@@ -9,7 +9,7 @@
 
   const GROUPS = Object.freeze([
     Object.freeze({ name:'Grupo A', teams:Object.freeze(['CV Cruz BDA','Hellyeah BDA','Imortais FC BDA','BDA Golden FC','CR Flamengo','Vera Cruz Do Oeste PR BDA']) }),
-    Object.freeze({ name:'Grupo B', teams:Object.freeze(['Zombie BDA','Sport Recife BDA','São Paulo BDA','Nacional AC BDA','Imperial São Paulo BDA']) }),
+    Object.freeze({ name:'Grupo B', teams:Object.freeze(['Zombie FC BDA','Sport Recife BDA','São Paulo BDA','Nacional AC BDA','Imperial São Paulo BDA']) }),
     Object.freeze({ name:'Grupo C', teams:Object.freeze(['Red Bull BDA','Independente FC BDA','Vasco Da Gama BDA','Esperança BDA','Florence Real BDA']) }),
     Object.freeze({ name:'Grupo D', teams:Object.freeze(['Boca Juniors','Praia Grande Jogobugado BDA','Flamestre BDA','BDA URDLS','Isaías 55-6-7']) })
   ]);
@@ -21,7 +21,7 @@
     'BDA Golden FC':['BDA GOLDEN','BDA GOLDEN FC'],
     'CR Flamengo':['CR FLAMENGO','CR FLAMENGO BDA'],
     'Vera Cruz Do Oeste PR BDA':['VERA CRUZ DO OESTE PR BDA'],
-    'Zombie BDA':['ZOMBIE BDA','ZOMBIE FC BDA','Zombie FC BDA'],
+    'Zombie FC BDA':['ZOMBIE FC BDA','Zombie FC BDA','ZOMBIE BDA','Zombie BDA'],
     'Sport Recife BDA':['SPORT RECIFE BDA'],
     'São Paulo BDA':['SAO PAULO BDA','SÃO PAULO FC BDA','SAO PAULO FC BDA'],
     'Nacional AC BDA':['NACIONAL AC BDA','NACIONAL FC BDA'],
@@ -61,13 +61,14 @@
   const pairKey = (a,b) => [token(a),token(b)].sort().join('|');
 
   function loadRepair() {
-    if (window.ArenaBDASuperLeagueScheduleRepair) {
+    if (window.ArenaBDASuperLeagueScheduleRepair?.version >= 3) {
       window.ArenaBDASuperLeagueScheduleRepair.repair?.();
       return;
     }
-    if (document.querySelector('script[data-super-league-schedule-repair]')) return;
+    const old = document.querySelector('script[data-super-league-schedule-repair]');
+    old?.remove();
     const script = document.createElement('script');
-    script.src = './super-league-schedule-repair.js?v=20260819-1';
+    script.src = './super-league-schedule-repair.js?v=20260819-2';
     script.async = true;
     script.dataset.superLeagueScheduleRepair = 'true';
     script.addEventListener('load', () => {
@@ -191,11 +192,6 @@
     ? last.map(value=>`<i data-result="${value}">${value}</i>`).join('')
     : '<span>–</span>';
 
-  /*
-    O módulo legado confrontos-validos.js ainda tenta ordenar pelo índice 10.
-    Mantemos nesse índice uma chave numérica oculta baseada na regra oficial
-    PTS > V > SG > GP. O APR continua visível, mas deixa de alterar posições.
-  */
   function rankKey(row) {
     return (row.pts * 1000000000)
       + (row.v * 1000000)
@@ -263,7 +259,7 @@
       const panel=document.getElementById('autoStandings');
       if (!panel || panel.hidden) return;
       const signature=JSON.stringify(groupMatches().map(item=>[item.home,item.away,item.game?.a,item.game?.b,item.game?.wo,item.stamp]));
-      const expected=`v3:${signature}`;
+      const expected=`v4:${signature}`;
       if (panel.dataset.superLeagueCanonical===expected && panel.querySelectorAll('[data-canonical-group]').length===4) return;
       panel.dataset.superLeagueCanonical=expected;
       panel.innerHTML=content();
@@ -323,7 +319,7 @@
   observer.observe(document.documentElement,{childList:true,subtree:true});
 
   window.ArenaBDASuperLeagueStandingsFix=Object.freeze({
-    version:3,
+    version:4,
     refresh,
     calculate,
     expectedGroupGames:45,
