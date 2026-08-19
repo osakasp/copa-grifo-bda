@@ -1,4 +1,4 @@
-const VERSION = 'v91-super-league-ranking-points-mobile';
+const VERSION = 'v92-direct-open-tournament-home';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
