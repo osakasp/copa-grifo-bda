@@ -3,7 +3,7 @@
 
   const TOURNAMENT_KEY = 'bda-v3-tournaments';
   const SUPER_LEAGUE_ID = 'bda-super-league';
-  const PROTECTION_VERSION = 2;
+  const PROTECTION_VERSION = 3;
   const COMMUNITY_SELECTORS = '[data-page="community"],[data-go="community"],[data-mobile-go="community"],[data-sheet-go="community"]';
 
   const GROUPS = Object.freeze([
@@ -102,10 +102,6 @@
     const tournaments = readTournaments();
     const index = tournaments.findIndex(item => String(item?.id || '').toLowerCase() === SUPER_LEAGUE_ID);
 
-    // A proteção agora garante apenas que a competição exista. Se a Super League
-    // já veio da nuvem, não reescrevemos seus campos durante o boot. Isso evita
-    // que o guard e o Firestore fiquem alternando versões do mesmo campeonato e
-    // provoquem reload em ciclo logo após o login.
     if (index >= 0) return clone(tournaments[index]);
 
     const next = clone(tournaments);
@@ -126,7 +122,10 @@
     style.id = 'arenaNoCommunityStyles';
     style.textContent = `
       ${COMMUNITY_SELECTORS}{display:none!important}
-      #adminModal .member-auth-tabs{display:none!important}
+      #adminModal .member-auth-tabs,
+      #adminModal [data-auth-mode="register"],
+      #memberNameLabel,
+      #memberConfirmLabel{display:none!important}
     `;
     document.head.append(style);
   }
@@ -143,14 +142,7 @@
 
     if (communityWasActive) {
       document.querySelectorAll('.page.active').forEach(page => page.classList.remove('active'));
-      const home = document.querySelector('[data-page="home"]');
-      home?.classList.add('active');
-      document.querySelectorAll('.nav-btn').forEach(button => {
-        const homeButton = button.dataset.go === 'home';
-        button.classList.toggle('active', homeButton);
-        if (homeButton) button.setAttribute('aria-current', 'page');
-        else button.removeAttribute('aria-current');
-      });
+      document.querySelector('[data-page="home"]')?.classList.add('active');
     }
   }
 
@@ -164,7 +156,20 @@
     if (!modal) return;
 
     const tabs = modal.querySelector('.member-auth-tabs');
-    if (tabs && tabs.style.display !== 'none') tabs.style.display = 'none';
+    if (tabs) {
+      tabs.hidden = true;
+      tabs.setAttribute('aria-hidden', 'true');
+      tabs.style.display = 'none';
+    }
+
+    const memberNameLabel = document.getElementById('memberNameLabel');
+    const memberConfirmLabel = document.getElementById('memberConfirmLabel');
+    const memberName = document.getElementById('memberName');
+    const memberConfirm = document.getElementById('memberConfirmPassword');
+    if (memberNameLabel) memberNameLabel.hidden = true;
+    if (memberConfirmLabel) memberConfirmLabel.hidden = true;
+    if (memberName) memberName.required = false;
+    if (memberConfirm) memberConfirm.required = false;
 
     setText('#adminModal .member-auth-brand .eyebrow', 'Gestão da Arena BDA');
     setText('#adminModalTitle', 'Acesso administrativo');
@@ -174,7 +179,25 @@
     setText('.brand-copy span', 'Arena competitiva • Campeonatos do Clã');
 
     const adminButton = document.getElementById('adminBtn');
-    adminButton?.setAttribute('aria-label', 'Acesso administrativo');
+    if (adminButton) {
+      adminButton.setAttribute('aria-label', 'Acesso administrativo');
+      adminButton.title = 'Acesso administrativo';
+    }
+
+    const logoutButton = document.getElementById('memberLogoutBtn');
+    if (logoutButton) logoutButton.setAttribute('aria-label', 'Sair da administração');
+  }
+
+  function protectNavigation() {
+    const current = window.navigate;
+    if (typeof current !== 'function' || current.__arenaNoCommunity) return;
+
+    const wrapped = function(page, ...args) {
+      const destination = page === 'community' ? 'home' : page;
+      return current.call(this, destination, ...args);
+    };
+    Object.defineProperty(wrapped, '__arenaNoCommunity', { value: true });
+    window.navigate = wrapped;
   }
 
   let cleanupFrame = 0;
@@ -182,9 +205,25 @@
     if (cleanupFrame) return;
     cleanupFrame = requestAnimationFrame(() => {
       cleanupFrame = 0;
+      protectNavigation();
       removeCommunityUI();
       makeAuthAdminOnly();
     });
+  }
+
+  let rejectingNonAdmin = false;
+  async function rejectNonAdminAccount(state) {
+    if (!state?.isAuthenticated || state.isAdmin || rejectingNonAdmin) return;
+    rejectingNonAdmin = true;
+    try {
+      await window.ArenaBDAAuth?.signOut?.();
+      if (typeof window.toast === 'function') window.toast('Acesso restrito aos administradores');
+    } catch (error) {
+      console.warn('[Arena BDA] Não foi possível encerrar uma conta sem acesso administrativo', error);
+    } finally {
+      rejectingNonAdmin = false;
+      scheduleCleanup();
+    }
   }
 
   document.addEventListener('click', event => {
@@ -195,19 +234,42 @@
     if (communityTrigger) {
       event.preventDefault();
       event.stopImmediatePropagation();
-      if (typeof window.navigate === 'function') window.navigate('home');
+      window.navigate?.('home');
       return;
     }
 
     const adminButton = target.closest('#adminBtn');
-    if (!adminButton || !window.ArenaBDAAuth?.isAdmin?.()) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    if (typeof window.navigate === 'function') window.navigate('tournament');
+    if (!adminButton) return;
+
+    if (window.ArenaBDAAuth?.isAdmin?.()) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      window.navigate?.('tournament');
+      return;
+    }
+
+    if (window.ArenaBDAAuthUI?.open) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      window.ArenaBDAAuthUI.open('login');
+      makeAuthAdminOnly();
+      queueMicrotask(makeAuthAdminOnly);
+      setTimeout(makeAuthAdminOnly, 0);
+    }
   }, true);
 
-  window.addEventListener('arena:cloud-ready', scheduleCleanup);
-  window.addEventListener('arena:auth-changed', scheduleCleanup);
+  window.addEventListener('arena:cloud-ready', () => {
+    makeAuthAdminOnly();
+    scheduleCleanup();
+    setTimeout(scheduleCleanup, 0);
+    setTimeout(scheduleCleanup, 120);
+  });
+
+  window.addEventListener('arena:auth-changed', event => {
+    scheduleCleanup();
+    rejectNonAdminAccount(event.detail);
+  });
+
   window.addEventListener('arena:bundle-loaded', scheduleCleanup);
   window.addEventListener('arena:matches-updated', scheduleCleanup);
 
@@ -216,6 +278,7 @@
   }
 
   const protectedTournament = protectSuperLeague();
+  protectNavigation();
   scheduleCleanup();
 
   window.ArenaBDASuperLeagueGuard = Object.freeze({
