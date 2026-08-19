@@ -300,6 +300,16 @@
     (document.body || document.head || document.documentElement).appendChild(script);
   }
 
+  function loadSuperLeagueRuntimeFix() {
+    if (window.ArenaBDASuperLeagueRuntimeFix || document.querySelector('script[data-super-league-runtime-fix]')) return;
+    const script = document.createElement('script');
+    script.src = './super-league-runtime-fix.js?v=20260818-1';
+    script.async = true;
+    script.dataset.superLeagueRuntimeFix = 'true';
+    script.addEventListener('error', () => console.warn('[Arena BDA] Não foi possível carregar a correção da Super League'), { once: true });
+    (document.body || document.head || document.documentElement).appendChild(script);
+  }
+
   let cleanupFrame = 0;
   function scheduleCleanup() {
     if (cleanupFrame) return;
@@ -396,6 +406,7 @@
   removeSupercopaFromStorage();
   const protectedTournament = protectSuperLeague();
   protectNavigation();
+  loadSuperLeagueRuntimeFix();
   loadProMotion();
   scheduleCleanup();
 
