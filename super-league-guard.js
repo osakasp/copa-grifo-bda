@@ -290,6 +290,16 @@
     window.navigate = wrapped;
   }
 
+  function loadProMotion() {
+    if (window.ArenaBDAProMotion || document.querySelector('script[data-arena-pro-motion]')) return;
+    const script = document.createElement('script');
+    script.src = './arena-pro-motion.js?v=20260818-1';
+    script.async = true;
+    script.dataset.arenaProMotion = 'true';
+    script.addEventListener('error', () => console.warn('[Arena BDA] Não foi possível carregar o visual premium'), { once: true });
+    (document.body || document.head || document.documentElement).appendChild(script);
+  }
+
   let cleanupFrame = 0;
   function scheduleCleanup() {
     if (cleanupFrame) return;
@@ -386,6 +396,7 @@
   removeSupercopaFromStorage();
   const protectedTournament = protectSuperLeague();
   protectNavigation();
+  loadProMotion();
   scheduleCleanup();
 
   window.ArenaBDASuperLeagueGuard = Object.freeze({
