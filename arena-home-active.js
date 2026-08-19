@@ -6,6 +6,16 @@
   const TOURNAMENT_KEY = 'bda-v3-tournaments';
   const HOME_SELECTOR = '[data-page="home"]';
 
+  function loadSuperLeagueStandingsFix() {
+    if (window.ArenaBDASuperLeagueStandingsFix || document.querySelector('script[data-super-league-standings-fix]')) return;
+    const script = document.createElement('script');
+    script.src = './super-league-standings-fix.js?v=20260819-1';
+    script.async = true;
+    script.dataset.superLeagueStandingsFix = 'true';
+    script.addEventListener('error', () => console.warn('[Arena BDA] Não foi possível carregar a classificação oficial da Super League'), { once:true });
+    (document.body || document.head || document.documentElement).appendChild(script);
+  }
+
   const normalize = value => String(value || '')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -224,6 +234,7 @@
   const observer = new MutationObserver(refresh);
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
-  window.ArenaBDAHomeActive = Object.freeze({ version: 1, refresh });
+  loadSuperLeagueStandingsFix();
+  window.ArenaBDAHomeActive = Object.freeze({ version: 2, refresh });
   refresh();
 })();

@@ -1,4 +1,4 @@
-const VERSION = 'v88-home-active-watermark';
+const VERSION = 'v89-super-league-standings-fix';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
@@ -6,7 +6,7 @@ const CACHE = Object.freeze({
   images: `${CACHE_PREFIX}images-${VERSION}`
 });
 const ACTIVE_CACHES = new Set(Object.values(CACHE));
-const SHELL = ['./', './index.html', './preview-v2.html', './favicon.svg', './site.webmanifest', './arena-pro-motion.js?v=20260818-1', './super-league-runtime-fix.js?v=20260818-1', './bda-logo.js?v=20260819-1', './arena-home-active.js?v=20260819-1'];
+const SHELL = ['./', './index.html', './preview-v2.html', './favicon.svg', './site.webmanifest', './arena-pro-motion.js?v=20260818-1', './super-league-runtime-fix.js?v=20260818-1', './super-league-standings-fix.js?v=20260819-1', './bda-logo.js?v=20260819-1', './arena-home-active.js?v=20260819-1'];
 
 self.addEventListener('install', event => {
   event.waitUntil(Promise.all([
@@ -87,7 +87,7 @@ self.addEventListener('fetch', event => {
   const isDocument = request.mode === 'navigate' || request.destination === 'document' || url.pathname.endsWith('.html');
   const isCriticalArenaScript = sameOrigin
     && request.destination === 'script'
-    && /\/(super-league-guard|super-league-runtime-fix|bda-logo|arena-home-active)\.js$/.test(url.pathname);
+    && /\/(super-league-guard|super-league-runtime-fix|super-league-standings-fix|bda-logo|arena-home-active)\.js$/.test(url.pathname);
 
   if (isDocument || isCriticalArenaScript) return event.respondWith(networkFirst(request));
   if (!sameOrigin) return;
