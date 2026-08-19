@@ -50,6 +50,8 @@
   let statusElement = null;
   let uploadButton = null;
   let downloadButton = null;
+  let pendingTournamentCloudRepair = false;
+  let tournamentRepairTimer = 0;
 
   const clone = value => JSON.parse(JSON.stringify(value));
   const isSupercopa = item => {
@@ -57,18 +59,42 @@
     const name = String(item?.name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '');
     return id === 'supercopa' || id.startsWith('super-copa-bda-') || name.includes('supercopabda');
   };
-  const restoreSupercopa = values => {
-    if (!Array.isArray(values) || values.some(isSupercopa)) return values;
-    return [clone(DEFAULT_TOURNAMENTS.find(isSupercopa)), ...values];
-  };
   const isSuperLeague = item => String(item?.id || '').toLowerCase() === 'bda-super-league';
-  const preserveRequiredTournaments = values => {
-    const next = restoreSupercopa(Array.isArray(values) ? clone(values) : []);
-    if (next.some(isSuperLeague)) return next;
-    const local = readStored(DATASETS.tournaments.key, []);
-    const superLeague = local.find(isSuperLeague);
-    return superLeague ? [...next, clone(superLeague)] : next;
-  };
+
+  function canonicalizeSuperLeague(item) {
+    if (!item) return null;
+    try {
+      if (window.ArenaBDASuperLeagueGuard?.canonicalize) {
+        return clone(window.ArenaBDASuperLeagueGuard.canonicalize(item));
+      }
+    } catch (error) {
+      console.warn('[Arena BDA] Não foi possível normalizar a Super League recebida da nuvem', error);
+    }
+    return clone(item);
+  }
+
+  function normalizeTournaments(values, { markRemoteMigration = false } = {}) {
+    const raw = Array.isArray(values) ? clone(values) : [];
+    const next = raw.filter(item => !isSupercopa(item));
+    const superLeagueIndex = next.findIndex(isSuperLeague);
+
+    if (superLeagueIndex >= 0) {
+      next[superLeagueIndex] = canonicalizeSuperLeague(next[superLeagueIndex]);
+    } else {
+      const local = readStored(DATASETS.tournaments.key, []).find(isSuperLeague);
+      let fallback = local || null;
+      if (!fallback) {
+        try { fallback = window.ArenaBDASuperLeagueGuard?.tournament?.() || null; }
+        catch { fallback = null; }
+      }
+      if (fallback) next.push(canonicalizeSuperLeague(fallback));
+    }
+
+    if (markRemoteMigration && stableStringify(raw) !== stableStringify(next)) {
+      pendingTournamentCloudRepair = true;
+    }
+    return next;
+  }
 
   function stable(value) {
     if (Array.isArray(value)) return value.map(stable);
@@ -138,7 +164,7 @@
       return clone(window.ArenaBDAChampionRanking.champions);
     }
     const config = DATASETS[name];
-    if (name === 'tournaments') return restoreSupercopa(readStored(config.key, clone(DEFAULT_TOURNAMENTS)));
+    if (name === 'tournaments') return normalizeTournaments(readStored(config.key, clone(DEFAULT_TOURNAMENTS)));
     return readStored(config.key, []);
   }
 
@@ -251,7 +277,9 @@
     try {
       Object.entries(remote).forEach(([name, values]) => {
         const config = DATASETS[name];
-        const nextValues = name === 'tournaments' ? preserveRequiredTournaments(values) : values;
+        const nextValues = name === 'tournaments'
+          ? normalizeTournaments(values, { markRemoteMigration: true })
+          : values;
         const localValues = readLocal(name);
         if (stableStringify(localValues) === stableStringify(nextValues)) return;
         nativeSetItem.call(localStorage, config.key, JSON.stringify(nextValues));
@@ -260,6 +288,7 @@
     } finally {
       applyingRemote = false;
     }
+    scheduleTournamentCloudRepair();
     return changed;
   }
 
@@ -315,6 +344,7 @@
       currentMeta = { ...(currentMeta || {}), initialized: true, counts, revisions };
       Object.assign(seenRevisions, revisions);
       Object.assign(knownCounts, counts);
+      pendingTournamentCloudRepair = false;
       setStatus('Sincronizado', 'ok');
       updateControls();
       notify('Dados enviados para a nuvem');
@@ -353,14 +383,29 @@
         counts: { ...(currentMeta?.counts || {}), [name]: values.length },
         revisions: { ...(currentMeta?.revisions || {}), [name]: revision }
       };
+      if (name === 'tournaments') pendingTournamentCloudRepair = false;
       setStatus('Sincronizado', 'ok');
     } catch (error) {
       console.error(error);
+      if (name === 'tournaments') pendingTournamentCloudRepair = true;
       setStatus('Erro na nuvem', 'error', errorMessage(error));
       notify(errorMessage(error));
     } finally {
       syncBusy = false;
     }
+  }
+
+  function scheduleTournamentCloudRepair() {
+    if (!pendingTournamentCloudRepair || !cloudInitialized || !authCore.isAdmin()) return;
+    clearTimeout(tournamentRepairTimer);
+    tournamentRepairTimer = setTimeout(() => {
+      if (!pendingTournamentCloudRepair || !cloudInitialized || !authCore.isAdmin()) return;
+      if (syncBusy || applyingRemote) {
+        scheduleTournamentCloudRepair();
+        return;
+      }
+      uploadDataset('tournaments');
+    }, 900);
   }
 
   async function downloadAll(forceNotice = false) {
@@ -410,6 +455,7 @@
       notify(errorMessage(error));
     } finally {
       syncBusy = false;
+      scheduleTournamentCloudRepair();
     }
   }
 
@@ -450,7 +496,8 @@
 
   authCore.subscribe(() => {
     updateControls();
-    if (!authCore.isAdmin()) setStatus(cloudInitialized ? 'Sincronizado' : 'Conectando', cloudInitialized ? 'ok' : '');
+    if (authCore.isAdmin()) scheduleTournamentCloudRepair();
+    else setStatus(cloudInitialized ? 'Sincronizado' : 'Conectando', cloudInitialized ? 'ok' : '');
   });
 
   window.addEventListener('arena:teams-prepared-for-cloud', () => scheduleUploadByKey(DATASETS.teams.key, 200));
@@ -479,6 +526,7 @@
 
     if (!changedNames.length) {
       setStatus('Sincronizado', 'ok');
+      scheduleTournamentCloudRepair();
       return;
     }
 
@@ -494,6 +542,8 @@
       if (changed) {
         sessionStorage.setItem('arena-cloud-message', 'Alterações sincronizadas entre os aparelhos');
         location.reload();
+      } else {
+        scheduleTournamentCloudRepair();
       }
     } catch (error) {
       console.error(error);
