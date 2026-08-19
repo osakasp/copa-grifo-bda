@@ -1,4 +1,4 @@
-const VERSION = 'v93-super-league-complete-schedule';
+const VERSION = 'v94-zombie-fc-bda-canonical';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
@@ -6,7 +6,7 @@ const CACHE = Object.freeze({
   images: `${CACHE_PREFIX}images-${VERSION}`
 });
 const ACTIVE_CACHES = new Set(Object.values(CACHE));
-const SHELL = ['./', './index.html', './preview-v2.html', './favicon.svg', './site.webmanifest', './arena-pro-motion.js?v=20260818-1', './super-league-runtime-fix.js?v=20260818-1', './super-league-standings-fix.js?v=20260819-1', './super-league-schedule-repair.js?v=20260819-1', './bda-logo.js?v=20260819-1', './arena-home-active.js?v=20260819-1'];
+const SHELL = ['./', './index.html', './preview-v2.html', './favicon.svg', './site.webmanifest', './arena-pro-motion.js?v=20260818-1', './super-league-runtime-fix.js?v=20260818-1', './super-league-standings-fix.js?v=20260819-2', './super-league-schedule-repair.js?v=20260819-2', './bda-logo.js?v=20260819-1', './arena-home-active.js?v=20260819-1'];
 
 self.addEventListener('install', event => {
   event.waitUntil(Promise.all([
