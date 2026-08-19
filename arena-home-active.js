@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAHomeActive) return;
+  if (window.ArenaBDAHomeActive?.version >= 3) return;
 
   const TOURNAMENT_KEY = 'bda-v3-tournaments';
   const HOME_SELECTOR = '[data-page="home"]';
@@ -52,59 +52,16 @@
     style.textContent = `
       ${HOME_SELECTOR}{position:relative;isolation:isolate}
       ${HOME_SELECTOR}>*:not(.arena-home-watermark){position:relative;z-index:1}
-      .arena-home-watermark{
-        position:absolute;
-        z-index:0;
-        top:84px;
-        right:clamp(-90px,-4vw,-28px);
-        width:clamp(260px,43vw,520px);
-        aspect-ratio:1;
-        object-fit:contain;
-        pointer-events:none;
-        user-select:none;
-        opacity:.065;
-        filter:grayscale(.15) saturate(.75) drop-shadow(0 22px 48px rgba(0,0,0,.25));
-        transform:rotate(-8deg);
-      }
+      .arena-home-watermark{position:absolute;z-index:0;top:84px;right:clamp(-90px,-4vw,-28px);width:clamp(260px,43vw,520px);aspect-ratio:1;object-fit:contain;pointer-events:none;user-select:none;opacity:.065;filter:grayscale(.15) saturate(.75) drop-shadow(0 22px 48px rgba(0,0,0,.25));transform:rotate(-8deg)}
       .arena-active-section{margin:16px 0 8px}
       .arena-active-heading{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:0 2px 10px}
       .arena-active-heading h2{margin:4px 0 0;font:900 27px/1 "Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.03em}
       .arena-active-heading p{margin:5px 0 0;color:var(--muted);font-size:10px}
-      .arena-active-heading .arena-active-count{flex:0 0 auto;padding:7px 10px;border:1px solid rgba(79,223,143,.22);border-radius:999px;color:#9af0bb;background:rgba(79,223,143,.08);font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}
+      .arena-active-count{flex:0 0 auto;padding:7px 10px;border:1px solid rgba(79,223,143,.22);border-radius:999px;color:#9af0bb;background:rgba(79,223,143,.08);font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}
       .arena-active-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
-      .arena-active-card{
-        position:relative;
-        overflow:hidden;
-        min-height:190px;
-        display:grid;
-        grid-template-columns:minmax(0,1fr) auto;
-        align-items:end;
-        gap:14px;
-        padding:18px;
-        border:1px solid rgba(79,223,143,.34);
-        border-radius:24px;
-        background:
-          radial-gradient(circle at 90% 10%,rgba(79,223,143,.16),transparent 31%),
-          radial-gradient(circle at 15% 95%,rgba(242,215,125,.12),transparent 32%),
-          linear-gradient(145deg,rgba(19,44,29,.98),rgba(5,13,9,.98));
-        box-shadow:0 20px 54px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.035);
-      }
-      .arena-active-card::before{
-        content:"";
-        position:absolute;
-        inset:0;
-        pointer-events:none;
-        background:linear-gradient(115deg,transparent 0 48%,rgba(255,255,255,.035) 50%,transparent 52%);
-        transform:translateX(-55%);
-        animation:arenaActiveSweep 5.6s ease-in-out infinite;
-      }
-      .arena-active-card[data-banner="true"]::after{
-        content:"";
-        position:absolute;
-        inset:0;
-        z-index:0;
-        background:linear-gradient(90deg,rgba(4,11,7,.96) 0 44%,rgba(4,11,7,.78) 70%,rgba(4,11,7,.58));
-      }
+      .arena-active-card{position:relative;overflow:hidden;min-height:190px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:14px;padding:18px;border:1px solid rgba(79,223,143,.34);border-radius:24px;background:radial-gradient(circle at 90% 10%,rgba(79,223,143,.16),transparent 31%),radial-gradient(circle at 15% 95%,rgba(242,215,125,.12),transparent 32%),linear-gradient(145deg,rgba(19,44,29,.98),rgba(5,13,9,.98));box-shadow:0 20px 54px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.035)}
+      .arena-active-card::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 0 48%,rgba(255,255,255,.035) 50%,transparent 52%);transform:translateX(-55%);animation:arenaActiveSweep 5.6s ease-in-out infinite}
+      .arena-active-card[data-banner="true"]::after{content:"";position:absolute;inset:0;z-index:0;background:linear-gradient(90deg,rgba(4,11,7,.96) 0 44%,rgba(4,11,7,.78) 70%,rgba(4,11,7,.58))}
       .arena-active-banner{position:absolute;inset:0;z-index:-1;width:100%;height:100%;object-fit:cover;filter:saturate(.9) contrast(1.05)}
       .arena-active-copy,.arena-active-side{position:relative;z-index:2}
       .arena-active-live{display:inline-flex;align-items:center;gap:7px;padding:6px 9px;border:1px solid rgba(79,223,143,.28);border-radius:999px;color:#98f1b9;background:rgba(79,223,143,.09);font-size:8px;font-weight:900;letter-spacing:.11em;text-transform:uppercase}
@@ -119,18 +76,8 @@
       #arenaHome .arena-home-card[data-active="true"]{border-color:rgba(79,223,143,.30)!important;box-shadow:0 16px 42px rgba(0,0,0,.30),0 0 0 1px rgba(79,223,143,.045)!important}
       @keyframes arenaActivePulse{50%{opacity:.45;transform:scale(.82)}}
       @keyframes arenaActiveSweep{0%,72%,100%{transform:translateX(-60%)}86%{transform:translateX(75%)}}
-      @media(max-width:720px){
-        .arena-home-watermark{top:118px;right:-105px;width:330px;opacity:.052}
-        .arena-active-grid{grid-template-columns:1fr}
-        .arena-active-card{min-height:176px;padding:15px;grid-template-columns:minmax(0,1fr) 82px}
-        .arena-active-card h3{font-size:34px}
-        .arena-active-side{min-width:0}.arena-active-badge{width:54px;height:54px;border-radius:16px;font-size:29px}
-        .arena-active-card button{padding:0 10px;font-size:9px}
-      }
-      @media(max-width:460px){
-        .arena-active-heading{align-items:start}.arena-active-heading .arena-active-count{margin-top:2px}
-        .arena-active-card{grid-template-columns:1fr}.arena-active-side{grid-auto-flow:column;justify-content:space-between;justify-items:stretch;align-items:center}.arena-active-badge{display:none}.arena-active-card button{width:100%}
-      }
+      @media(max-width:720px){.arena-home-watermark{top:118px;right:-105px;width:330px;opacity:.052}.arena-active-grid{grid-template-columns:1fr}.arena-active-card{min-height:176px;padding:15px;grid-template-columns:minmax(0,1fr) 82px}.arena-active-card h3{font-size:34px}.arena-active-side{min-width:0}.arena-active-badge{width:54px;height:54px;border-radius:16px;font-size:29px}.arena-active-card button{padding:0 10px;font-size:9px}}
+      @media(max-width:460px){.arena-active-heading{align-items:start}.arena-active-card{grid-template-columns:1fr}.arena-active-side{grid-auto-flow:column;justify-content:space-between;justify-items:stretch;align-items:center}.arena-active-badge{display:none}.arena-active-card button{width:100%}}
       @media(prefers-reduced-motion:reduce){.arena-active-card::before,.arena-active-live i{animation:none!important}}
     `;
     document.head.append(style);
@@ -212,6 +159,48 @@
     });
   }
 
+  function openTournamentDirectly(tournamentId) {
+    const id = String(tournamentId || '').trim();
+    if (!id) return;
+
+    const activate = () => {
+      const button = [...document.querySelectorAll('[data-open-tournament]')]
+        .find(node => String(node.dataset.openTournament || '') === id);
+      if (!button) return false;
+
+      button.click();
+      requestAnimationFrame(() => {
+        const detail = document.getElementById('arenaDetail');
+        if (detail) detail.scrollIntoView({ block:'start', behavior:'smooth' });
+      });
+      return true;
+    };
+
+    window.navigate?.('tournament');
+
+    let attempts = 0;
+    const retry = () => {
+      attempts += 1;
+      if (activate() || attempts >= 15) return;
+      setTimeout(retry, 70);
+    };
+    requestAnimationFrame(retry);
+  }
+
+  document.addEventListener('click', event => {
+    const target = event.target instanceof Element
+      ? event.target.closest('[data-home-tournament]')
+      : null;
+    if (!target) return;
+
+    const id = target.dataset.homeTournament;
+    if (!id) return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    openTournamentDirectly(id);
+  }, true);
+
   let frame = 0;
   function refresh() {
     if (frame) return;
@@ -235,6 +224,6 @@
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
   loadSuperLeagueStandingsFix();
-  window.ArenaBDAHomeActive = Object.freeze({ version: 2, refresh });
+  window.ArenaBDAHomeActive = Object.freeze({ version: 3, refresh, openTournamentDirectly });
   refresh();
 })();
