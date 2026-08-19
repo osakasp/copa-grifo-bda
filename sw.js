@@ -1,4 +1,4 @@
-const VERSION = 'v82-remove-community';
+const VERSION = 'v83-admin-login-modal-fix';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
