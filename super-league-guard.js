@@ -3,7 +3,7 @@
 
   const TOURNAMENT_KEY = 'bda-v3-tournaments';
   const SUPER_LEAGUE_ID = 'bda-super-league';
-  const PROTECTION_VERSION = 1;
+  const PROTECTION_VERSION = 2;
 
   const GROUPS = Object.freeze([
     Object.freeze({ name: 'Grupo A', teams: Object.freeze([
@@ -100,20 +100,23 @@
   function protectSuperLeague() {
     const tournaments = readTournaments();
     const index = tournaments.findIndex(item => String(item?.id || '').toLowerCase() === SUPER_LEAGUE_ID);
-    const next = clone(tournaments);
 
-    if (index < 0) next.unshift(canonicalTournament());
-    else next[index] = canonicalTournament(next[index]);
+    // A proteção agora garante apenas que a competição exista. Se a Super League
+    // já veio da nuvem, não reescrevemos seus campos durante o boot. Isso evita
+    // que o guard e o Firestore fiquem alternando versões do mesmo campeonato e
+    // provoquem reload em ciclo logo após o login.
+    if (index >= 0) return clone(tournaments[index]);
+
+    const next = clone(tournaments);
+    next.push(canonicalTournament());
 
     try {
-      const before = JSON.stringify(tournaments);
-      const after = JSON.stringify(next);
-      if (before !== after) localStorage.setItem(TOURNAMENT_KEY, after);
+      localStorage.setItem(TOURNAMENT_KEY, JSON.stringify(next));
     } catch (error) {
       console.warn('[Arena BDA] Não foi possível proteger a BDA Super League', error);
     }
 
-    return next.find(item => String(item?.id || '').toLowerCase() === SUPER_LEAGUE_ID) || null;
+    return clone(next[next.length - 1]);
   }
 
   const protectedTournament = protectSuperLeague();
@@ -123,6 +126,7 @@
     groups: GROUPS,
     participants: PARTICIPANTS,
     protect: protectSuperLeague,
+    canonicalize: current => clone(canonicalTournament(current)),
     tournament: () => clone(protectedTournament || canonicalTournament())
   });
 })();
