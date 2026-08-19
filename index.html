@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="Arena BDA">
   <meta name="description" content="Plataforma oficial para criação e acompanhamento dos campeonatos do Clã BDA.">
   <meta property="og:title" content="Arena BDA | Campeonatos do Clã">
-  <meta property="og:description" content="Campeonatos, clubes, resultados, notícias e comunidade do Clã BDA.">
+  <meta property="og:description" content="Campeonatos, clubes, resultados e notícias do Clã BDA.">
   <meta property="og:type" content="website">
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
   <link rel="dns-prefetch" href="//www.gstatic.com">
@@ -26,9 +26,9 @@
     *{box-sizing:border-box}
     html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
     .stage{position:fixed;inset:0;background:var(--bg)}
-    #arenaFrame{position:absolute;inset:0;width:100%;height:100%;border:0;background:var(--bg);opacity:0;transition:opacity .22s ease}
+    #arenaFrame{position:absolute;inset:0;width:100%;height:100%;border:0;background:var(--bg);opacity:0;transition:opacity .18s ease}
     #arenaFrame.ready{opacity:1}
-    .loading{position:absolute;inset:0;z-index:2;display:grid;place-items:center;padding:24px;text-align:center;background:var(--bg);transition:opacity .2s ease,visibility .2s ease}
+    .loading{position:absolute;inset:0;z-index:2;display:grid;place-items:center;padding:24px;text-align:center;background:var(--bg);transition:opacity .16s ease,visibility .16s ease}
     .loading.hidden{opacity:0;visibility:hidden;pointer-events:none}
     .loader-card{width:min(340px,92vw);padding:26px 22px;border:1px solid #26392d;border-radius:12px;background:var(--surface);box-shadow:0 14px 42px rgba(0,0,0,.34)}
     .griffin{width:68px;height:68px;margin:0 auto 15px;overflow:hidden;border:1px solid #b7cebe;border-radius:10px;background:#176b3d}
@@ -53,7 +53,7 @@
         <button class="retry" id="retryButton" type="button">Tentar novamente</button>
       </div>
     </section>
-    <iframe id="arenaFrame" title="Arena BDA" src="about:blank" data-src="./preview-v2.html?v=20260816-4" allow="clipboard-write; fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+    <iframe id="arenaFrame" title="Arena BDA" src="about:blank" data-src="./preview-v2.html?v=20260819-5" allow="clipboard-write; fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe>
   </main>
   <script>
     (() => {
@@ -106,6 +106,7 @@
       let loadingTimeoutId = 0;
       let loadGeneration = 0;
       let expectedToken = '';
+      let transitionTimer = 0;
 
       function setLoadingState() {
         panel.classList.remove('hidden');
@@ -123,8 +124,19 @@
         }, 12000);
       }
 
+      function showTransition(nextTitle, nextMessage) {
+        clearTimeout(transitionTimer);
+        panel.classList.remove('hidden');
+        frame.classList.remove('ready');
+        retryButton.classList.remove('show');
+        spinner.hidden = false;
+        title.textContent = nextTitle || 'Atualizando a Arena BDA';
+        message.textContent = nextMessage || 'Aplicando a interface e sincronizando os dados...';
+      }
+
       function showLoadError(detail = 'Verifique sua conexão e tente novamente.') {
         clearTimeout(loadingTimeoutId);
+        clearTimeout(transitionTimer);
         panel.classList.remove('hidden');
         frame.classList.remove('ready');
         title.textContent = 'Não foi possível abrir a Arena';
@@ -204,6 +216,19 @@
         });
       }
 
+      async function settleAndReveal(doc, generation, minimumDelay = 0) {
+        if (generation !== loadGeneration) return;
+        if (minimumDelay > 0) await new Promise(resolve => window.setTimeout(resolve, minimumDelay));
+        await yieldFrame(doc);
+        await yieldFrame(doc);
+        if (generation !== loadGeneration) return;
+        clearTimeout(loadingTimeoutId);
+        clearTimeout(transitionTimer);
+        spinner.hidden = false;
+        frame.classList.add('ready');
+        panel.classList.add('hidden');
+      }
+
       async function loadOrderedBatch(doc, scripts, failures, timeoutMs) {
         for (let index = 0; index < scripts.length; index += 1) {
           const src = scripts[index];
@@ -230,10 +255,25 @@
         let cloudReady = false;
         let lastInteractionAt = win.performance.now();
         let cloudIdleTimer = 0;
+        let adminFlowUntil = 0;
 
         const noteInteraction = () => { lastInteractionAt = win.performance.now(); };
         ['pointerdown', 'touchstart', 'keydown', 'scroll'].forEach(type => {
           doc.addEventListener(type, noteInteraction, { passive: true, capture: true });
+        });
+
+        const stabilizeAdminFlow = (nextTitle = 'Sincronizando a Arena BDA', nextMessage = 'Atualizando seu acesso e os dados do site...') => {
+          if (generation !== loadGeneration) return;
+          showTransition(nextTitle, nextMessage);
+          clearTimeout(transitionTimer);
+          transitionTimer = window.setTimeout(() => {
+            settleAndReveal(doc, generation, 80).catch(() => {});
+          }, 360);
+        };
+
+        win.addEventListener('arena:auth-changed', () => {
+          if (win.performance.now() > adminFlowUntil) return;
+          stabilizeAdminFlow();
         });
 
         const ensureCloud = reason => {
@@ -257,19 +297,28 @@
 
         doc.addEventListener('click', event => {
           const cloudFeature = event.target instanceof win.Element
-            && event.target.closest('[data-go="community"],[data-mobile-go="community"],[data-sheet-go="community"],[data-go="feedback"],[data-mobile-go="feedback"],[data-sheet-go="feedback"]');
+            && event.target.closest('[data-go="feedback"],[data-mobile-go="feedback"],[data-sheet-go="feedback"]');
           if (cloudFeature && !cloudReady) ensureCloud(cloudFeature.dataset.go || cloudFeature.dataset.mobileGo || cloudFeature.dataset.sheetGo || 'feature').catch(error => {
             console.error('[Arena BDA] Falha ao preparar recurso online', error);
           });
 
           const adminButton = event.target instanceof win.Element && event.target.closest('#adminBtn');
-          if (!adminButton || cloudReady) return;
+          if (!adminButton) return;
+          adminFlowUntil = win.performance.now() + (10 * 60 * 1000);
+          if (cloudReady) return;
+
           event.preventDefault();
           event.stopImmediatePropagation();
           adminButton.setAttribute('aria-busy', 'true');
           adminButton.textContent = 'CARREGANDO...';
-          ensureCloud('admin').then(() => doc.getElementById('adminBtn')?.click()).catch(error => {
+          showTransition('Preparando acesso administrativo', 'Carregando login e sincronização sem trocar a interface...');
+          ensureCloud('admin').then(async () => {
+            if (generation !== loadGeneration) return;
+            await settleAndReveal(doc, generation, 140);
+            doc.getElementById('adminBtn')?.click();
+          }).catch(error => {
             console.error('[Arena BDA] Falha ao preparar login', error);
+            showLoadError('O acesso administrativo não terminou de carregar. Tente novamente.');
           });
         }, true);
 
@@ -341,7 +390,7 @@
         frame.src = url.href;
       }
 
-      frame.addEventListener('load', () => {
+      frame.addEventListener('load', async () => {
         if (!validArenaDocument()) {
           let isBlank = false;
           try { isBlank = frame.contentWindow?.location?.href === 'about:blank'; } catch {}
@@ -350,10 +399,17 @@
         }
 
         const generation = loadGeneration;
-        clearTimeout(loadingTimeoutId);
-        frame.classList.add('ready');
-        panel.classList.add('hidden');
-        enhanceArena(generation);
+        title.textContent = 'Preparando a Arena BDA';
+        message.textContent = 'Aplicando a interface atual antes de mostrar o site...';
+
+        try {
+          await enhanceArena(generation);
+          if (generation !== loadGeneration) return;
+          await settleAndReveal(frame.contentDocument, generation, 40);
+        } catch (error) {
+          console.error('[Arena BDA] A interface não terminou de carregar', error);
+          showLoadError('A interface não terminou de carregar. Tente novamente.');
+        }
       });
 
       frame.addEventListener('error', () => {
