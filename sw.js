@@ -1,4 +1,4 @@
-const VERSION = 'v80-score-auth-race-fix';
+const VERSION = 'v81-login-super-league-sync-fix';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
