@@ -1,4 +1,4 @@
-const VERSION = 'v86-super-league-groups-score-fix';
+const VERSION = 'v87-show-super-league-groups';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
