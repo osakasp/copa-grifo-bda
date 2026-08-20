@@ -1,4 +1,4 @@
-const VERSION = 'v99-super-league-single-standings-owner';
+const VERSION = 'v100-arena-v3-clean-runtime';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
@@ -6,7 +6,20 @@ const CACHE = Object.freeze({
   images: `${CACHE_PREFIX}images-${VERSION}`
 });
 const ACTIVE_CACHES = new Set(Object.values(CACHE));
-const SHELL = ['./', './index.html', './preview-v2.html?v=20260819-5', './favicon.svg', './site.webmanifest', './arena-pro-motion.js?v=20260818-1', './super-league-runtime-fix.js?v=20260819-3', './super-league-schedule-repair.js?v=20260819-3', './bda-logo.js?v=20260819-1', './arena-home-active.js?v=20260820-1'];
+const CLEANUP_SRC = './arena-v3-cleanup.js?v=20260820-1';
+const SHELL = [
+  './',
+  './index.html',
+  './preview-v2.html?v=20260819-5',
+  './favicon.svg',
+  './site.webmanifest',
+  CLEANUP_SRC,
+  './arena-pro-motion.js?v=20260818-1',
+  './super-league-runtime-fix.js?v=20260819-3',
+  './super-league-schedule-repair.js?v=20260819-3',
+  './bda-logo.js?v=20260819-1',
+  './arena-home-active.js?v=20260820-1'
+];
 
 self.addEventListener('install', event => {
   event.waitUntil(Promise.all([
@@ -50,6 +63,37 @@ async function networkFirst(request) {
   }
 }
 
+function cleanupResponse(response) {
+  if (!response?.ok) return Promise.resolve(response);
+  return response.text().then(html => {
+    if (html.includes('arena-v3-cleanup.js')) return response;
+    const script = `<script src="${CLEANUP_SRC}"></script>`;
+    const next = /<\/body>/i.test(html) ? html.replace(/<\/body>/i, `${script}</body>`) : `${html}${script}`;
+    const headers = new Headers(response.headers);
+    headers.delete('content-length');
+    headers.delete('content-encoding');
+    headers.delete('etag');
+    headers.set('cache-control', 'no-store');
+    return new Response(next, {
+      status: response.status,
+      statusText: response.statusText,
+      headers
+    });
+  });
+}
+
+async function previewV3(request) {
+  const cache = await caches.open(CACHE.shell);
+  try {
+    const response = await fetch(request, { cache: 'no-store' });
+    if (canCache(request, response)) cache.put(request, response.clone()).catch(() => {});
+    return await cleanupResponse(response);
+  } catch {
+    const cached = await cache.match(request) || await cache.match('./preview-v2.html?v=20260819-5');
+    return cached ? cleanupResponse(cached) : Response.error();
+  }
+}
+
 async function staleWhileRevalidate(request) {
   const cache = await caches.open(CACHE.assets);
   const cached = await cache.match(request);
@@ -84,13 +128,17 @@ self.addEventListener('fetch', event => {
 
   const url = new URL(request.url);
   const sameOrigin = url.origin === self.location.origin;
+  if (!sameOrigin) return;
+
+  if (url.pathname.endsWith('/preview-v2.html') || url.pathname.endsWith('preview-v2.html')) {
+    return event.respondWith(previewV3(request));
+  }
+
   const isDocument = request.mode === 'navigate' || request.destination === 'document' || url.pathname.endsWith('.html');
-  const isCriticalArenaScript = sameOrigin
-    && request.destination === 'script'
-    && /\/(firestore-sync|classificacao-automatica|super-league-guard|super-league-runtime-fix|super-league-standings-fix|super-league-schedule-repair|bda-logo|arena-home-active)\.js$/.test(url.pathname);
+  const isCriticalArenaScript = request.destination === 'script'
+    && /\/(firebase-auth|firestore-sync|classificacao-automatica|arena-v3-cleanup|super-league-guard|super-league-runtime-fix|super-league-schedule-repair|bda-logo|arena-home-active)\.js$/.test(url.pathname);
 
   if (isDocument || isCriticalArenaScript) return event.respondWith(networkFirst(request));
-  if (!sameOrigin) return;
   if (request.destination === 'image') return event.respondWith(imageCacheFirst(request));
   if (['script', 'style', 'font', 'manifest'].includes(request.destination)) event.respondWith(staleWhileRevalidate(request));
 });
