@@ -1,4 +1,4 @@
-const VERSION = 'v97-super-league-admin-settings';
+const VERSION = 'v98-super-league-standings-order';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
@@ -87,7 +87,7 @@ self.addEventListener('fetch', event => {
   const isDocument = request.mode === 'navigate' || request.destination === 'document' || url.pathname.endsWith('.html');
   const isCriticalArenaScript = sameOrigin
     && request.destination === 'script'
-    && /\/(firestore-sync|super-league-guard|super-league-runtime-fix|super-league-standings-fix|super-league-schedule-repair|bda-logo|arena-home-active)\.js$/.test(url.pathname);
+    && /\/(firestore-sync|classificacao-automatica|super-league-guard|super-league-runtime-fix|super-league-standings-fix|super-league-schedule-repair|bda-logo|arena-home-active)\.js$/.test(url.pathname);
 
   if (isDocument || isCriticalArenaScript) return event.respondWith(networkFirst(request));
   if (!sameOrigin) return;
