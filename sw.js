@@ -65,7 +65,7 @@ async function networkFirst(request) {
 
 function cleanupResponse(response) {
   if (!response?.ok) return Promise.resolve(response);
-  return response.text().then(html => {
+  return response.clone().text().then(html => {
     if (html.includes('arena-v3-cleanup.js')) return response;
     const script = `<script src="${CLEANUP_SRC}"></script>`;
     const next = /<\/body>/i.test(html) ? html.replace(/<\/body>/i, `${script}</body>`) : `${html}${script}`;
