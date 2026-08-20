@@ -1,19 +1,17 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAHomeActive?.version >= 3) return;
+  if (window.ArenaBDAHomeActive?.version >= 4) return;
 
   const TOURNAMENT_KEY = 'bda-v3-tournaments';
   const HOME_SELECTOR = '[data-page="home"]';
+  const SUPER_LEAGUE_ID = 'bda-super-league';
 
   function loadSuperLeagueStandingsFix() {
-    if (window.ArenaBDASuperLeagueStandingsFix || document.querySelector('script[data-super-league-standings-fix]')) return;
-    const script = document.createElement('script');
-    script.src = './super-league-standings-fix.js?v=20260819-1';
-    script.async = true;
-    script.dataset.superLeagueStandingsFix = 'true';
-    script.addEventListener('error', () => console.warn('[Arena BDA] Não foi possível carregar a classificação oficial da Super League'), { once:true });
-    (document.body || document.head || document.documentElement).appendChild(script);
+    // A classificação da Super League agora pertence ao runtime dedicado.
+    // O módulo legado não deve ser carregado em paralelo, pois ambos escrevem
+    // no mesmo painel e podem deixar pontos novos em posições antigas.
+    return;
   }
 
   const normalize = value => String(value || '')
@@ -159,6 +157,40 @@
     });
   }
 
+  function repairSuperLeagueStandingsOrder() {
+    const runtime = window.ArenaBDASuperLeagueRuntimeFix;
+    const manager = document.querySelector(`#giManager[data-tid="${SUPER_LEAGUE_ID}"]`);
+    const panel = manager?.querySelector('#autoStandings');
+    if (!runtime?.calculate || !panel || panel.hidden) return;
+
+    const data = runtime.calculate();
+    if (!Array.isArray(data)) return;
+    const limit = Math.max(1, Number(runtime.qualifiers?.() || 3));
+
+    data.forEach(group => {
+      const section = [...panel.querySelectorAll('.stand-group')]
+        .find(node => normalize(node.querySelector('h3')?.textContent) === normalize(group.name));
+      const tbody = section?.querySelector('tbody');
+      if (!tbody) return;
+
+      const rowByTeam = new Map(
+        [...tbody.querySelectorAll('tr')]
+          .map(row => [normalize(row.querySelector('.stand-club b')?.textContent), row])
+          .filter(([name]) => Boolean(name))
+      );
+
+      group.rows.forEach((entry, index) => {
+        const row = rowByTeam.get(normalize(entry.name));
+        if (!row) return;
+        const current = tbody.children[index];
+        if (current !== row) tbody.insertBefore(row, current || null);
+        const position = row.querySelector('.stand-pos');
+        if (position && position.textContent !== String(index + 1)) position.textContent = String(index + 1);
+        row.classList.toggle('qualified', index < limit);
+      });
+    });
+  }
+
   function openTournamentDirectly(tournamentId) {
     const id = String(tournamentId || '').trim();
     if (!id) return;
@@ -210,20 +242,25 @@
       ensureWatermark();
       renderActive();
       markLegacyCards();
+      repairSuperLeagueStandingsOrder();
     });
   }
 
-  window.addEventListener('arena:tournaments-updated', refresh);
-  window.addEventListener('arena:bundle-loaded', refresh);
-  window.addEventListener('arena:cloud-ready', refresh);
+  ['arena:tournaments-updated','arena:bundle-loaded','arena:cloud-ready','arena:quick-score-saved','arena:matches-updated']
+    .forEach(type => window.addEventListener(type, refresh));
   window.addEventListener('storage', event => {
-    if (event.key === TOURNAMENT_KEY) refresh();
+    if (event.key === TOURNAMENT_KEY || event.key === 'bda-v3-confrontos') refresh();
   });
 
   const observer = new MutationObserver(refresh);
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
   loadSuperLeagueStandingsFix();
-  window.ArenaBDAHomeActive = Object.freeze({ version: 3, refresh, openTournamentDirectly });
+  window.ArenaBDAHomeActive = Object.freeze({
+    version: 4,
+    refresh,
+    openTournamentDirectly,
+    repairSuperLeagueStandingsOrder
+  });
   refresh();
 })();
