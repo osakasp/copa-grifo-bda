@@ -1,4 +1,4 @@
-const VERSION = 'v96-admin-login-sync-loop';
+const VERSION = 'v97-super-league-admin-settings';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
@@ -6,7 +6,7 @@ const CACHE = Object.freeze({
   images: `${CACHE_PREFIX}images-${VERSION}`
 });
 const ACTIVE_CACHES = new Set(Object.values(CACHE));
-const SHELL = ['./', './index.html', './preview-v2.html?v=20260819-5', './favicon.svg', './site.webmanifest', './arena-pro-motion.js?v=20260818-1', './super-league-runtime-fix.js?v=20260818-1', './super-league-standings-fix.js?v=20260819-2', './super-league-schedule-repair.js?v=20260819-2', './bda-logo.js?v=20260819-1', './arena-home-active.js?v=20260819-1'];
+const SHELL = ['./', './index.html', './preview-v2.html?v=20260819-5', './favicon.svg', './site.webmanifest', './arena-pro-motion.js?v=20260818-1', './super-league-runtime-fix.js?v=20260819-3', './super-league-standings-fix.js?v=20260819-2', './super-league-schedule-repair.js?v=20260819-3', './bda-logo.js?v=20260819-1', './arena-home-active.js?v=20260819-1'];
 
 self.addEventListener('install', event => {
   event.waitUntil(Promise.all([
