@@ -1,8 +1,9 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAV3Cleanup?.version >= 1) return;
+  if (window.ArenaBDAV3Cleanup?.version >= 2) return;
 
+  const REPECHAGE_SRC = './super-league-repechage.js?v=20260821-1';
   const LEGACY_SELECTORS = [
     '[data-page="community"]',
     '[data-go="community"]',
@@ -25,6 +26,16 @@
       const src = String(script.getAttribute('src') || '');
       if (LEGACY_SCRIPT_PARTS.some(part => src.includes(part))) script.remove();
     });
+  }
+
+  function ensureRepechageModule() {
+    if (window.ArenaBDASuperLeagueRepechage || document.querySelector('script[data-super-league-repechage]')) return;
+    const script = document.createElement('script');
+    script.src = REPECHAGE_SRC;
+    script.async = true;
+    script.dataset.superLeagueRepechage = 'true';
+    script.addEventListener('error', () => console.warn('[Arena BDA] Não foi possível carregar a repescagem da Super League'), { once:true });
+    (document.body || document.head || document.documentElement).appendChild(script);
   }
 
   function neutralizeLegacyAdminModal() {
@@ -64,6 +75,7 @@
     removeLegacyScripts();
     neutralizeLegacyAdminModal();
     scrubLegacyCopy();
+    ensureRepechageModule();
   }
 
   let frame = 0;
@@ -82,8 +94,9 @@
   observer.observe(document.documentElement, { childList:true, subtree:true });
 
   window.ArenaBDAV3Cleanup = Object.freeze({
-    version: 1,
+    version: 2,
     cleanup,
+    repechageSource: REPECHAGE_SRC,
     legacySelectors: Object.freeze([...LEGACY_SELECTORS])
   });
 
