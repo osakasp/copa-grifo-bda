@@ -1,4 +1,4 @@
-const VERSION = 'v100-arena-v3-clean-runtime';
+const VERSION = 'v101-super-league-repechage';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
@@ -6,7 +6,8 @@ const CACHE = Object.freeze({
   images: `${CACHE_PREFIX}images-${VERSION}`
 });
 const ACTIVE_CACHES = new Set(Object.values(CACHE));
-const CLEANUP_SRC = './arena-v3-cleanup.js?v=20260820-1';
+const CLEANUP_SRC = './arena-v3-cleanup.js?v=20260821-1';
+const REPECHAGE_SRC = './super-league-repechage.js?v=20260821-1';
 const SHELL = [
   './',
   './index.html',
@@ -14,6 +15,7 @@ const SHELL = [
   './favicon.svg',
   './site.webmanifest',
   CLEANUP_SRC,
+  REPECHAGE_SRC,
   './arena-pro-motion.js?v=20260818-1',
   './super-league-runtime-fix.js?v=20260819-3',
   './super-league-schedule-repair.js?v=20260819-3',
@@ -136,7 +138,7 @@ self.addEventListener('fetch', event => {
 
   const isDocument = request.mode === 'navigate' || request.destination === 'document' || url.pathname.endsWith('.html');
   const isCriticalArenaScript = request.destination === 'script'
-    && /\/(firebase-auth|firestore-sync|classificacao-automatica|arena-v3-cleanup|super-league-guard|super-league-runtime-fix|super-league-schedule-repair|bda-logo|arena-home-active)\.js$/.test(url.pathname);
+    && /\/(firebase-auth|firestore-sync|classificacao-automatica|arena-v3-cleanup|super-league-guard|super-league-runtime-fix|super-league-repechage|super-league-schedule-repair|bda-logo|arena-home-active)\.js$/.test(url.pathname);
 
   if (isDocument || isCriticalArenaScript) return event.respondWith(networkFirst(request));
   if (request.destination === 'image') return event.respondWith(imageCacheFirst(request));
