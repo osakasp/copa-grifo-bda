@@ -1,9 +1,10 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAV3Cleanup?.version >= 2) return;
+  if (window.ArenaBDAV3Cleanup?.version >= 3) return;
 
   const REPECHAGE_SRC = './super-league-repechage.js?v=20260821-1';
+  const REDESIGN_SRC = './arena-redesign-v1.js?v=20260821-1';
   const LEGACY_SELECTORS = [
     '[data-page="community"]',
     '[data-go="community"]',
@@ -28,14 +29,34 @@
     });
   }
 
-  function ensureRepechageModule() {
-    if (window.ArenaBDASuperLeagueRepechage || document.querySelector('script[data-super-league-repechage]')) return;
+  function ensureScript({ globalName, selector, src, datasetName, label }) {
+    if (window[globalName] || document.querySelector(selector)) return;
     const script = document.createElement('script');
-    script.src = REPECHAGE_SRC;
+    script.src = src;
     script.async = true;
-    script.dataset.superLeagueRepechage = 'true';
-    script.addEventListener('error', () => console.warn('[Arena BDA] Não foi possível carregar a repescagem da Super League'), { once:true });
+    script.dataset[datasetName] = 'true';
+    script.addEventListener('error', () => console.warn(`[Arena BDA] Não foi possível carregar ${label}`), { once:true });
     (document.body || document.head || document.documentElement).appendChild(script);
+  }
+
+  function ensureRepechageModule() {
+    ensureScript({
+      globalName: 'ArenaBDASuperLeagueRepechage',
+      selector: 'script[data-super-league-repechage]',
+      src: REPECHAGE_SRC,
+      datasetName: 'superLeagueRepechage',
+      label: 'a repescagem da Super League'
+    });
+  }
+
+  function ensureRedesignModule() {
+    ensureScript({
+      globalName: 'ArenaBDARedesign',
+      selector: 'script[data-arena-redesign]',
+      src: REDESIGN_SRC,
+      datasetName: 'arenaRedesign',
+      label: 'o novo design da Arena'
+    });
   }
 
   function neutralizeLegacyAdminModal() {
@@ -76,6 +97,7 @@
     neutralizeLegacyAdminModal();
     scrubLegacyCopy();
     ensureRepechageModule();
+    ensureRedesignModule();
   }
 
   let frame = 0;
@@ -94,9 +116,10 @@
   observer.observe(document.documentElement, { childList:true, subtree:true });
 
   window.ArenaBDAV3Cleanup = Object.freeze({
-    version: 2,
+    version: 3,
     cleanup,
     repechageSource: REPECHAGE_SRC,
+    redesignSource: REDESIGN_SRC,
     legacySelectors: Object.freeze([...LEGACY_SELECTORS])
   });
 
