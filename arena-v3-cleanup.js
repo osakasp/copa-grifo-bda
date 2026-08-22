@@ -1,12 +1,14 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAV3Cleanup?.version >= 5) return;
+  if (window.ArenaBDAV3Cleanup?.version >= 7) return;
 
   const REPECHAGE_SRC = './super-league-repechage.js?v=20260821-1';
   const REDESIGN_SRC = './arena-redesign-v1.js?v=20260821-1';
   const MOBILE_POLISH_SRC = './arena-mobile-polish.js?v=20260821-1';
   const MOBILE_BRACKET_SRC = './arena-mobile-bracket-v3.js?v=20260821-1';
+  const TEAM_EDITOR_SRC = './arena-team-editor.js?v=20260821-1';
+  const TEAM_CLOUD_SYNC_SRC = './arena-team-cloud-sync.js?v=20260821-1';
   const LEGACY_SELECTORS = [
     '[data-page="community"]',
     '[data-go="community"]',
@@ -81,6 +83,26 @@
     });
   }
 
+  function ensureTeamEditorModule() {
+    ensureScript({
+      globalName: 'ArenaBDATeamEditor',
+      selector: 'script[data-arena-team-editor]',
+      src: TEAM_EDITOR_SRC,
+      datasetName: 'arenaTeamEditor',
+      label: 'o editor administrativo de times'
+    });
+  }
+
+  function ensureTeamCloudSyncModule() {
+    ensureScript({
+      globalName: 'ArenaBDATeamCloudSync',
+      selector: 'script[data-arena-team-cloud-sync]',
+      src: TEAM_CLOUD_SYNC_SRC,
+      datasetName: 'arenaTeamCloudSync',
+      label: 'a sincronização de renomeações de times'
+    });
+  }
+
   function neutralizeLegacyAdminModal() {
     const modal = document.getElementById('adminModal');
     if (!modal || modal.dataset.arenaAuthReady === 'true') return;
@@ -122,6 +144,8 @@
     ensureRedesignModule();
     ensureMobilePolishModule();
     ensureMobileBracketModule();
+    ensureTeamCloudSyncModule();
+    ensureTeamEditorModule();
   }
 
   let frame = 0;
@@ -140,12 +164,14 @@
   observer.observe(document.documentElement, { childList:true, subtree:true });
 
   window.ArenaBDAV3Cleanup = Object.freeze({
-    version: 5,
+    version: 7,
     cleanup,
     repechageSource: REPECHAGE_SRC,
     redesignSource: REDESIGN_SRC,
     mobilePolishSource: MOBILE_POLISH_SRC,
     mobileBracketSource: MOBILE_BRACKET_SRC,
+    teamEditorSource: TEAM_EDITOR_SRC,
+    teamCloudSyncSource: TEAM_CLOUD_SYNC_SRC,
     legacySelectors: Object.freeze([...LEGACY_SELECTORS])
   });
 
