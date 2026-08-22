@@ -1,4 +1,4 @@
-const VERSION = 'v102-arena-redesign-current-competition';
+const VERSION = 'v103-mobile-polish-bda-identity';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
@@ -6,9 +6,10 @@ const CACHE = Object.freeze({
   images: `${CACHE_PREFIX}images-${VERSION}`
 });
 const ACTIVE_CACHES = new Set(Object.values(CACHE));
-const CLEANUP_SRC = './arena-v3-cleanup.js?v=20260821-2';
+const CLEANUP_SRC = './arena-v3-cleanup.js?v=20260821-3';
 const REPECHAGE_SRC = './super-league-repechage.js?v=20260821-1';
 const REDESIGN_SRC = './arena-redesign-v1.js?v=20260821-1';
+const MOBILE_POLISH_SRC = './arena-mobile-polish.js?v=20260821-1';
 const SHELL = [
   './',
   './index.html',
@@ -18,6 +19,7 @@ const SHELL = [
   CLEANUP_SRC,
   REPECHAGE_SRC,
   REDESIGN_SRC,
+  MOBILE_POLISH_SRC,
   './arena-pro-motion.js?v=20260818-1',
   './super-league-runtime-fix.js?v=20260819-3',
   './super-league-schedule-repair.js?v=20260819-3',
@@ -140,7 +142,7 @@ self.addEventListener('fetch', event => {
 
   const isDocument = request.mode === 'navigate' || request.destination === 'document' || url.pathname.endsWith('.html');
   const isCriticalArenaScript = request.destination === 'script'
-    && /\/(firebase-auth|firestore-sync|classificacao-automatica|arena-v3-cleanup|arena-redesign-v1|super-league-guard|super-league-runtime-fix|super-league-repechage|super-league-schedule-repair|bda-logo|arena-home-active)\.js$/.test(url.pathname);
+    && /\/(firebase-auth|firestore-sync|classificacao-automatica|arena-v3-cleanup|arena-redesign-v1|arena-mobile-polish|super-league-guard|super-league-runtime-fix|super-league-repechage|super-league-schedule-repair|bda-logo|arena-home-active)\.js$/.test(url.pathname);
 
   if (isDocument || isCriticalArenaScript) return event.respondWith(networkFirst(request));
   if (request.destination === 'image') return event.respondWith(imageCacheFirst(request));
