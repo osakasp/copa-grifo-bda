@@ -1,5 +1,5 @@
-const VERSION = 'v116-flash-draw';
-const REV = '20260822-9';
+const VERSION = 'v117-flash-knockout';
+const REV = '20260822-10';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
@@ -22,6 +22,7 @@ const TOURNAMENT_TRIM_SRC = `./arena-tournament-trim.js?v=${REV}`;
 const MATCH_DETAILS_SRC = `./arena-match-details.js?v=${REV}`;
 const MATCH_MEDIA_SRC = `./arena-match-media.js?v=${REV}`;
 const FLASH_DRAW_ENGINE_SRC = `./flash-cup-draw-engine.js?v=${REV}`;
+const FLASH_KNOCKOUT_ENGINE_SRC = `./flash-cup-knockout-engine.js?v=${REV}`;
 const FLASH_CUPS_SRC = `./copas-flash.js?v=${REV}`;
 
 const SHELL = [
@@ -44,6 +45,7 @@ const SHELL = [
   MATCH_DETAILS_SRC,
   MATCH_MEDIA_SRC,
   FLASH_DRAW_ENGINE_SRC,
+  FLASH_KNOCKOUT_ENGINE_SRC,
   FLASH_CUPS_SRC,
   './arena-pro-motion.js?v=20260818-1',
   `./super-league-runtime-fix.js?v=${REV}`,
@@ -197,7 +199,7 @@ self.addEventListener('fetch', event => {
 
   const isDocument = request.mode === 'navigate' || request.destination === 'document' || url.pathname.endsWith('.html');
   const isCriticalArenaScript = request.destination === 'script'
-    && /\/(firebase-auth|firestore-sync|classificacao-automatica|arena-v3-cleanup|arena-super-league-sync-gate|arena-redesign-v1|arena-design-polish-v2|arena-mobile-polish|arena-mobile-bracket-v4|arena-provisional-knockout|arena-team-editor|arena-team-cloud-sync|arena-tournament-trim|arena-match-details|arena-match-media|flash-cup-draw-engine|copas-flash|super-league-rule|super-league-guard|super-league-runtime-fix|bda-logo|arena-home-active)\.js$/.test(url.pathname);
+    && /\/(firebase-auth|firestore-sync|classificacao-automatica|arena-v3-cleanup|arena-super-league-sync-gate|arena-redesign-v1|arena-design-polish-v2|arena-mobile-polish|arena-mobile-bracket-v4|arena-provisional-knockout|arena-team-editor|arena-team-cloud-sync|arena-tournament-trim|arena-match-details|arena-match-media|flash-cup-draw-engine|flash-cup-knockout-engine|copas-flash|super-league-rule|super-league-guard|super-league-runtime-fix|bda-logo|arena-home-active)\.js$/.test(url.pathname);
 
   if (isDocument || isCriticalArenaScript) return event.respondWith(networkFirst(request));
   if (request.destination === 'image') return event.respondWith(imageCacheFirst(request));
