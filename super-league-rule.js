@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDASuperLeagueRule?.version >= 1) return;
+  if (window.ArenaBDASuperLeagueRule?.version >= 2) return;
 
   const TID = 'bda-super-league';
   const MATCH_KEY = 'bda-v3-confrontos';
@@ -34,6 +34,14 @@
   function notify(message) {
     if (typeof window.toast === 'function') window.toast(message);
     else console.info(message);
+  }
+
+  function setText(element, value) {
+    if (element && element.textContent !== value) element.textContent = value;
+  }
+
+  function setHtml(element, value) {
+    if (element && element.innerHTML !== value) element.innerHTML = value;
   }
 
   function matchStore() {
@@ -340,7 +348,7 @@
       const meta = section.querySelector(':scope > header > span');
       if (meta) {
         const clubs = (meta.textContent.match(/(\d+)\s*club/i) || [])[1];
-        meta.textContent = `2 classificados${clubs ? ` • ${clubs} clubes` : ''}`;
+        setText(meta, `2 classificados${clubs ? ` • ${clubs} clubes` : ''}`);
       }
       [...section.querySelectorAll('tbody > tr:not(.arena-mobile-stat-detail)')]
         .forEach((row, index) => { row.dataset.zone = index < DIRECT_QUALIFIERS ? 'direct' : 'out'; });
@@ -354,16 +362,17 @@
         legend.className = 'arena-zone-legend';
         (panel.querySelector('#standCapture') || panel.firstChild)?.before?.(legend);
       }
-      legend.innerHTML = '<span class="qualified"><i></i>1º e 2º classificados</span><span><i></i>Demais eliminados</span>';
+      legend.dataset.mode = 'super-league';
+      setHtml(legend, '<span class="qualified"><i></i>1º e 2º classificados</span><span><i></i>Demais eliminados</span>');
       const rule = panel.querySelector('.stand-rule');
-      if (rule) rule.textContent = 'Os 2 melhores de cada grupo avançam diretamente às quartas de final. Desempate: pontos, vitórias, saldo de gols e gols marcados.';
+      setText(rule, 'Os 2 melhores de cada grupo avançam diretamente às quartas de final. Desempate: pontos, vitórias, saldo de gols e gols marcados.');
     }
 
     const overview = manager.querySelector('#superLeagueGroupsOverview .slg-overview-head p');
     const total = runtime()?.groups?.()?.reduce?.((sum, group) => sum + (group.teams?.length || 0), 0) || 21;
-    if (overview) overview.textContent = `${total} clubes em 4 grupos. Os 2 melhores de cada grupo avançam diretamente às quartas de final.`;
+    setText(overview, `${total} clubes em 4 grupos. Os 2 melhores de cada grupo avançam diretamente às quartas de final.`);
     manager.querySelectorAll('#superLeagueGroupsOverview .slg-card header small')
-      .forEach(label => { label.textContent = '2 classificados'; });
+      .forEach(label => setText(label, '2 classificados'));
 
     const card = manager.querySelector('.league-knockout-card');
     if (card) {
@@ -371,15 +380,15 @@
       const description = card.querySelector('p');
       const footer = card.querySelector('footer span');
       const button = card.querySelector('[data-generate-knockout]');
-      if (title) title.textContent = 'Quartas de final da Super League';
-      if (description) description.textContent = 'Os 2 melhores de cada grupo avançam diretamente. Cruzamentos: A1 x B2, B1 x A2, C1 x D2 e D1 x C2.';
-      if (footer) footer.textContent = '4 quartas • 2 semifinais • final';
+      setText(title, 'Quartas de final da Super League');
+      setText(description, 'Os 2 melhores de cada grupo avançam diretamente. Cruzamentos: A1 x B2, B1 x A2, C1 x D2 e D1 x C2.');
+      setText(footer, '4 quartas • 2 semifinais • final');
       if (button) {
         button.hidden = !isAdmin();
         button.disabled = !groupsComplete() || finalStructureExists();
-        button.textContent = finalStructureExists()
+        setText(button, finalStructureExists()
           ? 'Quartas geradas'
-          : groupsComplete() ? 'Gerar quartas' : 'Aguardando fase de grupos';
+          : groupsComplete() ? 'Gerar quartas' : 'Aguardando fase de grupos');
       }
     }
   }
@@ -413,7 +422,7 @@
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
   window.ArenaBDASuperLeagueRule = Object.freeze({
-    version: 1,
+    version: 2,
     qualifiers: DIRECT_QUALIFIERS,
     refresh,
     slices: () => clone(slices()),
@@ -422,7 +431,8 @@
     groupsComplete,
     finalStructureExists,
     normalizeGames,
-    resetKnockout
+    resetKnockout,
+    patchUi
   });
 
   migrateLegacyKnockout();

@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAMobileBracketV4?.version >= 5) return;
+  if (window.ArenaBDAMobileBracketV4?.version >= 6) return;
 
   const TID = 'bda-super-league';
   const MATCH_KEY = 'bda-v3-confrontos';
@@ -121,7 +121,8 @@
     const generated=structureExists();
     button.hidden=!window.ArenaBDAAuth?.isAdmin?.();
     button.disabled=!groupComplete()||generated;
-    button.textContent=generated?'Quartas geradas':groupComplete()?'Gerar quartas':'Aguardando fase de grupos';
+    const label=generated?'Quartas geradas':groupComplete()?'Gerar quartas':'Aguardando fase de grupos';
+    if(button.textContent!==label) button.textContent=label;
   }
 
   function installStyles(){
@@ -141,6 +142,6 @@
   });
   ['arena:bundle-loaded','arena:matches-updated','arena:tournaments-updated','arena:auth-changed','arena:cloud-ready','arena:quick-score-saved'].forEach(type=>window.addEventListener(type,schedule));
   const observer=new MutationObserver(schedule);observer.observe(document.documentElement,{childList:true,subtree:true});
-  window.ArenaBDAMobileBracketV4=Object.freeze({version:5,refresh,render,preferredPhase});
+  window.ArenaBDAMobileBracketV4=Object.freeze({version:6,refresh,render,preferredPhase});
   refresh();
 })();
