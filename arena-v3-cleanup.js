@@ -56,7 +56,7 @@
   }
 
   function ensureRepechageModule() {
-    if (window.ArenaBDASuperLeagueRuleV2?.version >= 2) return;
+    if (window.ArenaBDASuperLeagueRuleV2?.version >= 2 || document.querySelector('script[data-super-league-rule-v2]')) return;
     ensureScript({
       globalName: 'ArenaBDASuperLeagueRepechage',
       selector: 'script[data-super-league-repechage]',
@@ -126,6 +126,12 @@
     });
   }
 
+  function ensureSuperLeagueCloud() {
+    const active = document.querySelector('#giManager[data-tid="bda-super-league"]');
+    if (!active || typeof window.ArenaBDAEnsureCloud !== 'function') return;
+    window.ArenaBDAEnsureCloud('super-league-public-sync').catch(() => {});
+  }
+
   function neutralizeLegacyAdminModal() {
     const modal = document.getElementById('adminModal');
     if (!modal || modal.dataset.arenaAuthReady === 'true') return;
@@ -165,6 +171,7 @@
     scrubLegacyCopy();
     ensureSuperLeagueRuleModule();
     ensureRepechageModule();
+    ensureSuperLeagueCloud();
     ensureRedesignModule();
     ensureMobilePolishModule();
     ensureMobileBracketModule();
