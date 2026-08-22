@@ -1,10 +1,11 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAV3Cleanup?.version >= 3) return;
+  if (window.ArenaBDAV3Cleanup?.version >= 4) return;
 
   const REPECHAGE_SRC = './super-league-repechage.js?v=20260821-1';
   const REDESIGN_SRC = './arena-redesign-v1.js?v=20260821-1';
+  const MOBILE_POLISH_SRC = './arena-mobile-polish.js?v=20260821-1';
   const LEGACY_SELECTORS = [
     '[data-page="community"]',
     '[data-go="community"]',
@@ -59,6 +60,16 @@
     });
   }
 
+  function ensureMobilePolishModule() {
+    ensureScript({
+      globalName: 'ArenaBDAMobilePolish',
+      selector: 'script[data-arena-mobile-polish]',
+      src: MOBILE_POLISH_SRC,
+      datasetName: 'arenaMobilePolish',
+      label: 'o acabamento mobile da Arena'
+    });
+  }
+
   function neutralizeLegacyAdminModal() {
     const modal = document.getElementById('adminModal');
     if (!modal || modal.dataset.arenaAuthReady === 'true') return;
@@ -98,6 +109,7 @@
     scrubLegacyCopy();
     ensureRepechageModule();
     ensureRedesignModule();
+    ensureMobilePolishModule();
   }
 
   let frame = 0;
@@ -116,10 +128,11 @@
   observer.observe(document.documentElement, { childList:true, subtree:true });
 
   window.ArenaBDAV3Cleanup = Object.freeze({
-    version: 3,
+    version: 4,
     cleanup,
     repechageSource: REPECHAGE_SRC,
     redesignSource: REDESIGN_SRC,
+    mobilePolishSource: MOBILE_POLISH_SRC,
     legacySelectors: Object.freeze([...LEGACY_SELECTORS])
   });
 
