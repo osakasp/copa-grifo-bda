@@ -34,7 +34,7 @@ global.window = {
 require('../super-league-rule.js');
 
 const rule = global.window.ArenaBDASuperLeagueRule;
-assert.equal(rule.version, 1);
+assert.equal(rule.version, 2);
 assert.equal(rule.qualifiers, 2);
 
 const normalized = rule.normalizeGames([
@@ -94,5 +94,63 @@ const resetGames = JSON.parse(localStorage.getItem('bda-v3-confrontos'))['bda-su
 assert.equal(resetGames.find(game => game.id === 'mata-super-league-qf1').ta, '1º Grupo A');
 assert.equal(resetGames.find(game => game.id === 'mata-super-league-qf1').a, '');
 assert.equal(JSON.parse(localStorage.getItem('bda-v114-super-league-legacy-knockout-backup')).reason, 'test-group-change');
+
+let domWrites = 0;
+const textNode = initial => {
+  let value = initial;
+  return {
+    get textContent() { return value; },
+    set textContent(next) { domWrites += 1; value = next; }
+  };
+};
+const legend = {
+  ...textNode(''),
+  dataset: {},
+  get innerHTML() { return this._html || ''; },
+  set innerHTML(value) { domWrites += 1; this._html = value; }
+};
+const meta = textNode('3 classificam • 5 clubes');
+const ruleCopy = textNode('Regra antiga');
+const overview = textNode('Resumo antigo');
+const label = textNode('3 classificados');
+const title = textNode('Fase final');
+const description = textNode('Descrição antiga');
+const footer = textNode('Repescagem');
+const button = { ...textNode('Gerar fase final'), hidden: false, disabled: false };
+const section = {
+  querySelector: selector => selector === ':scope > header > span' ? meta : null,
+  querySelectorAll: () => []
+};
+const panel = {
+  firstChild: {},
+  querySelectorAll: selector => selector === '.stand-group' ? [section] : [],
+  querySelector: selector => ({
+    '#superLeagueRuleLegend': legend,
+    '.stand-rule': ruleCopy
+  })[selector] || null
+};
+const card = {
+  querySelector: selector => ({
+    h3: title,
+    p: description,
+    'footer span': footer,
+    '[data-generate-knockout]': button
+  })[selector] || null
+};
+const manager = {
+  querySelector: selector => ({
+    '#autoStandings': panel,
+    '#superLeagueGroupsOverview .slg-overview-head p': overview,
+    '.league-knockout-card': card
+  })[selector] || null,
+  querySelectorAll: selector => selector === '#superLeagueGroupsOverview .slg-card header small' ? [label] : []
+};
+document.getElementById = id => id === 'superLeagueDirectRuleStyles' ? {} : null;
+document.querySelector = selector => selector === '#giManager[data-tid="bda-super-league"]' ? manager : null;
+
+rule.patchUi();
+const writesAfterFirstPatch = domWrites;
+rule.patchUi();
+assert.equal(domWrites, writesAfterFirstPatch, 'a segunda renderização não pode reescrever o DOM');
 
 console.log('Regra da Super League validada: 2 classificados diretos e 7 jogos eliminatórios.');
