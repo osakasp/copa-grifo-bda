@@ -1,10 +1,11 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDATournamentTrim?.version >= 5) return;
+  if (window.ArenaBDATournamentTrim?.version >= 6) return;
 
   const DESIGN_POLISH_SRC = './arena-design-polish-v2.js?v=20260822-1';
   const MATCH_DETAILS_SRC = './arena-match-details.js?v=20260822-1';
+  const MATCH_MEDIA_SRC = './arena-match-media.js?v=20260822-1';
   const LABELS = new Set([
     'previa do proximo jogo',
     'central ao vivo',
@@ -61,6 +62,16 @@
     script.async = false;
     script.dataset.arenaMatchDetailsModule = 'true';
     script.addEventListener('error', () => console.warn('[Arena BDA] Não foi possível carregar detalhes de partida e artilharia'), { once:true });
+    (document.body || document.head || document.documentElement).appendChild(script);
+  }
+
+  function ensureMatchMedia() {
+    if (window.ArenaBDAMatchMedia || document.querySelector('script[data-arena-match-media-module]')) return;
+    const script = document.createElement('script');
+    script.src = MATCH_MEDIA_SRC;
+    script.async = false;
+    script.dataset.arenaMatchMediaModule = 'true';
+    script.addEventListener('error', () => console.warn('[Arena BDA] Não foi possível carregar o print das partidas'), { once:true });
     (document.body || document.head || document.documentElement).appendChild(script);
   }
 
@@ -134,6 +145,7 @@
     const page = document.querySelector('[data-page="tournament"]');
     if (!page) return 0;
     ensureMatchDetails();
+    ensureMatchMedia();
 
     ensureStyles();
     let removed = trimFixed(page);
@@ -170,11 +182,12 @@
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
   window.ArenaBDATournamentTrim = Object.freeze({
-    version: 5,
+    version: 6,
     trim,
     trimMatchActions,
     designPolishSource: DESIGN_POLISH_SRC,
     matchDetailsSource: MATCH_DETAILS_SRC,
+    matchMediaSource: MATCH_MEDIA_SRC,
     labels: Object.freeze([...LABELS]),
     matchActionLabels: Object.freeze([...MATCH_ACTION_LABELS]),
     fixedSelectors: Object.freeze([...FIXED_SELECTORS])
