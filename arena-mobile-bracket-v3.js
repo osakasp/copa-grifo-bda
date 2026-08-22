@@ -233,8 +233,10 @@
       button.className = `${legacy.className || 'primary'} arena-v3-generate-repechage`;
       legacy.after(button);
     }
-    button.disabled = !groupComplete();
-    button.textContent = groupComplete() ? 'Gerar repescagem' : 'Aguardando fase de grupos';
+    const complete = groupComplete();
+    button.disabled = !complete;
+    const nextText = complete ? 'Gerar repescagem' : 'Aguardando fase de grupos';
+    if (button.textContent !== nextText) button.textContent = nextText;
   }
 
   function customGenerate() {
