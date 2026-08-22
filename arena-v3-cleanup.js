@@ -1,8 +1,9 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAV3Cleanup?.version >= 8) return;
+  if (window.ArenaBDAV3Cleanup?.version >= 9) return;
 
+  const SUPER_LEAGUE_RULE_SRC = './super-league-rule-v2.js?v=20260821-1';
   const REPECHAGE_SRC = './super-league-repechage.js?v=20260821-1';
   const REDESIGN_SRC = './arena-redesign-v1.js?v=20260821-1';
   const MOBILE_POLISH_SRC = './arena-mobile-polish.js?v=20260821-1';
@@ -44,7 +45,18 @@
     (document.body || document.head || document.documentElement).appendChild(script);
   }
 
+  function ensureSuperLeagueRuleModule() {
+    ensureScript({
+      globalName: 'ArenaBDASuperLeagueRuleV2',
+      selector: 'script[data-super-league-rule-v2]',
+      src: SUPER_LEAGUE_RULE_SRC,
+      datasetName: 'superLeagueRuleV2',
+      label: 'a regra atual da Super League'
+    });
+  }
+
   function ensureRepechageModule() {
+    if (window.ArenaBDASuperLeagueRuleV2?.version >= 2) return;
     ensureScript({
       globalName: 'ArenaBDASuperLeagueRepechage',
       selector: 'script[data-super-league-repechage]',
@@ -151,6 +163,7 @@
     removeLegacyScripts();
     neutralizeLegacyAdminModal();
     scrubLegacyCopy();
+    ensureSuperLeagueRuleModule();
     ensureRepechageModule();
     ensureRedesignModule();
     ensureMobilePolishModule();
@@ -176,8 +189,9 @@
   observer.observe(document.documentElement, { childList:true, subtree:true });
 
   window.ArenaBDAV3Cleanup = Object.freeze({
-    version: 8,
+    version: 9,
     cleanup,
+    superLeagueRuleSource: SUPER_LEAGUE_RULE_SRC,
     repechageSource: REPECHAGE_SRC,
     redesignSource: REDESIGN_SRC,
     mobilePolishSource: MOBILE_POLISH_SRC,
