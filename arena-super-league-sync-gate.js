@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDASuperLeagueSyncGate?.version >= 2) return;
+  if (window.ArenaBDASuperLeagueSyncGate?.version >= 3) return;
 
   const TID = 'bda-super-league';
   const MATCH_KEY = 'bda-v3-confrontos';
@@ -70,6 +70,15 @@
     ]);
   }
 
+  function normalizeDirectKnockout(games) {
+    const list = Array.isArray(games) ? games : [];
+    try {
+      return window.ArenaBDASuperLeagueRule?.normalizeGames?.(list) || list;
+    } catch {
+      return list;
+    }
+  }
+
   function chooseGame(local, remote) {
     if (!remote) return local;
     if (!local) return remote;
@@ -98,11 +107,12 @@
       if (id) remoteMap.set(id, game);
     });
     const ids = new Set([...remoteMap.keys(), ...localMap.keys()]);
-    return [...ids].map(id => chooseGame(localMap.get(id), remoteMap.get(id))).filter(Boolean);
+    return normalizeDirectKnockout([...ids].map(id => chooseGame(localMap.get(id), remoteMap.get(id))).filter(Boolean));
   }
 
   function setLocalGames(games, reason) {
     if (!Array.isArray(games)) return false;
+    games = normalizeDirectKnockout(games);
     const current = localGames();
     if (signature(current) === signature(games)) return false;
     const store = readStore();
@@ -112,7 +122,7 @@
       detail:{ tournamentId:TID, reason, count:games.length }
     }));
     window.ArenaBDASuperLeagueRuntimeFix?.refresh?.();
-    window.ArenaBDASuperLeagueRuleV3?.refresh?.();
+    window.ArenaBDASuperLeagueRule?.refresh?.();
     return true;
   }
 
@@ -155,7 +165,7 @@
       }
     }
     window.ArenaBDASuperLeagueRuntimeFix?.refresh?.();
-    window.ArenaBDASuperLeagueRuleV3?.refresh?.();
+    window.ArenaBDASuperLeagueRule?.refresh?.();
     window.dispatchEvent(new CustomEvent('arena:super-league-cloud-synced', {
       detail:{ tournamentId:TID, state }
     }));
@@ -355,7 +365,7 @@
   observer.observe(document.documentElement, { childList:true, subtree:true });
 
   const api = Object.freeze({
-    version:2,
+    version:3,
     startSync,
     uploadAdminLatest,
     mergeSafely,

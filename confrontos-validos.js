@@ -168,7 +168,7 @@
       'Vera Cruz Do Oeste PR BDA'
     ]) }),
     Object.freeze({ name: 'Grupo B', teams: Object.freeze([
-      'Zombie BDA',
+      'Zombie FC BDA',
       'Sport Recife BDA',
       'São Paulo BDA',
       'Nacional AC BDA',
@@ -197,7 +197,6 @@
   const ARENA_DEFAULT_TOURNAMENTS = Object.freeze([
     {id:'copa-grifo',name:'Copa Grifo BDA',edition:'8ª edição',format:'Mata-mata',status:'Finalizado',phase:'Campeão definido',maxTeams:19,badge:'🦅',participants:['Zombie FC BDA','JOGOBUGADO BDA','Inter Brasil BDA','Vasco da Gama BDA'],description:'Competição tradicional do Clã BDA em formato eliminatório e jogo único.',legacy:true,locked:true},
     {id:'copa-francos',name:'Copa Francos',edition:'Próxima edição',format:'Mata-mata',status:'Planejado',phase:'Preparação',maxTeams:16,badge:'🕊️',participants:[],description:'Competição especial em homenagem à história do Francos FC BDA.'},
-    {id:'supercopa',name:'Supercopa BDA',edition:'Nova edição',format:'Grupos + mata-mata',status:'Inscrições abertas',phase:'Preparação',maxTeams:25,badge:'🏆',participants:['Esperança BDA','Boca Juniors','HELLYEAH BDA','SPORT RECIFE BDA','NACIONAL AC BDA','SANTOS RB BDA','BDA URDLS','CV CRUZ BDA','INDEPENDENTE FC APOSENTADO BDA','FLAMESTRE FC DF BDA','IMORTAIS FC BDA','BDA GOLDEN','Zombie FC BDA','JOGOBUGADO BDA','Vasco da Gama BDA','São Paulo BDA'],deadline:'24h por rodada',description:'Campeonato oficial do Clã BDA.'},
     {id:'liga-a',name:'Liga A BDA',edition:'Temporada encerrada',format:'Pontos corridos',status:'Finalizado',phase:'Campeão: Inter Brasil BDA',maxTeams:20,badge:'🥇',participants:['Inter Brasil BDA'],description:'A divisão de elite do Clã BDA.'},
     {id:'liga-b',name:'Liga B BDA',edition:'Temporada encerrada',format:'Pontos corridos',status:'Finalizado',phase:'Campeão: Vasco da Gama BDA',maxTeams:20,badge:'🛡️',participants:['Vasco da Gama BDA'],description:'A divisão de acesso para a Liga A BDA.'}
   ]);
@@ -246,7 +245,8 @@
         distribution: 'serpentine',
         groups: SUPER_LEAGUE_GROUPS.map(group => ({ name: group.name, teams: [...group.teams] })),
         generatedAt: Date.now(),
-        knockoutGenerated: true
+        knockoutGenerated: false,
+        knockoutMode: 'direct-top-2'
       }
     };
   }

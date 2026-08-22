@@ -165,7 +165,7 @@
 
     const data = runtime.calculate();
     if (!Array.isArray(data)) return;
-    const limit = Math.max(1, Number(runtime.qualifiers?.() || 3));
+    const limit = Math.max(1, Number(runtime.qualifiers?.() || 2));
 
     data.forEach(group => {
       const section = [...panel.querySelectorAll('.stand-group')]

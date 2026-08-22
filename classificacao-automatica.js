@@ -73,7 +73,7 @@ function syncSuperLeagueStandings(){
   requestAnimationFrame(()=>{
     const data=runtime.calculate?.();
     if(!Array.isArray(data))return;
-    const q=Math.max(1,Number(runtime.qualifiers?.()||3));
+    const q=Math.max(1,Number(runtime.qualifiers?.()||2));
     data.forEach(group=>{
       const section=[...panel.querySelectorAll('.stand-group')].find(node=>norm(node.querySelector('h3')?.textContent)===norm(group.name));
       const tbody=section?.querySelector('tbody');

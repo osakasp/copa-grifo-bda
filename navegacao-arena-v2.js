@@ -2,9 +2,9 @@
   'use strict';
 
   const PRIMARY_PAGES = ['home', 'tournament', 'teams'];
-  const SECONDARY_PAGES = ['champions', 'registrations', 'community', 'news', 'history', 'flash', 'season', 'feedback'];
+  const SECONDARY_PAGES = ['champions', 'registrations', 'news', 'history', 'flash', 'season', 'feedback'];
   const MOBILE_PRIMARY_PAGES = ['home', 'tournament', 'teams'];
-  const MOBILE_SECONDARY_PAGES = ['champions', 'registrations', 'community', 'news', 'history', 'flash', 'season', 'feedback'];
+  const MOBILE_SECONDARY_PAGES = ['champions', 'registrations', 'news', 'history', 'flash', 'season', 'feedback'];
   const ORDER = [...PRIMARY_PAGES, ...SECONDARY_PAGES];
   const HISTORY_PAGE_KEY = 'arenaNavigationPage';
   const HISTORY_DEPTH_KEY = 'arenaNavigationDepth';
@@ -14,7 +14,6 @@
     registrations: ['03', 'Inscrições', 'Vagas e aprovações'],
     champions: ['04', 'Campeões', 'Sala de troféus'],
     teams: ['05', 'Times', 'Clubes cadastrados'],
-    community: ['06', 'Comunidade', 'Arquibancada do clã'],
     news: ['07', 'Notícias', 'Comunicados e novidades'],
     history: ['08', 'História', 'Memória oficial do clã'],
     flash: ['09', 'Copas Flash', 'Edições rápidas'],
@@ -27,7 +26,6 @@
     registrations: '<svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2h6v2M8.5 12l2.5 2.5 4.5-5"/></svg>',
     champions: '<svg viewBox="0 0 24 24"><path d="m12 3 2.6 5.3 5.9.9-4.3 4.2 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.2 5.9-.9L12 3Z"/></svg>',
     teams: '<svg viewBox="0 0 24 24"><path d="m12 3 8 3v5c0 5.2-3.4 8.6-8 10-4.6-1.4-8-4.8-8-10V6l8-3Z"/><path d="M9 12h6M12 9v6"/></svg>',
-    community: '<svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="3"/><circle cx="17" cy="10" r="2.5"/><path d="M3.5 20c.4-3.6 2.2-5.5 5.5-5.5s5.1 1.9 5.5 5.5M14 15.5c.8-.5 1.8-.7 2.9-.7 2.5 0 3.9 1.6 4.1 4.5"/></svg>',
     news: '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
     history: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>',
     flash: '<svg viewBox="0 0 24 24"><path d="m13.5 2-8 12H12l-1.5 8 8-12H12l1.5-8Z"/></svg>',

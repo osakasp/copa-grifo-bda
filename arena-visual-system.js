@@ -15,7 +15,6 @@
     registrations: { icon: '07', label: 'Inscrições', description: 'Vagas e aprovações', color: '#83b99b', rgb: '131,185,155' },
     champions: { icon: '08', label: 'Campeões', description: 'Títulos da Arena BDA', color: '#e3c45f', rgb: '227,196,95' },
     teams: { icon: '09', label: 'Times', description: 'Clubes cadastrados', color: '#7fb5aa', rgb: '127,181,170' },
-    community: { icon: '10', label: 'Comunidade', description: 'Arquibancada do clã', color: '#a69abf', rgb: '166,154,191' },
     feedback: { icon: '11', label: 'Feedback', description: 'Ajude a melhorar a Arena', color: '#85b5bf', rgb: '133,181,191' }
   });
 

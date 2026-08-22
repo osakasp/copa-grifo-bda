@@ -1,5 +1,5 @@
-const VERSION = 'v113-hard-cache-sync-reset';
-const REV = '20260822-6';
+const VERSION = 'v114-super-league-top2';
+const REV = '20260822-7';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
@@ -8,7 +8,7 @@ const CACHE = Object.freeze({
 });
 const ACTIVE_CACHES = new Set(Object.values(CACHE));
 
-const SUPER_LEAGUE_RULE_SRC = `./super-league-rule-v3.js?v=${REV}`;
+const SUPER_LEAGUE_RULE_SRC = `./super-league-rule.js?v=${REV}`;
 const SUPER_LEAGUE_SYNC_SRC = `./arena-super-league-sync-gate.js?v=${REV}`;
 const CLEANUP_SRC = `./arena-v3-cleanup.js?v=${REV}`;
 const REDESIGN_SRC = `./arena-redesign-v1.js?v=${REV}`;
@@ -42,10 +42,9 @@ const SHELL = [
   MATCH_DETAILS_SRC,
   MATCH_MEDIA_SRC,
   './arena-pro-motion.js?v=20260818-1',
-  './super-league-runtime-fix.js?v=20260819-3',
-  './super-league-schedule-repair.js?v=20260819-3',
+  `./super-league-runtime-fix.js?v=${REV}`,
   './bda-logo.js?v=20260819-1',
-  './arena-home-active.js?v=20260820-1'
+  `./arena-home-active.js?v=${REV}`
 ];
 
 async function precacheFresh() {
@@ -194,7 +193,7 @@ self.addEventListener('fetch', event => {
 
   const isDocument = request.mode === 'navigate' || request.destination === 'document' || url.pathname.endsWith('.html');
   const isCriticalArenaScript = request.destination === 'script'
-    && /\/(firebase-auth|firestore-sync|classificacao-automatica|arena-v3-cleanup|arena-super-league-sync-gate|arena-redesign-v1|arena-design-polish-v2|arena-mobile-polish|arena-mobile-bracket-v4|arena-provisional-knockout|arena-team-editor|arena-team-cloud-sync|arena-tournament-trim|arena-match-details|arena-match-media|super-league-rule-v3|super-league-guard|super-league-runtime-fix|super-league-schedule-repair|bda-logo|arena-home-active)\.js$/.test(url.pathname);
+    && /\/(firebase-auth|firestore-sync|classificacao-automatica|arena-v3-cleanup|arena-super-league-sync-gate|arena-redesign-v1|arena-design-polish-v2|arena-mobile-polish|arena-mobile-bracket-v4|arena-provisional-knockout|arena-team-editor|arena-team-cloud-sync|arena-tournament-trim|arena-match-details|arena-match-media|super-league-rule|super-league-guard|super-league-runtime-fix|bda-logo|arena-home-active)\.js$/.test(url.pathname);
 
   if (isDocument || isCriticalArenaScript) return event.respondWith(networkFirst(request));
   if (request.destination === 'image') return event.respondWith(imageCacheFirst(request));

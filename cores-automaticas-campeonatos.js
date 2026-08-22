@@ -44,23 +44,6 @@
       border: 'rgba(245,220,134,.40)',
       glow: 'rgba(211,169,58,.27)'
     },
-    supercopa: {
-      label: 'SuperCopa BDA',
-      description: 'Vermelho, dourado e preto',
-      icon: '⚡',
-      primary: '#ef334f',
-      soft: '#ff7789',
-      secondary: '#f4c95d',
-      bg: '#080204',
-      bg2: '#1d070c',
-      surface: '#42101b',
-      surface2: '#120408',
-      text: '#fff8f7',
-      muted: '#d2afb4',
-      success: '#f4c95d',
-      border: 'rgba(244,201,93,.42)',
-      glow: 'rgba(239,51,79,.30)'
-    },
     ligaA: {
       label: 'Liga A BDA',
       description: 'Dourado, âmbar e preto',
@@ -151,7 +134,6 @@
   function themeKey(name) {
     const value = norm(name);
     if (value.includes('francos')) return 'francos';
-    if (value.includes('supercopa') || value.includes('super copa')) return 'supercopa';
     if (/liga\s*a(?:\s|$)/.test(value)) return 'ligaA';
     if (/liga\s*b(?:\s|$)/.test(value)) return 'ligaB';
     if (value.includes('super league') || value.includes('superleague')) return 'superLeague';

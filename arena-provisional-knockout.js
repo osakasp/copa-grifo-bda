@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAProvisionalKnockout?.version >= 1) return;
+  if (window.ArenaBDAProvisionalKnockout?.version >= 2) return;
 
   const TID = 'bda-super-league';
   const STYLE_ID = 'arenaProvisionalKnockoutStyles';
@@ -49,17 +49,9 @@
       }));
   }
 
-  function secondDestinations() {
-    if (!window.ArenaBDASuperLeagueRuleV3?.groupsComplete?.()) return new Map();
-    const slices = window.ArenaBDASuperLeagueRuleV3?.slices?.();
-    const seconds = Array.isArray(slices?.seconds) ? slices.seconds : [];
-    return new Map(seconds.map((row, index) => [norm(row?.name), index < 2 ? 'Quartas de final' : 'Play-in']));
-  }
-
   function qualifiedEntries() {
-    const destinations = secondDestinations();
     return completedGroups().flatMap(group => {
-      const [leader, second, third] = group.rows;
+      const [leader, second] = group.rows;
       const items = [];
       if (leader) items.push({
         name: leader.name,
@@ -72,17 +64,8 @@
         name: second.name,
         group: group.name,
         position: 2,
-        destination: destinations.get(norm(second.name)) || 'Quartas ou Play-in',
-        zone: destinations.has(norm(second.name))
-          ? (destinations.get(norm(second.name)) === 'Quartas de final' ? 'direct' : 'playin')
-          : 'pending'
-      });
-      if (third) items.push({
-        name: third.name,
-        group: group.name,
-        position: 3,
-        destination: 'Repescagem',
-        zone: 'repechage'
+        destination: 'Quartas de final',
+        zone: 'direct'
       });
       return items;
     });
@@ -99,7 +82,7 @@
   }
 
   function finalStructureExists() {
-    return Boolean(window.ArenaBDASuperLeagueRuleV3?.finalStructureExists?.());
+    return Boolean(window.ArenaBDASuperLeagueRule?.finalStructureExists?.());
   }
 
   function installStyles() {
@@ -117,9 +100,6 @@
       .arena-provisional-team b{display:block;overflow:hidden;color:#eef4ef;font-size:10px;text-overflow:ellipsis;white-space:nowrap}
       .arena-provisional-team span{display:block;margin-top:3px;color:#82958a;font-size:7px;font-weight:800}
       .arena-provisional-team[data-zone="direct"] span{color:#69e69b}
-      .arena-provisional-team[data-zone="repechage"] span{color:#e3c45f}
-      .arena-provisional-team[data-zone="playin"] span{color:#f0ce70}
-      .arena-provisional-team[data-zone="pending"] span{color:#b4c2b9}
       @media(max-width:760px){
         .arena-provisional-qualified>header{display:block}
         .arena-provisional-qualified>header small{display:block;margin-top:4px;text-align:left}
@@ -191,7 +171,7 @@
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
   window.ArenaBDAProvisionalKnockout = Object.freeze({
-    version: 1,
+    version: 2,
     render,
     entries: () => qualifiedEntries().map(entry => ({ ...entry }))
   });
