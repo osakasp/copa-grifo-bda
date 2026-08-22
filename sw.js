@@ -20,8 +20,8 @@ const SHELL = [
   './preview-v2.html?v=20260819-5',
   './favicon.svg',
   './site.webmanifest',
-  SUPER_LEAGUE_RULE_SRC,
   CLEANUP_SRC,
+  SUPER_LEAGUE_RULE_SRC,
   REDESIGN_SRC,
   MOBILE_POLISH_SRC,
   MOBILE_BRACKET_SRC,
@@ -80,11 +80,9 @@ async function networkFirst(request) {
 function cleanupResponse(response) {
   if (!response?.ok) return Promise.resolve(response);
   return response.clone().text().then(html => {
-    const ruleScript = html.includes('super-league-rule-v3.js') ? '' : `<script src="${SUPER_LEAGUE_RULE_SRC}"></script>`;
-    const cleanupScript = html.includes('arena-v3-cleanup.js') ? '' : `<script src="${CLEANUP_SRC}"></script>`;
-    if (!ruleScript && !cleanupScript) return response;
-    const scripts = `${ruleScript}${cleanupScript}`;
-    const next = /<\/body>/i.test(html) ? html.replace(/<\/body>/i, `${scripts}</body>`) : `${html}${scripts}`;
+    if (html.includes('arena-v3-cleanup.js')) return response;
+    const script = `<script src="${CLEANUP_SRC}"></script>`;
+    const next = /<\/body>/i.test(html) ? html.replace(/<\/body>/i, `${script}</body>`) : `${html}${script}`;
     const headers = new Headers(response.headers);
     headers.delete('content-length');
     headers.delete('content-encoding');
