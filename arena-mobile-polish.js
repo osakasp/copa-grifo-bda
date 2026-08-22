@@ -36,7 +36,6 @@
       .arena-zone-legend span{display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:0 9px;border:1px solid rgba(255,255,255,.08);border-radius:999px;color:#9aac9f;background:#08120c;font-size:8px;font-weight:850}
       .arena-zone-legend i{width:7px;height:7px;border-radius:50%;background:#59665e}
       .arena-zone-legend .direct i,.arena-zone-legend .qualified i{background:#4fdf8f}
-      .arena-zone-legend .repechage i{background:#d8b248}
 
       @media(max-width:760px){
         :root{--arena-mobile-nav-space:108px;--arena-context-accent:#d8b248!important;--arena-context-rgb:216,178,72!important;--arena-context-soft:#f1d97f!important}
@@ -107,12 +106,10 @@
         #autoStandings .stand-club small{font-size:7px!important}
         #autoStandings .stand-pos{display:grid!important;place-items:center!important;width:28px!important;height:28px!important;margin:auto!important;border-radius:9px!important;color:#91a197!important;background:#142219!important}
         #autoStandings tr[data-zone="direct"] .stand-pos,#autoStandings tr[data-zone="qualified"] .stand-pos{color:#041108!important;background:#4fdf8f!important}
-        #autoStandings tr[data-zone="repechage"] .stand-pos{color:#171207!important;background:#d8b248!important}
         #autoStandings tr[data-zone="out"] .stand-pos{color:#728178!important;background:#111b15!important}
         #giManager[data-tid="bda-super-league"] #autoStandings tr[data-zone] .stand-club small{display:none!important}
-        #giManager[data-tid="bda-super-league"] #autoStandings tr[data-zone="direct"] .stand-club span::after,#giManager[data-tid="bda-super-league"] #autoStandings tr[data-zone="repechage"] .stand-club span::after,#giManager[data-tid="bda-super-league"] #autoStandings tr[data-zone="out"] .stand-club span::after{display:block;margin-top:3px;font-size:7px;font-weight:800;line-height:1}
+        #giManager[data-tid="bda-super-league"] #autoStandings tr[data-zone="direct"] .stand-club span::after,#giManager[data-tid="bda-super-league"] #autoStandings tr[data-zone="out"] .stand-club span::after{display:block;margin-top:3px;font-size:7px;font-weight:800;line-height:1}
         #giManager[data-tid="bda-super-league"] #autoStandings tr[data-zone="direct"] .stand-club span::after{content:'Direto às quartas';color:#69e69b}
-        #giManager[data-tid="bda-super-league"] #autoStandings tr[data-zone="repechage"] .stand-club span::after{content:'Repescagem';color:#e3c45f}
         #giManager[data-tid="bda-super-league"] #autoStandings tr[data-zone="out"] .stand-club span::after{content:'Fora da zona';color:#728178}
         #autoStandings tbody tr:not(.arena-mobile-stat-detail){cursor:pointer}
         #autoStandings tbody tr[aria-expanded="true"]{background:rgba(216,178,72,.045)!important}
@@ -178,7 +175,7 @@
     if (legend.dataset.mode === mode) return;
     legend.dataset.mode = mode;
     legend.innerHTML = superLeague
-      ? '<span class="direct"><i></i>1º direto às quartas</span><span class="repechage"><i></i>2º e 3º repescagem</span><span><i></i>Fora da zona</span>'
+      ? '<span class="direct"><i></i>1º e 2º direto às quartas</span><span><i></i>Fora da zona</span>'
       : '<span class="qualified"><i></i>Zona de classificação</span><span><i></i>Demais posições</span>';
   }
 
@@ -192,7 +189,7 @@
     panel.querySelectorAll('.stand-group:not(#superLeagueThirdPlaceRanking) tbody').forEach(tbody => {
       [...tbody.children].filter(row => row.matches?.('tr:not(.arena-mobile-stat-detail)')).forEach((row, index) => {
         let zone = 'out';
-        if (superLeague) zone = index === 0 ? 'direct' : index <= 2 ? 'repechage' : 'out';
+        if (superLeague) zone = index <= 1 ? 'direct' : 'out';
         else if (row.classList.contains('qualified')) zone = 'qualified';
         row.dataset.zone = zone;
         if (mobileQuery.matches) {

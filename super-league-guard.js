@@ -3,7 +3,7 @@
 
   const TOURNAMENT_KEY = 'bda-v3-tournaments';
   const SUPER_LEAGUE_ID = 'bda-super-league';
-  const PROTECTION_VERSION = 5;
+  const PROTECTION_VERSION = 6;
   const COMMUNITY_SELECTORS = '[data-page="community"],[data-go="community"],[data-mobile-go="community"],[data-sheet-go="community"]';
 
   const GROUPS = Object.freeze([
@@ -106,7 +106,7 @@
   }
 
   function canonicalTournament(current = {}) {
-    return {
+    const canonical = {
       ...current,
       id: SUPER_LEAGUE_ID,
       name: 'BDA Super League',
@@ -118,7 +118,7 @@
       badge: '⚜️',
       participants: [...PARTICIPANTS],
       deadline: current.deadline || 'Conforme organização BDA',
-      description: current.description || 'Full Razz • 21 clubes • 2 classificados por grupo. Campeão: R$ 20 • Vice: R$ 10.',
+      description: 'Full Razz • 21 clubes • 2 classificados por grupo. Campeão: R$ 20 • Vice: R$ 10.',
       qualifiersPerGroup: 2,
       rankingMode: 'efficiency',
       rankingTieBreakers: ['goalDifference', 'goalsFor'],
@@ -139,9 +139,15 @@
         legs: 1,
         distribution: current.groupGenerator?.distribution || 'serpentine',
         groups: GROUPS.map(group => ({ name: group.name, teams: [...group.teams] })),
-        knockoutGenerated: true
+        knockoutGenerated: Boolean(current.groupGenerator?.knockoutGenerated),
+        knockoutMode: 'direct-top-2'
       }
     };
+    delete canonical.groupGenerator.repechageQualifiers;
+    delete canonical.groupGenerator.directQuarterfinalSeconds;
+    delete canonical.groupGenerator.playInQualifiers;
+    delete canonical.groupGenerator.repechageGeneratedAt;
+    return canonical;
   }
 
   function readTournaments() {
@@ -164,7 +170,15 @@
       const currentGroups = current?.groupSettings?.groups || current?.groupGenerator?.groups || [];
       const hasOldZombieName = (current.participants || []).some(name => normalizeToken(name) === 'zombiebda')
         || currentGroups.some(group => (group?.teams || []).some(name => normalizeToken(name) === 'zombiebda'));
-      const needsMigration = Number(current.superLeagueProtectionVersion || 0) < PROTECTION_VERSION || hasOldZombieName;
+      const configuredQualifiers = Number(
+        current?.qualifiersPerGroup
+        ?? current?.groupSettings?.qualifiersPerGroup
+        ?? current?.groupGenerator?.qualifiers
+        ?? 0
+      );
+      const needsMigration = Number(current.superLeagueProtectionVersion || 0) < PROTECTION_VERSION
+        || configuredQualifiers !== 2
+        || hasOldZombieName;
 
       if (!needsMigration) return clone(current);
 
@@ -324,7 +338,7 @@
   function loadSuperLeagueRuntimeFix() {
     if (window.ArenaBDASuperLeagueRuntimeFix || document.querySelector('script[data-super-league-runtime-fix]')) return;
     const script = document.createElement('script');
-    script.src = './super-league-runtime-fix.js?v=20260818-1';
+    script.src = './super-league-runtime-fix.js?v=20260822-7';
     script.async = true;
     script.dataset.superLeagueRuntimeFix = 'true';
     script.addEventListener('error', () => console.warn('[Arena BDA] Não foi possível carregar a correção da Super League'), { once: true });

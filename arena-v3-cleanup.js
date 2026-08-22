@@ -1,11 +1,11 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAV3Cleanup?.version >= 14) return;
+  if (window.ArenaBDAV3Cleanup?.version >= 15) return;
 
-  const BUILD = 'v113';
-  const REV = '20260822-6';
-  const SUPER_LEAGUE_RULE_SRC = `./super-league-rule-v3.js?v=${REV}`;
+  const BUILD = 'v114';
+  const REV = '20260822-7';
+  const SUPER_LEAGUE_RULE_SRC = `./super-league-rule.js?v=${REV}`;
   const SUPER_LEAGUE_SYNC_SRC = `./arena-super-league-sync-gate.js?v=${REV}`;
   const REDESIGN_SRC = `./arena-redesign-v1.js?v=${REV}`;
   const MOBILE_POLISH_SRC = `./arena-mobile-polish.js?v=${REV}`;
@@ -28,6 +28,8 @@
     'super-league-standings-fix.js',
     'super-league-repechage.js',
     'super-league-rule-v2.js',
+    'super-league-rule-v3.js',
+    'super-league-schedule-repair.js',
     'arena-mobile-bracket-v3.js',
     'comunidade-social.js'
   ];
@@ -49,6 +51,19 @@
       const src = String(script.getAttribute('src') || '');
       if (LEGACY_SCRIPT_PARTS.some(part => src.includes(part))) script.remove();
     });
+  }
+
+  function removeLegacySuperLeagueArtifacts() {
+    [
+      'superLeagueSecondPlaceRanking',
+      'superLeagueThirdPlaceRanking',
+      'superLeagueRepechageStyles',
+      'superLeagueRuleV3Styles'
+    ].forEach(id => document.getElementById(id)?.remove());
+    try { delete window.ArenaBDASuperLeagueRuleV2; } catch {}
+    try { delete window.ArenaBDASuperLeagueRuleV3; } catch {}
+    try { delete window.ArenaBDASuperLeagueRepechage; } catch {}
+    try { delete window.ArenaBDASuperLeagueScheduleRepair; } catch {}
   }
 
   function ensureScript({ globalName, selector, src, datasetName, label, minVersion = 0 }) {
@@ -77,19 +92,19 @@
   }
 
   function ensureSuperLeagueRuleModule() {
-    ensureScript({ globalName:'ArenaBDASuperLeagueRuleV3', selector:'script[data-super-league-rule-v3]', src:SUPER_LEAGUE_RULE_SRC, datasetName:'superLeagueRuleV3', label:'a regra atual da Super League', minVersion:3 });
+    ensureScript({ globalName:'ArenaBDASuperLeagueRule', selector:'script[data-super-league-rule]', src:SUPER_LEAGUE_RULE_SRC, datasetName:'superLeagueRule', label:'a regra atual da Super League', minVersion:1 });
   }
 
   function ensureSuperLeagueSyncModule() {
-    ensureScript({ globalName:'ArenaBDASuperLeagueSyncGate', selector:'script[data-super-league-sync-gate]', src:SUPER_LEAGUE_SYNC_SRC, datasetName:'superLeagueSyncGate', label:'a sincronização entre aparelhos da Super League', minVersion:2 });
+    ensureScript({ globalName:'ArenaBDASuperLeagueSyncGate', selector:'script[data-super-league-sync-gate]', src:SUPER_LEAGUE_SYNC_SRC, datasetName:'superLeagueSyncGate', label:'a sincronização entre aparelhos da Super League', minVersion:3 });
   }
 
   function ensureMobileBracketModule() {
-    ensureScript({ globalName:'ArenaBDAMobileBracketV4', selector:'script[data-arena-mobile-bracket-v4]', src:MOBILE_BRACKET_SRC, datasetName:'arenaMobileBracketV4', label:'o chaveamento atual da Super League', minVersion:4 });
+    ensureScript({ globalName:'ArenaBDAMobileBracketV4', selector:'script[data-arena-mobile-bracket-v4]', src:MOBILE_BRACKET_SRC, datasetName:'arenaMobileBracketV4', label:'o chaveamento atual da Super League', minVersion:5 });
   }
 
   function ensureProvisionalKnockoutModule() {
-    ensureScript({ globalName:'ArenaBDAProvisionalKnockout', selector:'script[data-arena-provisional-knockout]', src:PROVISIONAL_KNOCKOUT_SRC, datasetName:'arenaProvisionalKnockout', label:'as vagas confirmadas das eliminatórias', minVersion:1 });
+    ensureScript({ globalName:'ArenaBDAProvisionalKnockout', selector:'script[data-arena-provisional-knockout]', src:PROVISIONAL_KNOCKOUT_SRC, datasetName:'arenaProvisionalKnockout', label:'as vagas confirmadas das eliminatórias', minVersion:2 });
   }
 
   function ensureTeamEditorModule() {
@@ -154,6 +169,7 @@
     removeLegacyStorage();
     removeLegacyCommunity();
     removeLegacyScripts();
+    removeLegacySuperLeagueArtifacts();
     neutralizeLegacyAdminModal();
     scrubLegacyCopy();
     ensureRedesignModule();
@@ -187,7 +203,7 @@
   observer.observe(document.documentElement, { childList:true, subtree:true });
 
   window.ArenaBDAV3Cleanup = Object.freeze({
-    version:14,
+    version:15,
     build:BUILD,
     revision:REV,
     cleanup,

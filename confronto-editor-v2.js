@@ -58,13 +58,6 @@
     return tournaments().find(item => String(item?.id) === String(tid)) || null;
   }
 
-  function isSupercopa(tid = tournamentId()) {
-    const item = tournament(tid);
-    const id = norm(item?.id).replace(/[^a-z0-9]/g, '');
-    const name = norm(item?.name).replace(/[^a-z0-9]/g, '');
-    return id === 'supercopa' || id === 'supercopabda' || name.includes('supercopabda');
-  }
-
   function matchStore() {
     const value = read(MATCH_KEY, {});
     return value && typeof value === 'object' ? value : {};
@@ -253,7 +246,6 @@
     const tid = tournamentId();
     const item = tournament(tid);
     const participants = Array.isArray(item?.participants) ? item.participants.length : 0;
-    const supercopa = isSupercopa(tid);
     const sheet = $('.asmgr-sheet', ensureManagerSheet());
 
     sheet.innerHTML = `
@@ -261,27 +253,18 @@
         <div><span>ORGANIZAR</span><h2 id="asmgrTitle">${esc(item?.name || 'Campeonato')}</h2></div>
         <button type="button" data-asmgr-close aria-label="Fechar">×</button>
       </header>
-      ${supercopa ? `
-        <section class="asmgr-card recommended">
-          <strong>Formato recomendado</strong>
-          <h3>4 grupos → quartas → semifinal → final</h3>
-          <p>Com ${participants || 16} times: 4 grupos de 4 e 2 classificados por grupo.</p>
-          <button type="button" class="primary" data-asmgr-supercopa>Usar este formato</button>
-        </section>
-      ` : `
-        <section class="asmgr-card">
-          <strong>Formato</strong>
-          <h3>Escolha uma opção</h3>
-          <div class="asmgr-options">
-            <button type="button" data-asmgr-format="groups">Grupos + mata-mata</button>
-            <button type="button" data-asmgr-format="league">Pontos corridos</button>
-          </div>
-        </section>
-      `}
+      <section class="asmgr-card">
+        <strong>Formato</strong>
+        <h3>Escolha uma opção</h3>
+        <p>${participants ? `${participants} participantes cadastrados.` : 'Adicione os participantes antes de gerar os jogos.'}</p>
+        <div class="asmgr-options">
+          <button type="button" data-asmgr-format="groups">Grupos + mata-mata</button>
+          <button type="button" data-asmgr-format="league">Pontos corridos</button>
+        </div>
+      </section>
       <button type="button" class="asmgr-link" data-asmgr-advanced>Opções avançadas</button>`;
 
     $('[data-asmgr-close]', sheet)?.addEventListener('click', closeManager);
-    $('[data-asmgr-supercopa]', sheet)?.addEventListener('click', applySupercopaPreset);
     $$('[data-asmgr-format]', sheet).forEach(button => button.addEventListener('click', () => openGenerator(button.dataset.asmgrFormat)));
     $('[data-asmgr-advanced]', sheet)?.addEventListener('click', () => openGenerator(''));
   }
@@ -324,35 +307,6 @@
       }
       $('#leagueGeneratorPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
-  }
-
-  function applySupercopaPreset() {
-    closeManager();
-    if (!activateGenerator()) return;
-
-    setTimeout(() => {
-      const mode = $('#leagueMode');
-      const groupCount = $('#leagueGroupCount');
-      const qualifiers = $('#leagueQualifiers');
-      const legs = $('#leagueLegs');
-      const distribution = $('#leagueDistribution');
-      if (!mode || !groupCount || !qualifiers) return notify('Não foi possível preparar a Supercopa');
-
-      mode.value = 'groups';
-      groupCount.value = '4';
-      qualifiers.value = '2';
-      if (legs) legs.value = '1';
-      if (distribution) distribution.value = 'random';
-      [mode, groupCount, qualifiers, legs, distribution].filter(Boolean).forEach(element => {
-        element.dispatchEvent(new Event('change', { bubbles: true }));
-      });
-
-      setTimeout(() => {
-        const generate = $('#leagueGeneratorPanel [data-generate-schedule]');
-        if (!generate) return notify('O gerador ainda está carregando');
-        if (confirm('Criar a Supercopa com 4 grupos de 4 e 2 classificados por grupo?')) generate.click();
-      }, 120);
-    }, 120);
   }
 
   function simplifyManager() {

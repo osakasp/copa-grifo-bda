@@ -19,13 +19,10 @@
       './galeria-historica-v2.js?v=20260816-3'
     ],
     season: [
-      './temporada-bda.js?v=20260801-2'
+      './temporada-bda.js?v=20260822-7'
     ],
     flash: [
       './copas-flash.js?v=20260803-2'
-    ],
-    community: [
-      './comunidade-social.js?v=20260805-2'
     ],
     feedback: [
       './feedback-bda.js?v=20260803-1'
@@ -46,7 +43,7 @@
     tournamentDetail: [
       './confrontos-copa-grifo.js',
       './gestor-inteligente.js?v=20260816-5',
-      './classificacao-automatica.js?v=20260816-5',
+      './classificacao-automatica.js?v=20260822-7',
       './resultados-cards-pro.js?v=20260816-2',
       './placar-mobile-stability.js?v=20260803-1'
     ],
@@ -75,7 +72,6 @@
     registrations: 'registrations',
     teams: 'teams',
     tournament: 'tournament',
-    community: 'community',
     feedback: 'feedback'
   });
   const ROUTES = Object.freeze({

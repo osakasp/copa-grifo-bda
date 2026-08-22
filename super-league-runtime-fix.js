@@ -1,12 +1,14 @@
 (() => {
   'use strict';
 
+  if (window.ArenaBDASuperLeagueRuntimeFix?.version >= 4) return;
+
   const SUPER_LEAGUE_ID = 'bda-super-league';
   const TOURNAMENT_KEY = 'bda-v3-tournaments';
   const MATCH_KEY = 'bda-v3-confrontos';
   const TEAM_KEY = 'bda-v2-teams';
-  const CONFIG_VERSION = 1;
-  const DEFAULT_QUALIFIERS = 3;
+  const CONFIG_VERSION = 2;
+  const DEFAULT_QUALIFIERS = 2;
 
   const DEFAULT_GROUPS = Object.freeze([
     Object.freeze({ name:'Grupo A', teams:Object.freeze(['CV Cruz BDA','Hellyeah BDA','Imortais FC BDA','BDA Golden FC','CR Flamengo','Vera Cruz Do Oeste PR BDA']) }),
@@ -88,14 +90,8 @@
     );
   }
 
-  function qualifiers(tournament = readTournament()) {
-    const value = Number(
-      tournament?.qualifiersPerGroup
-      ?? tournament?.groupSettings?.qualifiersPerGroup
-      ?? tournament?.groupGenerator?.qualifiers
-      ?? DEFAULT_QUALIFIERS
-    );
-    return Number.isFinite(value) && value > 0 ? Math.floor(value) : DEFAULT_QUALIFIERS;
+  function qualifiers() {
+    return DEFAULT_QUALIFIERS;
   }
 
   function configStamp(tournament) {
@@ -106,12 +102,12 @@
     return Number(tournament?.superLeagueUserConfigVersion || 0) >= CONFIG_VERSION;
   }
 
-  function buildTournament(base, groups, q, stamp = 0) {
+  function buildTournament(base, groups, _q, stamp = 0) {
     const normalizedGroups = cleanGroups(groups);
     const participants = normalizedGroups.flatMap(group => group.teams);
-    const safeQ = Math.max(1, Math.min(Number(q) || DEFAULT_QUALIFIERS, Math.max(1, Math.min(...normalizedGroups.map(group => group.teams.length)))));
+    const safeQ = DEFAULT_QUALIFIERS;
     const description = `Full Razz • ${participants.length} clubes • ${safeQ} classificados por grupo. Campeão: R$ 20 • Vice: R$ 10.`;
-    return {
+    const next = {
       ...(base || {}),
       id: SUPER_LEAGUE_ID,
       name: 'BDA Super League',
@@ -140,6 +136,15 @@
         groups: normalizedGroups
       }
     };
+    delete next.groupGenerator.repechageQualifiers;
+    delete next.groupGenerator.directQuarterfinalSeconds;
+    delete next.groupGenerator.playInQualifiers;
+    delete next.groupGenerator.repechageGeneratedAt;
+    if (next.groupGenerator.knockoutMode && next.groupGenerator.knockoutMode !== 'direct-top-2') {
+      next.groupGenerator.knockoutMode = 'direct-top-2';
+      next.groupGenerator.knockoutGenerated = false;
+    }
+    return next;
   }
 
   function chooseConfigSource(remote) {
@@ -152,7 +157,7 @@
 
   function canonicalizeTournament(remote = {}) {
     const source = chooseConfigSource(remote);
-    if (source) return buildTournament(remote, tournamentGroups(source), qualifiers(source), configStamp(source));
+    if (source) return buildTournament(remote, tournamentGroups(source), DEFAULT_QUALIFIERS, configStamp(source));
     return buildTournament(remote, DEFAULT_GROUPS, DEFAULT_QUALIFIERS, 1);
   }
 
@@ -176,16 +181,22 @@
     const index = list.findIndex(item => String(item?.id || '') === SUPER_LEAGUE_ID);
     if (index < 0) return false;
     const current = list[index];
-    if (hasUserConfig(current)) {
+    const configuredQualifiers = Number(
+      current?.qualifiersPerGroup
+      ?? current?.groupSettings?.qualifiersPerGroup
+      ?? current?.groupGenerator?.qualifiers
+      ?? 0
+    );
+    if (hasUserConfig(current) && configuredQualifiers === DEFAULT_QUALIFIERS) {
       replaceGuardFacade();
       return false;
     }
     const next = [...list];
-    next[index] = buildTournament(current, DEFAULT_GROUPS, DEFAULT_QUALIFIERS, 1);
+    next[index] = buildTournament(current, tournamentGroups(current), DEFAULT_QUALIFIERS, Math.max(1, configStamp(current)));
     localStorage.setItem(TOURNAMENT_KEY, JSON.stringify(next));
     replaceGuardFacade();
     window.dispatchEvent(new CustomEvent('arena:tournaments-updated', {
-      detail:{ tournamentId:SUPER_LEAGUE_ID, reason:'super-league-3-qualifiers-default' }
+      detail:{ tournamentId:SUPER_LEAGUE_ID, reason:'super-league-direct-top2-default' }
     }));
     return true;
   }
@@ -219,7 +230,7 @@
 
   function patchValidMatches() {
     const current = window.ArenaBDAValidMatches;
-    if (!current?.forTournament || current.__superLeagueRuntimeFixV3) return;
+    if (!current?.forTournament || current.__superLeagueRuntimeFixV4) return;
     const originalForTournament = current.forTournament.bind(current);
     const patchedForTournament = (tournament, games) => originalForTournament(withConfiguredGroups(tournament), games);
     const patched = {
@@ -230,7 +241,7 @@
         return patchedForTournament(tournament, games);
       }
     };
-    Object.defineProperty(patched,'__superLeagueRuntimeFixV3',{value:true});
+    Object.defineProperty(patched,'__superLeagueRuntimeFixV4',{value:true});
     window.ArenaBDAValidMatches = Object.freeze(patched);
   }
 
@@ -527,12 +538,7 @@
         <div><span class="eyebrow">Configurações da competição</span><h2>BDA Super League</h2></div>
         <button class="cloud-panel-close" type="button" data-sl-close aria-label="Fechar">×</button>
       </div>
-      <p>Defina quantos clubes avançam por grupo e edite os participantes. Digite um time por linha.</p>
-      <label style="margin-top:14px">Classificados por grupo
-        <select id="slQualifiers">
-          ${[1,2,3,4,5,6].map(value=>`<option value="${value}">${value}</option>`).join('')}
-        </select>
-      </label>
+      <p>Edite os participantes de cada grupo. A regra oficial mantém 2 classificados por grupo, com avanço direto às quartas de final.</p>
       <div class="sl-settings-grid" id="slGroupEditors"></div>
       <div class="sl-settings-summary" id="slSettingsSummary"></div>
       <div class="sl-settings-actions">
@@ -543,7 +549,6 @@
     document.body.append(modal);
     modal.addEventListener('click',event=>{ if (event.target === modal || event.target.closest('[data-sl-close]')) closeSettings(); });
     document.getElementById('slSaveSettings')?.addEventListener('click',saveSettings);
-    document.getElementById('slQualifiers')?.addEventListener('change',updateSettingsSummary);
     modal.addEventListener('input',event=>{ if (event.target instanceof HTMLTextAreaElement) updateSettingsSummary(); });
   }
 
@@ -556,7 +561,7 @@
 
   function updateSettingsSummary() {
     const groups = editorsData();
-    const q = Number(document.getElementById('slQualifiers')?.value || DEFAULT_QUALIFIERS);
+    const q = DEFAULT_QUALIFIERS;
     const total = groups.reduce((sum,group)=>sum+group.teams.length,0);
     const element = document.getElementById('slSettingsSummary');
     if (element) element.textContent = `${total} participantes • ${groups.length} grupos • ${q} classificados por grupo • ${groups.length*q} vagas nas eliminatórias`;
@@ -566,13 +571,10 @@
     if (!window.ArenaBDAAuth?.isAdmin?.()) return;
     ensureSettingsModal();
     const groups = tournamentGroups();
-    const q = qualifiers();
     const editor = document.getElementById('slGroupEditors');
     editor.innerHTML = groups.map((group,index)=>`<label>${esc(group.name)}
       <textarea data-group-name="${esc(group.name)}" data-group-index="${index}" spellcheck="false">${esc(group.teams.join('\n'))}</textarea>
     </label>`).join('');
-    const select = document.getElementById('slQualifiers');
-    select.value = String(q);
     updateSettingsSummary();
     document.getElementById('superLeagueSettingsModal')?.classList.add('show');
   }
@@ -581,7 +583,7 @@
     document.getElementById('superLeagueSettingsModal')?.classList.remove('show');
   }
 
-  function validateSettings(groups,q) {
+  function validateSettings(groups) {
     if (groups.length !== 4) return 'A Super League precisa manter os quatro grupos.';
     if (groups.some(group=>group.teams.length < 2)) return 'Cada grupo precisa ter pelo menos 2 times.';
     const seen = new Set();
@@ -593,16 +595,14 @@
         seen.add(key);
       }
     }
-    const smallest = Math.min(...groups.map(group=>group.teams.length));
-    if (!Number.isInteger(q) || q < 1 || q > smallest) return `Escolha entre 1 e ${smallest} classificados por grupo.`;
     return '';
   }
 
   function saveSettings() {
     if (!window.ArenaBDAAuth?.isAdmin?.()) return;
     const groups = editorsData();
-    const q = Number(document.getElementById('slQualifiers')?.value || DEFAULT_QUALIFIERS);
-    const error = validateSettings(groups,q);
+    const q = DEFAULT_QUALIFIERS;
+    const error = validateSettings(groups);
     if (error) {
       if (typeof toast === 'function') toast(error); else alert(error);
       return;
@@ -612,13 +612,15 @@
     if (index < 0) return;
     const next = [...list];
     next[index] = buildTournament(list[index],groups,q,Date.now());
+    next[index].phase = 'Fase de grupos';
+    next[index].groupGenerator.knockoutGenerated = false;
     localStorage.setItem(TOURNAMENT_KEY,JSON.stringify(next));
+    window.ArenaBDASuperLeagueRule?.resetKnockout?.('super-league-groups-changed');
     replaceGuardFacade();
     closeSettings();
     window.dispatchEvent(new CustomEvent('arena:tournaments-updated',{
       detail:{ tournamentId:SUPER_LEAGUE_ID, reason:'super-league-admin-settings' }
     }));
-    window.ArenaBDASuperLeagueScheduleRepair?.repair?.();
     refresh();
     if (typeof toast === 'function') toast('Configurações da Super League salvas');
   }
@@ -636,20 +638,6 @@
       openSettings();
     });
     shortcuts.append(button);
-  }
-
-  function ensureScheduleRepair() {
-    if (window.ArenaBDASuperLeagueScheduleRepair?.version >= 4) {
-      window.ArenaBDASuperLeagueScheduleRepair.repair?.();
-      return;
-    }
-    if (document.querySelector('script[data-super-league-schedule-repair-v4]')) return;
-    const script = document.createElement('script');
-    script.src = './super-league-schedule-repair.js?v=20260819-3';
-    script.async = true;
-    script.dataset.superLeagueScheduleRepairV4 = 'true';
-    script.addEventListener('load',()=>window.ArenaBDASuperLeagueScheduleRepair?.repair?.(),{once:true});
-    (document.body || document.head || document.documentElement).append(script);
   }
 
   function nudgeStandings() {
@@ -674,7 +662,6 @@
       ensureStyles();
       ensureSettingsModal();
       injectAdminShortcut();
-      ensureScheduleRepair();
       renderGroupOverview();
       renderStandings();
       nudgeStandings();
@@ -688,7 +675,6 @@
   patchScoreSync();
   ensureStyles();
   ensureSettingsModal();
-  ensureScheduleRepair();
 
   document.addEventListener('focusin',protectScoreEdit,true);
   document.addEventListener('input',protectScoreEdit,true);
@@ -719,7 +705,7 @@
   observer.observe(document.documentElement,{childList:true,subtree:true});
 
   window.ArenaBDASuperLeagueRuntimeFix = Object.freeze({
-    version:3,
+    version:4,
     refresh,
     groups:()=>clone(tournamentGroups()),
     qualifiers,
