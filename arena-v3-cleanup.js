@@ -1,13 +1,14 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAV3Cleanup?.version >= 12) return;
+  if (window.ArenaBDAV3Cleanup?.version >= 13) return;
 
   const SUPER_LEAGUE_RULE_SRC = './super-league-rule-v3.js?v=20260822-3';
   const SUPER_LEAGUE_SYNC_SRC = './arena-super-league-sync-gate.js?v=20260822-1';
   const REDESIGN_SRC = './arena-redesign-v1.js?v=20260822-3';
   const MOBILE_POLISH_SRC = './arena-mobile-polish.js?v=20260822-3';
   const MOBILE_BRACKET_SRC = './arena-mobile-bracket-v4.js?v=20260822-3';
+  const PROVISIONAL_KNOCKOUT_SRC = './arena-provisional-knockout.js?v=20260822-1';
   const TEAM_EDITOR_SRC = './arena-team-editor.js?v=20260822-3';
   const TEAM_CLOUD_SYNC_SRC = './arena-team-cloud-sync.js?v=20260822-3';
   const TOURNAMENT_TRIM_SRC = './arena-tournament-trim.js?v=20260822-3';
@@ -98,6 +99,16 @@
     });
   }
 
+  function ensureProvisionalKnockoutModule() {
+    ensureScript({
+      globalName: 'ArenaBDAProvisionalKnockout',
+      selector: 'script[data-arena-provisional-knockout]',
+      src: PROVISIONAL_KNOCKOUT_SRC,
+      datasetName: 'arenaProvisionalKnockout',
+      label: 'as vagas confirmadas das eliminatórias'
+    });
+  }
+
   function ensureTeamEditorModule() {
     ensureScript({
       globalName: 'ArenaBDATeamEditor',
@@ -167,7 +178,7 @@
 
   function cleanup() {
     document.documentElement.dataset.arenaUi = 'v3';
-    document.documentElement.dataset.arenaBuild = 'v111';
+    document.documentElement.dataset.arenaBuild = 'v112';
     removeLegacyStorage();
     removeLegacyCommunity();
     removeLegacyScripts();
@@ -178,6 +189,7 @@
     ensureSuperLeagueRuleModule();
     ensureSuperLeagueSyncModule();
     ensureMobileBracketModule();
+    ensureProvisionalKnockoutModule();
     ensureSuperLeagueCloud();
     ensureTeamCloudSyncModule();
     ensureTeamEditorModule();
@@ -200,13 +212,14 @@
   observer.observe(document.documentElement, { childList:true, subtree:true });
 
   window.ArenaBDAV3Cleanup = Object.freeze({
-    version: 12,
+    version: 13,
     cleanup,
     superLeagueRuleSource: SUPER_LEAGUE_RULE_SRC,
     superLeagueSyncSource: SUPER_LEAGUE_SYNC_SRC,
     redesignSource: REDESIGN_SRC,
     mobilePolishSource: MOBILE_POLISH_SRC,
     mobileBracketSource: MOBILE_BRACKET_SRC,
+    provisionalKnockoutSource: PROVISIONAL_KNOCKOUT_SRC,
     teamEditorSource: TEAM_EDITOR_SRC,
     teamCloudSyncSource: TEAM_CLOUD_SYNC_SRC,
     tournamentTrimSource: TOURNAMENT_TRIM_SRC,
