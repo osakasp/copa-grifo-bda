@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDATournamentTrim?.version >= 3) return;
+  if (window.ArenaBDATournamentTrim?.version >= 4) return;
 
   const DESIGN_POLISH_SRC = './arena-design-polish-v2.js?v=20260822-1';
   const LABELS = new Set([
@@ -9,6 +9,27 @@
     'central ao vivo',
     'regulamento'
   ]);
+
+  const MATCH_ACTION_LABELS = new Set([
+    'previa',
+    'ver previa',
+    'previa do jogo',
+    'ao vivo',
+    'ver ao vivo'
+  ]);
+
+  const MATCH_CARD_SELECTOR = [
+    '.gi-game',
+    '.gip-card',
+    '.match-card',
+    '.game-card',
+    '.partida-card',
+    '.card-jogo',
+    '.arena-v4-bracket-card',
+    '.arena-provisional-card',
+    '[data-card]',
+    '[data-match-card]'
+  ].join(',');
 
   const FIXED_SELECTORS = [
     '#superLeagueGroupsOverview'
@@ -84,6 +105,19 @@
     return count;
   }
 
+  function trimMatchActions(page) {
+    let removed = 0;
+    page.querySelectorAll(MATCH_CARD_SELECTOR).forEach(card => {
+      card.querySelectorAll('button,a,[role="button"]').forEach(control => {
+        const label = normalize(control.textContent);
+        if (!MATCH_ACTION_LABELS.has(label)) return;
+        control.remove();
+        removed += 1;
+      });
+    });
+    return removed;
+  }
+
   function trim() {
     ensureDesignPolish();
     const page = document.querySelector('[data-page="tournament"]');
@@ -91,6 +125,7 @@
 
     ensureStyles();
     let removed = trimFixed(page);
+    removed += trimMatchActions(page);
     const targets = new Set();
     const walker = document.createTreeWalker(page, NodeFilter.SHOW_TEXT);
 
@@ -123,10 +158,12 @@
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
   window.ArenaBDATournamentTrim = Object.freeze({
-    version: 3,
+    version: 4,
     trim,
+    trimMatchActions,
     designPolishSource: DESIGN_POLISH_SRC,
     labels: Object.freeze([...LABELS]),
+    matchActionLabels: Object.freeze([...MATCH_ACTION_LABELS]),
     fixedSelectors: Object.freeze([...FIXED_SELECTORS])
   });
 
