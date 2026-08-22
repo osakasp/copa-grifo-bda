@@ -1,4 +1,4 @@
-const VERSION = 'v110-remove-super-league-groups-overview';
+const VERSION = 'v111-hard-sync-cache-all-devices';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
@@ -6,22 +6,24 @@ const CACHE = Object.freeze({
   images: `${CACHE_PREFIX}images-${VERSION}`
 });
 const ACTIVE_CACHES = new Set(Object.values(CACHE));
-const SUPER_LEAGUE_RULE_SRC = './super-league-rule-v3.js?v=20260822-1';
-const CLEANUP_SRC = './arena-v3-cleanup.js?v=20260822-2';
-const REDESIGN_SRC = './arena-redesign-v1.js?v=20260821-1';
-const MOBILE_POLISH_SRC = './arena-mobile-polish.js?v=20260821-1';
-const MOBILE_BRACKET_SRC = './arena-mobile-bracket-v4.js?v=20260822-1';
-const TEAM_EDITOR_SRC = './arena-team-editor.js?v=20260821-1';
-const TEAM_CLOUD_SYNC_SRC = './arena-team-cloud-sync.js?v=20260821-1';
-const TOURNAMENT_TRIM_SRC = './arena-tournament-trim.js?v=20260822-2';
+const SUPER_LEAGUE_RULE_SRC = './super-league-rule-v3.js?v=20260822-3';
+const SUPER_LEAGUE_SYNC_SRC = './arena-super-league-sync-gate.js?v=20260822-1';
+const CLEANUP_SRC = './arena-v3-cleanup.js?v=20260822-3';
+const REDESIGN_SRC = './arena-redesign-v1.js?v=20260822-3';
+const MOBILE_POLISH_SRC = './arena-mobile-polish.js?v=20260822-3';
+const MOBILE_BRACKET_SRC = './arena-mobile-bracket-v4.js?v=20260822-3';
+const TEAM_EDITOR_SRC = './arena-team-editor.js?v=20260822-3';
+const TEAM_CLOUD_SYNC_SRC = './arena-team-cloud-sync.js?v=20260822-3';
+const TOURNAMENT_TRIM_SRC = './arena-tournament-trim.js?v=20260822-3';
 const SHELL = [
   './',
   './index.html',
-  './preview-v2.html?v=20260819-5',
+  './preview-v2.html?v=20260822-3',
   './favicon.svg',
   './site.webmanifest',
   CLEANUP_SRC,
   SUPER_LEAGUE_RULE_SRC,
+  SUPER_LEAGUE_SYNC_SRC,
   REDESIGN_SRC,
   MOBILE_POLISH_SRC,
   MOBILE_BRACKET_SRC,
@@ -35,25 +37,45 @@ const SHELL = [
   './arena-home-active.js?v=20260820-1'
 ];
 
+async function precacheFresh() {
+  const cache = await caches.open(CACHE.shell);
+  await Promise.allSettled(SHELL.map(async url => {
+    const request = new Request(url, { cache: 'reload' });
+    const response = await fetch(request, { cache: 'no-store' });
+    if (canCache(request, response)) await cache.put(request, response.clone());
+  }));
+}
+
 self.addEventListener('install', event => {
-  event.waitUntil(Promise.all([
-    self.skipWaiting(),
-    caches.open(CACHE.shell).then(cache => cache.addAll(SHELL)).catch(() => {})
-  ]));
+  event.waitUntil((async () => {
+    await self.skipWaiting();
+    await precacheFresh().catch(() => {});
+  })());
 });
 
 self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(keys
-        .filter(key => !ACTIVE_CACHES.has(key) && (/^arena-bda-/.test(key) || /^copa-grifo-/.test(key)))
-        .map(key => caches.delete(key))))
-      .then(() => self.clients.claim())
-  );
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys
+      .filter(key => !ACTIVE_CACHES.has(key) && (/^arena-bda-/.test(key) || /^copa-grifo-/.test(key)))
+      .map(key => caches.delete(key)));
+
+    await self.clients.claim();
+    const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    await Promise.all(clients.map(async client => {
+      try {
+        client.postMessage({ type: 'ARENA_BUILD_ACTIVATED', version: VERSION });
+        if (typeof client.navigate === 'function') await client.navigate(client.url);
+      } catch {}
+    }));
+  })());
 });
 
 self.addEventListener('message', event => {
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
+  if (event.data?.type === 'GET_ARENA_BUILD') {
+    event.source?.postMessage?.({ type: 'ARENA_BUILD', version: VERSION });
+  }
 });
 
 function canCache(request, response) {
@@ -73,7 +95,9 @@ async function networkFirst(request) {
     if (canCache(request, response)) cache.put(request, response.clone()).catch(() => {});
     return response;
   } catch {
-    return (await cache.match(request)) || (request.mode === 'navigate' ? await cache.match('./index.html') : undefined) || Response.error();
+    return (await cache.match(request))
+      || (request.mode === 'navigate' ? await cache.match('./index.html') : undefined)
+      || Response.error();
   }
 }
 
@@ -87,7 +111,7 @@ function cleanupResponse(response) {
     headers.delete('content-length');
     headers.delete('content-encoding');
     headers.delete('etag');
-    headers.set('cache-control', 'no-store');
+    headers.set('cache-control', 'no-store, no-cache, must-revalidate');
     return new Response(next, {
       status: response.status,
       statusText: response.statusText,
@@ -103,7 +127,7 @@ async function previewV3(request) {
     if (canCache(request, response)) cache.put(request, response.clone()).catch(() => {});
     return await cleanupResponse(response);
   } catch {
-    const cached = await cache.match(request) || await cache.match('./preview-v2.html?v=20260819-5');
+    const cached = await cache.match(request) || await cache.match('./preview-v2.html?v=20260822-3');
     return cached ? cleanupResponse(cached) : Response.error();
   }
 }
@@ -111,7 +135,7 @@ async function previewV3(request) {
 async function staleWhileRevalidate(request) {
   const cache = await caches.open(CACHE.assets);
   const cached = await cache.match(request);
-  const network = fetch(request)
+  const network = fetch(request, { cache: 'no-cache' })
     .then(response => {
       if (canCache(request, response)) cache.put(request, response.clone()).catch(() => {});
       return response;
@@ -150,7 +174,7 @@ self.addEventListener('fetch', event => {
 
   const isDocument = request.mode === 'navigate' || request.destination === 'document' || url.pathname.endsWith('.html');
   const isCriticalArenaScript = request.destination === 'script'
-    && /\/(firebase-auth|firestore-sync|classificacao-automatica|arena-v3-cleanup|arena-redesign-v1|arena-mobile-polish|arena-mobile-bracket-v4|arena-team-editor|arena-team-cloud-sync|arena-tournament-trim|super-league-rule-v3|super-league-guard|super-league-runtime-fix|super-league-schedule-repair|bda-logo|arena-home-active)\.js$/.test(url.pathname);
+    && /\/(firebase-auth|firestore-sync|classificacao-automatica|arena-v3-cleanup|arena-super-league-sync-gate|arena-redesign-v1|arena-mobile-polish|arena-mobile-bracket-v4|arena-team-editor|arena-team-cloud-sync|arena-tournament-trim|super-league-rule-v3|super-league-guard|super-league-runtime-fix|super-league-schedule-repair|bda-logo|arena-home-active)\.js$/.test(url.pathname);
 
   if (isDocument || isCriticalArenaScript) return event.respondWith(networkFirst(request));
   if (request.destination === 'image') return event.respondWith(imageCacheFirst(request));
