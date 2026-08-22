@@ -4,7 +4,6 @@
   if (window.ArenaBDATeamCloudSync?.version >= 1) return;
 
   const MATCH_KEY = 'bda-v3-confrontos';
-  const SUPER_LEAGUE_ID = 'bda-super-league';
   let timer = 0;
 
   function readMatches() {
@@ -46,7 +45,14 @@
     return true;
   }
 
-  function scheduleSync(detail) {
+  function refreshTeamsPage() {
+    const grid = document.getElementById('teamGrid');
+    if (grid) grid.removeAttribute('data-arena-team-editor-state');
+    requestAnimationFrame(() => window.ArenaBDATeamEditor?.refresh?.());
+  }
+
+  function handleUpdate(detail) {
+    refreshTeamsPage();
     if (!detail?.renamed) return;
     clearTimeout(timer);
     timer = setTimeout(() => {
@@ -56,10 +62,11 @@
     }, 350);
   }
 
-  window.addEventListener('arena:teams-updated', event => scheduleSync(event.detail));
+  window.addEventListener('arena:teams-updated', event => handleUpdate(event.detail));
 
   window.ArenaBDATeamCloudSync = Object.freeze({
     version: 1,
-    sync: syncAllMatchStores
+    sync: syncAllMatchStores,
+    refreshTeamsPage
   });
 })();
