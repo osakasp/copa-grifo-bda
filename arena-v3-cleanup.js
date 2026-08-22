@@ -1,15 +1,16 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAV3Cleanup?.version >= 11) return;
+  if (window.ArenaBDAV3Cleanup?.version >= 12) return;
 
-  const SUPER_LEAGUE_RULE_SRC = './super-league-rule-v3.js?v=20260822-1';
-  const REDESIGN_SRC = './arena-redesign-v1.js?v=20260821-1';
-  const MOBILE_POLISH_SRC = './arena-mobile-polish.js?v=20260821-1';
-  const MOBILE_BRACKET_SRC = './arena-mobile-bracket-v4.js?v=20260822-1';
-  const TEAM_EDITOR_SRC = './arena-team-editor.js?v=20260821-1';
-  const TEAM_CLOUD_SYNC_SRC = './arena-team-cloud-sync.js?v=20260821-1';
-  const TOURNAMENT_TRIM_SRC = './arena-tournament-trim.js?v=20260822-2';
+  const SUPER_LEAGUE_RULE_SRC = './super-league-rule-v3.js?v=20260822-3';
+  const SUPER_LEAGUE_SYNC_SRC = './arena-super-league-sync-gate.js?v=20260822-1';
+  const REDESIGN_SRC = './arena-redesign-v1.js?v=20260822-3';
+  const MOBILE_POLISH_SRC = './arena-mobile-polish.js?v=20260822-3';
+  const MOBILE_BRACKET_SRC = './arena-mobile-bracket-v4.js?v=20260822-3';
+  const TEAM_EDITOR_SRC = './arena-team-editor.js?v=20260822-3';
+  const TEAM_CLOUD_SYNC_SRC = './arena-team-cloud-sync.js?v=20260822-3';
+  const TOURNAMENT_TRIM_SRC = './arena-tournament-trim.js?v=20260822-3';
   const LEGACY_SELECTORS = [
     '[data-page="community"]',
     '[data-go="community"]',
@@ -77,6 +78,16 @@
     });
   }
 
+  function ensureSuperLeagueSyncModule() {
+    ensureScript({
+      globalName: 'ArenaBDASuperLeagueSyncGate',
+      selector: 'script[data-super-league-sync-gate]',
+      src: SUPER_LEAGUE_SYNC_SRC,
+      datasetName: 'superLeagueSyncGate',
+      label: 'a sincronização entre aparelhos da Super League'
+    });
+  }
+
   function ensureMobileBracketModule() {
     ensureScript({
       globalName: 'ArenaBDAMobileBracketV4',
@@ -121,6 +132,7 @@
     const active = document.querySelector('#giManager[data-tid="bda-super-league"]');
     if (!active || typeof window.ArenaBDAEnsureCloud !== 'function') return;
     window.ArenaBDAEnsureCloud('super-league-public-sync').catch(() => {});
+    window.ArenaBDASuperLeagueSyncGate?.startSync?.().catch?.(() => {});
   }
 
   function neutralizeLegacyAdminModal() {
@@ -155,6 +167,7 @@
 
   function cleanup() {
     document.documentElement.dataset.arenaUi = 'v3';
+    document.documentElement.dataset.arenaBuild = 'v111';
     removeLegacyStorage();
     removeLegacyCommunity();
     removeLegacyScripts();
@@ -163,6 +176,7 @@
     ensureRedesignModule();
     ensureMobilePolishModule();
     ensureSuperLeagueRuleModule();
+    ensureSuperLeagueSyncModule();
     ensureMobileBracketModule();
     ensureSuperLeagueCloud();
     ensureTeamCloudSyncModule();
@@ -179,16 +193,17 @@
     });
   }
 
-  ['arena:bundle-loaded','arena:cloud-ready','arena:auth-changed','arena:tournaments-updated']
+  ['arena:bundle-loaded','arena:cloud-ready','arena:auth-changed','arena:tournaments-updated','arena:matches-updated']
     .forEach(type => window.addEventListener(type, scheduleCleanup));
 
   const observer = new MutationObserver(scheduleCleanup);
   observer.observe(document.documentElement, { childList:true, subtree:true });
 
   window.ArenaBDAV3Cleanup = Object.freeze({
-    version: 11,
+    version: 12,
     cleanup,
     superLeagueRuleSource: SUPER_LEAGUE_RULE_SRC,
+    superLeagueSyncSource: SUPER_LEAGUE_SYNC_SRC,
     redesignSource: REDESIGN_SRC,
     mobilePolishSource: MOBILE_POLISH_SRC,
     mobileBracketSource: MOBILE_BRACKET_SRC,
