@@ -1,12 +1,12 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDASuperLeagueSyncGate?.version >= 1) return;
+  if (window.ArenaBDASuperLeagueSyncGate?.version >= 2) return;
 
   const TID = 'bda-super-league';
   const MATCH_KEY = 'bda-v3-confrontos';
   const DOC_ID = `confrontos-${TID}`;
-  const MAX_WAIT_MS = 10000;
+  const MAX_WAIT_MS = 12000;
   let db = null;
   let unsubscribe = null;
   let syncPromise = null;
@@ -53,19 +53,52 @@
     return Number(game?.updated || game?.created || 0);
   }
 
-  function mergeByFreshness(local, remote) {
-    const map = new Map();
-    (Array.isArray(remote) ? remote : []).forEach(game => {
-      const id = String(game?.id || '');
-      if (id) map.set(id, game);
-    });
+  function hasResult(game) {
+    if (game?.wo === 'a' || game?.wo === 'b') return true;
+    const a = game?.a;
+    const b = game?.b;
+    return a !== '' && a != null && b !== '' && b != null && !Number.isNaN(Number(a)) && !Number.isNaN(Number(b));
+  }
+
+  function resultSignature(game) {
+    return JSON.stringify([
+      game?.wo || 'none',
+      game?.a === '' || game?.a == null ? null : Number(game.a),
+      game?.b === '' || game?.b == null ? null : Number(game.b),
+      game?.pa === '' || game?.pa == null ? null : Number(game.pa),
+      game?.pb === '' || game?.pb == null ? null : Number(game.pb)
+    ]);
+  }
+
+  function chooseGame(local, remote) {
+    if (!remote) return local;
+    if (!local) return remote;
+    const localHas = hasResult(local);
+    const remoteHas = hasResult(remote);
+
+    if (remoteHas && !localHas) return remote;
+    if (localHas && !remoteHas) return local;
+
+    if (localHas && remoteHas && resultSignature(local) !== resultSignature(remote)) {
+      return freshness(local) > freshness(remote) ? local : remote;
+    }
+
+    return freshness(local) > freshness(remote) ? local : remote;
+  }
+
+  function mergeSafely(local, remote) {
+    const localMap = new Map();
+    const remoteMap = new Map();
     (Array.isArray(local) ? local : []).forEach(game => {
       const id = String(game?.id || '');
-      if (!id) return;
-      const previous = map.get(id);
-      if (!previous || freshness(game) >= freshness(previous)) map.set(id, game);
+      if (id) localMap.set(id, game);
     });
-    return [...map.values()];
+    (Array.isArray(remote) ? remote : []).forEach(game => {
+      const id = String(game?.id || '');
+      if (id) remoteMap.set(id, game);
+    });
+    const ids = new Set([...remoteMap.keys(), ...localMap.keys()]);
+    return [...ids].map(id => chooseGame(localMap.get(id), remoteMap.get(id))).filter(Boolean);
   }
 
   function setLocalGames(games, reason) {
@@ -76,7 +109,7 @@
     store[TID] = games;
     localStorage.setItem(MATCH_KEY, JSON.stringify(store));
     window.dispatchEvent(new CustomEvent('arena:matches-updated', {
-      detail: { tournamentId: TID, reason, count: games.length }
+      detail:{ tournamentId:TID, reason, count:games.length }
     }));
     window.ArenaBDASuperLeagueRuntimeFix?.refresh?.();
     window.ArenaBDASuperLeagueRuleV3?.refresh?.();
@@ -84,15 +117,15 @@
   }
 
   function statusElement(create = true) {
-    const host = manager()?.querySelector('#autoStandings');
+    const host = manager();
     if (!host) return null;
-    let status = host.querySelector('#arenaSuperLeagueSyncStatus');
+    let status = host.querySelector(':scope > #arenaSuperLeagueSyncStatus');
     if (!status && create) {
       status = document.createElement('div');
       status.id = 'arenaSuperLeagueSyncStatus';
       status.className = 'arena-sl-sync-status';
-      const capture = host.querySelector('#standCapture');
-      if (capture) capture.before(status);
+      const nav = host.querySelector(':scope > nav');
+      if (nav) nav.after(status);
       else host.prepend(status);
     }
     return status;
@@ -105,7 +138,7 @@
     const status = statusElement(true);
     if (status) {
       status.dataset.state = 'loading';
-      status.innerHTML = '<span class="arena-sl-sync-spinner" aria-hidden="true"></span><div><b>Sincronizando classificação</b><small>Buscando os placares oficiais da nuvem antes de montar a tabela.</small></div>';
+      status.innerHTML = '<span class="arena-sl-sync-spinner" aria-hidden="true"></span><div><b>Sincronizando resultados oficiais</b><small>Aguarde um instante. A Arena está buscando os placares da nuvem antes de liberar os jogos e a classificação.</small></div>';
     }
   }
 
@@ -117,37 +150,38 @@
       if (state === 'ready') status.remove();
       else {
         status.dataset.state = state;
-        status.innerHTML = `<div><b>${state === 'offline' ? 'Sem conexão com a nuvem' : 'Sincronização parcial'}</b><small>${message || 'A tabela foi liberada com os dados disponíveis neste aparelho.'}</small></div>`;
-        setTimeout(() => status.remove(), 4200);
+        status.innerHTML = `<div><b>${state === 'offline' ? 'Sem conexão com a nuvem' : 'Sincronização parcial'}</b><small>${message || 'A Arena liberou os dados disponíveis neste aparelho e continuará tentando sincronizar.'}</small></div>`;
+        setTimeout(() => status.remove(), 5000);
       }
     }
     window.ArenaBDASuperLeagueRuntimeFix?.refresh?.();
     window.ArenaBDASuperLeagueRuleV3?.refresh?.();
     window.dispatchEvent(new CustomEvent('arena:super-league-cloud-synced', {
-      detail: { tournamentId: TID, state }
+      detail:{ tournamentId:TID, state }
     }));
   }
 
   async function ensureFirebase() {
     if (window.firebase && typeof firebase.firestore === 'function') return true;
     if (typeof window.ArenaBDAEnsureCloud === 'function') {
-      try { await window.ArenaBDAEnsureCloud('super-league-sync-gate'); }
-      catch {}
+      try { await window.ArenaBDAEnsureCloud('super-league-sync-gate-v2'); } catch {}
     }
     return Boolean(window.firebase && typeof firebase.firestore === 'function');
   }
 
   async function writeMerged(remote = []) {
     if (!db || !isAdmin()) return false;
-    const merged = mergeByFreshness(localGames(), remote);
-    setLocalGames(merged, 'super-league-admin-cloud-merge');
+    const local = localGames();
+    const merged = mergeSafely(local, remote);
+    setLocalGames(merged, 'super-league-admin-safe-cloud-merge');
     if (signature(merged) === signature(Array.isArray(remote) ? remote : [])) return true;
     await db.collection('arenaData').doc(DOC_ID).set({
-      dataset: 'confrontos',
-      tournamentId: TID,
-      games: merged,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      updatedBy: window.ArenaBDAAuth?.currentEmail?.() || ''
+      dataset:'confrontos',
+      tournamentId:TID,
+      games:merged,
+      syncRule:'v2-safe-result-merge',
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
+      updatedBy:window.ArenaBDAAuth?.currentEmail?.() || ''
     });
     return true;
   }
@@ -161,15 +195,12 @@
 
     const remote = snapshot.data()?.games;
     if (!Array.isArray(remote)) {
-      setReady('partial', 'A nuvem respondeu, mas não trouxe uma lista de confrontos válida.');
+      setReady('partial', 'A nuvem respondeu sem uma lista válida de confrontos.');
       return;
     }
 
-    if (isAdmin()) {
-      await writeMerged(remote);
-    } else {
-      setLocalGames(remote, `super-league-cloud-${source}`);
-    }
+    if (isAdmin()) await writeMerged(remote);
+    else setLocalGames(remote, `super-league-cloud-${source}`);
     setReady('ready');
   }
 
@@ -191,6 +222,7 @@
     const timer = setTimeout(() => {
       if (document.documentElement.dataset.arenaSuperLeagueCloud === 'loading') {
         setReady(navigator.onLine === false ? 'offline' : 'partial');
+        scheduleRetry();
       }
     }, MAX_WAIT_MS);
 
@@ -199,14 +231,17 @@
       if (!available) throw new Error('Firebase indisponível');
       db = firebase.firestore();
       subscribe();
-      const snapshot = await db.collection('arenaData').doc(DOC_ID).get({ source: 'server' });
+      const snapshot = await db.collection('arenaData').doc(DOC_ID).get({ source:'server' });
       await handleSnapshot(snapshot, 'server');
       retryCount = 0;
       return true;
     } catch (error) {
       console.warn('[Arena BDA] Sincronização inicial da Super League não terminou', error);
       if (navigator.onLine === false) setReady('offline');
-      else scheduleRetry();
+      else {
+        setReady('partial');
+        scheduleRetry();
+      }
       return false;
     } finally {
       clearTimeout(timer);
@@ -223,12 +258,12 @@
   }
 
   function scheduleRetry() {
-    if (retryTimer || retryCount >= 20 || !manager()) return;
+    if (retryTimer || retryCount >= 24 || !manager()) return;
     retryTimer = setTimeout(() => {
       retryTimer = 0;
       retryCount += 1;
       startSync(true).catch(() => {});
-    }, Math.min(5000, 500 + retryCount * 350));
+    }, Math.min(6000, 650 + retryCount * 350));
   }
 
   async function uploadAdminLatest() {
@@ -243,7 +278,7 @@
     try {
       let remote = [];
       try {
-        const snapshot = await db.collection('arenaData').doc(DOC_ID).get({ source: 'server' });
+        const snapshot = await db.collection('arenaData').doc(DOC_ID).get({ source:'server' });
         remote = snapshot.exists && Array.isArray(snapshot.data()?.games) ? snapshot.data().games : [];
       } catch {}
       await writeMerged(remote);
@@ -279,6 +314,7 @@
     const style = document.createElement('style');
     style.id = 'arenaSuperLeagueSyncGateStyles';
     style.textContent = `
+      html.arena-sl-cloud-wait #giManager[data-tid="${TID}"] > .gi-content{display:none!important}
       html.arena-sl-cloud-wait #giManager[data-tid="${TID}"] #autoStandings:not([hidden]) #standCapture{display:none!important}
       .arena-sl-sync-status{display:flex;align-items:center;gap:11px;margin:12px 0;padding:14px 15px;border:1px solid rgba(79,223,143,.22);border-radius:15px;color:#e9f3ed;background:rgba(10,24,16,.96)}
       .arena-sl-sync-status b{display:block;font-size:11px}.arena-sl-sync-status small{display:block;margin-top:3px;color:#9fb0a5;font-size:8px;line-height:1.45}
@@ -287,7 +323,7 @@
       @keyframes arenaSlSyncSpin{to{transform:rotate(360deg)}}
       @media(prefers-reduced-motion:reduce){.arena-sl-sync-spinner{animation-duration:1.5s}}
     `;
-    document.head.append(style);
+    document.head.appendChild(style);
   }
 
   document.addEventListener('input', event => {
@@ -299,13 +335,13 @@
     if (input) scheduleAdminUpload(350);
   }, true);
 
-  ['arena:bundle-loaded','arena:cloud-ready','arena:auth-changed','arena:tournaments-updated'].forEach(type => {
-    window.addEventListener(type, () => scheduleStatusCheck());
+  ['arena:bundle-loaded','arena:cloud-ready','arena:auth-changed','arena:tournaments-updated','arena:build-ready'].forEach(type => {
+    window.addEventListener(type, scheduleStatusCheck);
   });
   window.addEventListener('arena:matches-updated', event => {
     if (event.detail?.tournamentId !== TID) return;
     const reason = String(event.detail?.reason || '');
-    if (isAdmin() && !reason.includes('cloud')) scheduleAdminUpload(700);
+    if (isAdmin() && !reason.includes('cloud') && !reason.includes('safe-cloud-merge')) scheduleAdminUpload(700);
     scheduleStatusCheck();
   });
   window.addEventListener('arena:quick-score-saved', event => {
@@ -313,16 +349,17 @@
   });
   window.addEventListener('online', () => startSync(true).then(() => {
     if (isAdmin()) scheduleAdminUpload(200);
-  }).catch(() => {}), { passive: true });
+  }).catch(() => {}), { passive:true });
 
   const observer = new MutationObserver(scheduleStatusCheck);
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  observer.observe(document.documentElement, { childList:true, subtree:true });
 
   const api = Object.freeze({
-    version: 1,
+    version:2,
     startSync,
     uploadAdminLatest,
-    state: () => document.documentElement.dataset.arenaSuperLeagueCloud || 'idle'
+    mergeSafely,
+    state:() => document.documentElement.dataset.arenaSuperLeagueCloud || 'idle'
   });
   window.ArenaBDASuperLeagueSyncGate = api;
   scheduleStatusCheck();
