@@ -1,8 +1,9 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDATournamentTrim?.version >= 2) return;
+  if (window.ArenaBDATournamentTrim?.version >= 3) return;
 
+  const DESIGN_POLISH_SRC = './arena-design-polish-v2.js?v=20260822-1';
   const LABELS = new Set([
     'previa do proximo jogo',
     'central ao vivo',
@@ -20,6 +21,16 @@
     .replace(/[^a-z0-9]+/g, ' ')
     .trim()
     .replace(/\s+/g, ' ');
+
+  function ensureDesignPolish() {
+    if (window.ArenaBDADesignPolishV2 || document.querySelector('script[data-arena-design-polish-v2]')) return;
+    const script = document.createElement('script');
+    script.src = DESIGN_POLISH_SRC;
+    script.async = false;
+    script.dataset.arenaDesignPolishV2 = 'true';
+    script.addEventListener('error', () => console.warn('[Arena BDA] Não foi possível carregar o acabamento visual v2'), { once:true });
+    (document.body || document.head || document.documentElement).appendChild(script);
+  }
 
   function matchingLabel(value) {
     const text = normalize(value);
@@ -74,6 +85,7 @@
   }
 
   function trim() {
+    ensureDesignPolish();
     const page = document.querySelector('[data-page="tournament"]');
     if (!page) return 0;
 
@@ -111,8 +123,9 @@
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
   window.ArenaBDATournamentTrim = Object.freeze({
-    version: 2,
+    version: 3,
     trim,
+    designPolishSource: DESIGN_POLISH_SRC,
     labels: Object.freeze([...LABELS]),
     fixedSelectors: Object.freeze([...FIXED_SELECTORS])
   });
