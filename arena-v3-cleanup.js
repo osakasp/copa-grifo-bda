@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAV3Cleanup?.version >= 7) return;
+  if (window.ArenaBDAV3Cleanup?.version >= 8) return;
 
   const REPECHAGE_SRC = './super-league-repechage.js?v=20260821-1';
   const REDESIGN_SRC = './arena-redesign-v1.js?v=20260821-1';
@@ -9,6 +9,7 @@
   const MOBILE_BRACKET_SRC = './arena-mobile-bracket-v3.js?v=20260821-1';
   const TEAM_EDITOR_SRC = './arena-team-editor.js?v=20260821-1';
   const TEAM_CLOUD_SYNC_SRC = './arena-team-cloud-sync.js?v=20260821-1';
+  const TOURNAMENT_TRIM_SRC = './arena-tournament-trim.js?v=20260821-1';
   const LEGACY_SELECTORS = [
     '[data-page="community"]',
     '[data-go="community"]',
@@ -103,6 +104,16 @@
     });
   }
 
+  function ensureTournamentTrimModule() {
+    ensureScript({
+      globalName: 'ArenaBDATournamentTrim',
+      selector: 'script[data-arena-tournament-trim]',
+      src: TOURNAMENT_TRIM_SRC,
+      datasetName: 'arenaTournamentTrim',
+      label: 'a limpeza dos atalhos da tela de campeonato'
+    });
+  }
+
   function neutralizeLegacyAdminModal() {
     const modal = document.getElementById('adminModal');
     if (!modal || modal.dataset.arenaAuthReady === 'true') return;
@@ -146,6 +157,7 @@
     ensureMobileBracketModule();
     ensureTeamCloudSyncModule();
     ensureTeamEditorModule();
+    ensureTournamentTrimModule();
   }
 
   let frame = 0;
@@ -164,7 +176,7 @@
   observer.observe(document.documentElement, { childList:true, subtree:true });
 
   window.ArenaBDAV3Cleanup = Object.freeze({
-    version: 7,
+    version: 8,
     cleanup,
     repechageSource: REPECHAGE_SRC,
     redesignSource: REDESIGN_SRC,
@@ -172,6 +184,7 @@
     mobileBracketSource: MOBILE_BRACKET_SRC,
     teamEditorSource: TEAM_EDITOR_SRC,
     teamCloudSyncSource: TEAM_CLOUD_SYNC_SRC,
+    tournamentTrimSource: TOURNAMENT_TRIM_SRC,
     legacySelectors: Object.freeze([...LEGACY_SELECTORS])
   });
 

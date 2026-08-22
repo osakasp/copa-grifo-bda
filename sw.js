@@ -1,4 +1,4 @@
-const VERSION = 'v106-admin-team-editor-cloud';
+const VERSION = 'v107-tournament-trim';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
@@ -6,13 +6,14 @@ const CACHE = Object.freeze({
   images: `${CACHE_PREFIX}images-${VERSION}`
 });
 const ACTIVE_CACHES = new Set(Object.values(CACHE));
-const CLEANUP_SRC = './arena-v3-cleanup.js?v=20260821-6';
+const CLEANUP_SRC = './arena-v3-cleanup.js?v=20260821-7';
 const REPECHAGE_SRC = './super-league-repechage.js?v=20260821-1';
 const REDESIGN_SRC = './arena-redesign-v1.js?v=20260821-1';
 const MOBILE_POLISH_SRC = './arena-mobile-polish.js?v=20260821-1';
 const MOBILE_BRACKET_SRC = './arena-mobile-bracket-v3.js?v=20260821-1';
 const TEAM_EDITOR_SRC = './arena-team-editor.js?v=20260821-1';
 const TEAM_CLOUD_SYNC_SRC = './arena-team-cloud-sync.js?v=20260821-1';
+const TOURNAMENT_TRIM_SRC = './arena-tournament-trim.js?v=20260821-1';
 const SHELL = [
   './',
   './index.html',
@@ -26,6 +27,7 @@ const SHELL = [
   MOBILE_BRACKET_SRC,
   TEAM_EDITOR_SRC,
   TEAM_CLOUD_SYNC_SRC,
+  TOURNAMENT_TRIM_SRC,
   './arena-pro-motion.js?v=20260818-1',
   './super-league-runtime-fix.js?v=20260819-3',
   './super-league-schedule-repair.js?v=20260819-3',
@@ -148,7 +150,7 @@ self.addEventListener('fetch', event => {
 
   const isDocument = request.mode === 'navigate' || request.destination === 'document' || url.pathname.endsWith('.html');
   const isCriticalArenaScript = request.destination === 'script'
-    && /\/(firebase-auth|firestore-sync|classificacao-automatica|arena-v3-cleanup|arena-redesign-v1|arena-mobile-polish|arena-mobile-bracket-v3|arena-team-editor|arena-team-cloud-sync|super-league-guard|super-league-runtime-fix|super-league-repechage|super-league-schedule-repair|bda-logo|arena-home-active)\.js$/.test(url.pathname);
+    && /\/(firebase-auth|firestore-sync|classificacao-automatica|arena-v3-cleanup|arena-redesign-v1|arena-mobile-polish|arena-mobile-bracket-v3|arena-team-editor|arena-team-cloud-sync|arena-tournament-trim|super-league-guard|super-league-runtime-fix|super-league-repechage|super-league-schedule-repair|bda-logo|arena-home-active)\.js$/.test(url.pathname);
 
   if (isDocument || isCriticalArenaScript) return event.respondWith(networkFirst(request));
   if (request.destination === 'image') return event.respondWith(imageCacheFirst(request));
