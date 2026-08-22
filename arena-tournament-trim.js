@@ -1,11 +1,12 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDATournamentTrim?.version >= 6) return;
+  if (window.ArenaBDATournamentTrim?.version >= 7) return;
 
-  const DESIGN_POLISH_SRC = './arena-design-polish-v2.js?v=20260822-1';
-  const MATCH_DETAILS_SRC = './arena-match-details.js?v=20260822-1';
-  const MATCH_MEDIA_SRC = './arena-match-media.js?v=20260822-1';
+  const REV = '20260822-6';
+  const DESIGN_POLISH_SRC = `./arena-design-polish-v2.js?v=${REV}`;
+  const MATCH_DETAILS_SRC = `./arena-match-details.js?v=${REV}`;
+  const MATCH_MEDIA_SRC = `./arena-match-media.js?v=${REV}`;
   const LABELS = new Set([
     'previa do proximo jogo',
     'central ao vivo',
@@ -33,9 +34,7 @@
     '[data-match-card]'
   ].join(',');
 
-  const FIXED_SELECTORS = [
-    '#superLeagueGroupsOverview'
-  ];
+  const FIXED_SELECTORS = ['#superLeagueGroupsOverview'];
 
   const normalize = value => String(value || '')
     .normalize('NFD')
@@ -45,34 +44,31 @@
     .trim()
     .replace(/\s+/g, ' ');
 
-  function ensureDesignPolish() {
-    if (window.ArenaBDADesignPolishV2 || document.querySelector('script[data-arena-design-polish-v2]')) return;
+  function ensureModule({ globalName, selector, src, datasetName, label, minVersion = 0 }) {
+    const current = window[globalName];
+    const version = Number(current?.version || 0);
+    if (current && (minVersion <= 0 || version >= minVersion)) return;
+    const existing = document.querySelector(selector);
+    if (existing && !current) return;
+    if (existing && current && minVersion > 0 && version < minVersion) existing.remove();
     const script = document.createElement('script');
-    script.src = DESIGN_POLISH_SRC;
+    script.src = src;
     script.async = false;
-    script.dataset.arenaDesignPolishV2 = 'true';
-    script.addEventListener('error', () => console.warn('[Arena BDA] Não foi possível carregar o acabamento visual v2'), { once:true });
+    script.dataset[datasetName] = 'true';
+    script.addEventListener('error', () => console.warn(`[Arena BDA] Não foi possível carregar ${label}`), { once:true });
     (document.body || document.head || document.documentElement).appendChild(script);
+  }
+
+  function ensureDesignPolish() {
+    ensureModule({ globalName:'ArenaBDADesignPolishV2', selector:'script[data-arena-design-polish-v2]', src:DESIGN_POLISH_SRC, datasetName:'arenaDesignPolishV2', label:'o acabamento visual v2', minVersion:2 });
   }
 
   function ensureMatchDetails() {
-    if (window.ArenaBDAMatchDetails || document.querySelector('script[data-arena-match-details-module]')) return;
-    const script = document.createElement('script');
-    script.src = MATCH_DETAILS_SRC;
-    script.async = false;
-    script.dataset.arenaMatchDetailsModule = 'true';
-    script.addEventListener('error', () => console.warn('[Arena BDA] Não foi possível carregar detalhes de partida e artilharia'), { once:true });
-    (document.body || document.head || document.documentElement).appendChild(script);
+    ensureModule({ globalName:'ArenaBDAMatchDetails', selector:'script[data-arena-match-details-module]', src:MATCH_DETAILS_SRC, datasetName:'arenaMatchDetailsModule', label:'detalhes de partida e artilharia', minVersion:1 });
   }
 
   function ensureMatchMedia() {
-    if (window.ArenaBDAMatchMedia || document.querySelector('script[data-arena-match-media-module]')) return;
-    const script = document.createElement('script');
-    script.src = MATCH_MEDIA_SRC;
-    script.async = false;
-    script.dataset.arenaMatchMediaModule = 'true';
-    script.addEventListener('error', () => console.warn('[Arena BDA] Não foi possível carregar o print das partidas'), { once:true });
-    (document.body || document.head || document.documentElement).appendChild(script);
+    ensureModule({ globalName:'ArenaBDAMatchMedia', selector:'script[data-arena-match-media-module]', src:MATCH_MEDIA_SRC, datasetName:'arenaMatchMediaModule', label:'o print das partidas', minVersion:1 });
   }
 
   function matchingLabel(value) {
@@ -84,27 +80,20 @@
     let current = start;
     let best = null;
     let depth = 0;
-
     while (current && current !== page && depth < 6) {
       const text = normalize(current.textContent);
-      if (text === label) {
-        best = current;
-      } else if (best) {
-        break;
-      }
+      if (text === label) best = current;
+      else if (best) break;
       current = current.parentElement;
       depth += 1;
     }
-
     if (!best) return null;
     if (best.matches('summary')) return best.closest('details') || best;
     if (best.matches('button,a,[role="button"],details')) return best;
-
     const interactive = best.closest('button,a,summary,[role="button"],details');
     if (interactive && page.contains(interactive) && normalize(interactive.textContent) === label) {
       return interactive.matches('summary') ? interactive.closest('details') || interactive : interactive;
     }
-
     return best;
   }
 
@@ -146,8 +135,8 @@
     if (!page) return 0;
     ensureMatchDetails();
     ensureMatchMedia();
-
     ensureStyles();
+
     let removed = trimFixed(page);
     removed += trimMatchActions(page);
     const targets = new Set();
@@ -175,22 +164,23 @@
     });
   }
 
-  ['arena:bundle-loaded','arena:tournaments-updated','arena:matches-updated','arena:auth-changed']
+  ['arena:bundle-loaded','arena:tournaments-updated','arena:matches-updated','arena:auth-changed','arena:build-ready']
     .forEach(type => window.addEventListener(type, schedule));
 
   const observer = new MutationObserver(schedule);
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  observer.observe(document.documentElement, { childList:true, subtree:true });
 
   window.ArenaBDATournamentTrim = Object.freeze({
-    version: 6,
+    version:7,
+    revision:REV,
     trim,
     trimMatchActions,
-    designPolishSource: DESIGN_POLISH_SRC,
-    matchDetailsSource: MATCH_DETAILS_SRC,
-    matchMediaSource: MATCH_MEDIA_SRC,
-    labels: Object.freeze([...LABELS]),
-    matchActionLabels: Object.freeze([...MATCH_ACTION_LABELS]),
-    fixedSelectors: Object.freeze([...FIXED_SELECTORS])
+    designPolishSource:DESIGN_POLISH_SRC,
+    matchDetailsSource:MATCH_DETAILS_SRC,
+    matchMediaSource:MATCH_MEDIA_SRC,
+    labels:Object.freeze([...LABELS]),
+    matchActionLabels:Object.freeze([...MATCH_ACTION_LABELS]),
+    fixedSelectors:Object.freeze([...FIXED_SELECTORS])
   });
 
   trim();
