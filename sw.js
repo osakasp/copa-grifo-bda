@@ -1,4 +1,4 @@
-const VERSION = 'v109-super-league-10-team-knockout';
+const VERSION = 'v110-remove-super-league-groups-overview';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
@@ -7,13 +7,13 @@ const CACHE = Object.freeze({
 });
 const ACTIVE_CACHES = new Set(Object.values(CACHE));
 const SUPER_LEAGUE_RULE_SRC = './super-league-rule-v3.js?v=20260822-1';
-const CLEANUP_SRC = './arena-v3-cleanup.js?v=20260822-1';
+const CLEANUP_SRC = './arena-v3-cleanup.js?v=20260822-2';
 const REDESIGN_SRC = './arena-redesign-v1.js?v=20260821-1';
 const MOBILE_POLISH_SRC = './arena-mobile-polish.js?v=20260821-1';
 const MOBILE_BRACKET_SRC = './arena-mobile-bracket-v4.js?v=20260822-1';
 const TEAM_EDITOR_SRC = './arena-team-editor.js?v=20260821-1';
 const TEAM_CLOUD_SYNC_SRC = './arena-team-cloud-sync.js?v=20260821-1';
-const TOURNAMENT_TRIM_SRC = './arena-tournament-trim.js?v=20260821-1';
+const TOURNAMENT_TRIM_SRC = './arena-tournament-trim.js?v=20260822-2';
 const SHELL = [
   './',
   './index.html',
