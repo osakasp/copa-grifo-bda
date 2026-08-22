@@ -1,13 +1,17 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDATournamentTrim?.version >= 1) return;
+  if (window.ArenaBDATournamentTrim?.version >= 2) return;
 
   const LABELS = new Set([
     'previa do proximo jogo',
     'central ao vivo',
     'regulamento'
   ]);
+
+  const FIXED_SELECTORS = [
+    '#superLeagueGroupsOverview'
+  ];
 
   const normalize = value => String(value || '')
     .normalize('NFD')
@@ -50,10 +54,31 @@
     return best;
   }
 
+  function ensureStyles() {
+    if (document.getElementById('arenaTournamentTrimStyles')) return;
+    const style = document.createElement('style');
+    style.id = 'arenaTournamentTrimStyles';
+    style.textContent = '#superLeagueGroupsOverview{display:none!important}';
+    document.head.appendChild(style);
+  }
+
+  function trimFixed(page) {
+    let count = 0;
+    FIXED_SELECTORS.forEach(selector => {
+      page.querySelectorAll(selector).forEach(node => {
+        node.remove();
+        count += 1;
+      });
+    });
+    return count;
+  }
+
   function trim() {
     const page = document.querySelector('[data-page="tournament"]');
     if (!page) return 0;
 
+    ensureStyles();
+    let removed = trimFixed(page);
     const targets = new Set();
     const walker = document.createTreeWalker(page, NodeFilter.SHOW_TEXT);
 
@@ -66,7 +91,8 @@
     }
 
     targets.forEach(target => target.remove());
-    return targets.size;
+    removed += targets.size;
+    return removed;
   }
 
   let frame = 0;
@@ -85,9 +111,10 @@
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
   window.ArenaBDATournamentTrim = Object.freeze({
-    version: 1,
+    version: 2,
     trim,
-    labels: Object.freeze([...LABELS])
+    labels: Object.freeze([...LABELS]),
+    fixedSelectors: Object.freeze([...FIXED_SELECTORS])
   });
 
   trim();
