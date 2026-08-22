@@ -1,11 +1,12 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAV3Cleanup?.version >= 4) return;
+  if (window.ArenaBDAV3Cleanup?.version >= 5) return;
 
   const REPECHAGE_SRC = './super-league-repechage.js?v=20260821-1';
   const REDESIGN_SRC = './arena-redesign-v1.js?v=20260821-1';
   const MOBILE_POLISH_SRC = './arena-mobile-polish.js?v=20260821-1';
+  const MOBILE_BRACKET_SRC = './arena-mobile-bracket-v3.js?v=20260821-1';
   const LEGACY_SELECTORS = [
     '[data-page="community"]',
     '[data-go="community"]',
@@ -70,6 +71,16 @@
     });
   }
 
+  function ensureMobileBracketModule() {
+    ensureScript({
+      globalName: 'ArenaBDAMobileBracketV3',
+      selector: 'script[data-arena-mobile-bracket-v3]',
+      src: MOBILE_BRACKET_SRC,
+      datasetName: 'arenaMobileBracketV3',
+      label: 'o chaveamento mobile da Arena'
+    });
+  }
+
   function neutralizeLegacyAdminModal() {
     const modal = document.getElementById('adminModal');
     if (!modal || modal.dataset.arenaAuthReady === 'true') return;
@@ -110,6 +121,7 @@
     ensureRepechageModule();
     ensureRedesignModule();
     ensureMobilePolishModule();
+    ensureMobileBracketModule();
   }
 
   let frame = 0;
@@ -128,11 +140,12 @@
   observer.observe(document.documentElement, { childList:true, subtree:true });
 
   window.ArenaBDAV3Cleanup = Object.freeze({
-    version: 4,
+    version: 5,
     cleanup,
     repechageSource: REPECHAGE_SRC,
     redesignSource: REDESIGN_SRC,
     mobilePolishSource: MOBILE_POLISH_SRC,
+    mobileBracketSource: MOBILE_BRACKET_SRC,
     legacySelectors: Object.freeze([...LEGACY_SELECTORS])
   });
 
