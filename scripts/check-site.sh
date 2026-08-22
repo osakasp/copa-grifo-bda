@@ -8,6 +8,7 @@ for file in *.js; do
   node --check "$file" >/dev/null
 done
 node scripts/test-super-league-rule.js >/dev/null
+node scripts/test-flash-draw.js >/dev/null
 
 while IFS= read -r reference; do
   path="${reference%%\?*}"
