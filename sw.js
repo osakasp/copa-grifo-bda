@@ -1,4 +1,4 @@
-const VERSION = 'v108-third-only-repechage-cloud';
+const VERSION = 'v109-super-league-10-team-knockout';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
@@ -6,12 +6,11 @@ const CACHE = Object.freeze({
   images: `${CACHE_PREFIX}images-${VERSION}`
 });
 const ACTIVE_CACHES = new Set(Object.values(CACHE));
-const SUPER_LEAGUE_RULE_SRC = './super-league-rule-v2.js?v=20260821-1';
-const CLEANUP_SRC = './arena-v3-cleanup.js?v=20260821-7';
-const REPECHAGE_SRC = './super-league-repechage.js?v=20260821-1';
+const SUPER_LEAGUE_RULE_SRC = './super-league-rule-v3.js?v=20260822-1';
+const CLEANUP_SRC = './arena-v3-cleanup.js?v=20260822-1';
 const REDESIGN_SRC = './arena-redesign-v1.js?v=20260821-1';
 const MOBILE_POLISH_SRC = './arena-mobile-polish.js?v=20260821-1';
-const MOBILE_BRACKET_SRC = './arena-mobile-bracket-v3.js?v=20260821-1';
+const MOBILE_BRACKET_SRC = './arena-mobile-bracket-v4.js?v=20260822-1';
 const TEAM_EDITOR_SRC = './arena-team-editor.js?v=20260821-1';
 const TEAM_CLOUD_SYNC_SRC = './arena-team-cloud-sync.js?v=20260821-1';
 const TOURNAMENT_TRIM_SRC = './arena-tournament-trim.js?v=20260821-1';
@@ -21,9 +20,8 @@ const SHELL = [
   './preview-v2.html?v=20260819-5',
   './favicon.svg',
   './site.webmanifest',
-  SUPER_LEAGUE_RULE_SRC,
   CLEANUP_SRC,
-  REPECHAGE_SRC,
+  SUPER_LEAGUE_RULE_SRC,
   REDESIGN_SRC,
   MOBILE_POLISH_SRC,
   MOBILE_BRACKET_SRC,
@@ -82,11 +80,9 @@ async function networkFirst(request) {
 function cleanupResponse(response) {
   if (!response?.ok) return Promise.resolve(response);
   return response.clone().text().then(html => {
-    const ruleScript = html.includes('super-league-rule-v2.js') ? '' : `<script src="${SUPER_LEAGUE_RULE_SRC}"></script>`;
-    const cleanupScript = html.includes('arena-v3-cleanup.js') ? '' : `<script src="${CLEANUP_SRC}"></script>`;
-    if (!ruleScript && !cleanupScript) return response;
-    const scripts = `${ruleScript}${cleanupScript}`;
-    const next = /<\/body>/i.test(html) ? html.replace(/<\/body>/i, `${scripts}</body>`) : `${html}${scripts}`;
+    if (html.includes('arena-v3-cleanup.js')) return response;
+    const script = `<script src="${CLEANUP_SRC}"></script>`;
+    const next = /<\/body>/i.test(html) ? html.replace(/<\/body>/i, `${script}</body>`) : `${html}${script}`;
     const headers = new Headers(response.headers);
     headers.delete('content-length');
     headers.delete('content-encoding');
@@ -154,7 +150,7 @@ self.addEventListener('fetch', event => {
 
   const isDocument = request.mode === 'navigate' || request.destination === 'document' || url.pathname.endsWith('.html');
   const isCriticalArenaScript = request.destination === 'script'
-    && /\/(firebase-auth|firestore-sync|classificacao-automatica|arena-v3-cleanup|arena-redesign-v1|arena-mobile-polish|arena-mobile-bracket-v3|arena-team-editor|arena-team-cloud-sync|arena-tournament-trim|super-league-rule-v2|super-league-guard|super-league-runtime-fix|super-league-repechage|super-league-schedule-repair|bda-logo|arena-home-active)\.js$/.test(url.pathname);
+    && /\/(firebase-auth|firestore-sync|classificacao-automatica|arena-v3-cleanup|arena-redesign-v1|arena-mobile-polish|arena-mobile-bracket-v4|arena-team-editor|arena-team-cloud-sync|arena-tournament-trim|super-league-rule-v3|super-league-guard|super-league-runtime-fix|super-league-schedule-repair|bda-logo|arena-home-active)\.js$/.test(url.pathname);
 
   if (isDocument || isCriticalArenaScript) return event.respondWith(networkFirst(request));
   if (request.destination === 'image') return event.respondWith(imageCacheFirst(request));
