@@ -2,13 +2,16 @@
   'use strict';
 
   const STORAGE_KEY = 'bda-v3-flash-cups';
+  const DRAW_BACKUP_KEY = 'bda-v3-flash-draw-backup';
   const CLOUD_DOC = 'copas-flash';
-  const PHASES = ['Preliminar', 'Oitavas de final', 'Quartas de final', 'Semifinal', 'Final'];
+  const PHASES = ['Preliminar', '16 avos de final', 'Oitavas de final', 'Quartas de final', 'Semifinal', 'Final'];
 
   let editions = loadEditions();
   let selectedId = editions[0]?.id || '';
   let editingId = '';
   let draftMatches = [];
+  let drawEditionId = '';
+  let drawPreview = null;
   let db = null;
   let unsubscribe = null;
   let cloudTimer = 0;
@@ -81,6 +84,14 @@
       runnerUp: String(edition?.runnerUp || '').trim(),
       participants,
       matches,
+      lastDraw: edition?.lastDraw && typeof edition.lastDraw === 'object' ? {
+        seed: String(edition.lastDraw.seed || ''),
+        phase: String(edition.lastDraw.phase || ''),
+        nextPhase: String(edition.lastDraw.nextPhase || ''),
+        participants: uniqueNames(edition.lastDraw.participants || []),
+        byes: uniqueNames(edition.lastDraw.byes || []),
+        drawnAt: Number(edition.lastDraw.drawnAt) || 0
+      } : null,
       createdAt: Number(edition?.createdAt) || Date.now() + index,
       updatedAt: Number(edition?.updatedAt) || Date.now() + index
     };
@@ -397,6 +408,15 @@
     return `<div class="flash-bracket">${[...groups].map(([phase, list]) => `<section><header><span>${esc(phase)}</span><b>${list.length} ${list.length === 1 ? 'jogo' : 'jogos'}</b></header>${list.map(matchCard).join('')}</section>`).join('')}</div>`;
   }
 
+  function drawRecord(edition) {
+    const draw = edition?.lastDraw;
+    if (!draw?.seed) return '';
+    const byes = draw.byes?.length
+      ? `<div><span>Folga para ${esc(draw.nextPhase)}</span>${draw.byes.map(name => `<b>${esc(name)}</b>`).join('')}</div>`
+      : '';
+    return `<aside class="flash-draw-record"><p><span>Último sorteio</span><strong>${esc(draw.phase)}</strong><code>${esc(draw.seed)}</code></p>${byes}</aside>`;
+  }
+
   function rankingTable() {
     const rows = ranking();
     if (!rows.length) return '<div class="flash-empty compact"><b>Ranking aguardando dados</b><span>Ele será calculado automaticamente.</span></div>';
@@ -415,13 +435,13 @@
       return `<section class="flash-empty flash-empty-main"><span>⚡</span><b>Nenhuma Copa Flash cadastrada</b><p>Crie a primeira edição para registrar times, jogos, campeão e vice.</p>${adminActive() ? '<button type="button" class="primary" data-flash-add>+ Criar primeira edição</button>' : ''}</section>`;
     }
     return `<section class="flash-detail">
-      <header class="flash-detail-head"><div><span class="eyebrow">Edição selecionada</span><h2>${esc(edition.name)}</h2><p>${esc(edition.status)} • ${esc(formatDate(edition.date))}</p></div>${adminActive() ? `<button type="button" data-flash-edit="${esc(edition.id)}">Editar edição</button>` : ''}</header>
+      <header class="flash-detail-head"><div><span class="eyebrow">Edição selecionada</span><h2>${esc(edition.name)}</h2><p>${esc(edition.status)} • ${esc(formatDate(edition.date))}</p></div>${adminActive() ? `<div class="flash-detail-actions"><button type="button" class="primary" data-flash-draw="${esc(edition.id)}">🎲 Sortear jogos</button><button type="button" data-flash-edit="${esc(edition.id)}">Editar edição</button></div>` : ''}</header>
       <div class="flash-podium">
         <article><span>Campeão</span><i>🏆</i><strong>${esc(edition.champion || 'A definir')}</strong></article>
         <article><span>Vice-campeão</span><i>🥈</i><strong>${esc(edition.runnerUp || 'A definir')}</strong></article>
       </div>
       <section class="flash-participants"><header><div><span class="eyebrow">Clubes confirmados</span><h3>Times participantes</h3></div><b>${edition.participants.length}</b></header>${edition.participants.length ? `<div>${edition.participants.map((name, index) => `<span><i>${index + 1}</i>${esc(name)}</span>`).join('')}</div>` : '<div class="flash-empty compact"><b>Nenhum participante cadastrado</b></div>'}</section>
-      <section class="flash-results"><header><div><span class="eyebrow">Eliminação rápida</span><h3>Chaveamento e resultados</h3></div><b>${edition.matches.length} jogos</b></header>${bracket(edition)}</section>
+      <section class="flash-results"><header><div><span class="eyebrow">Eliminação rápida</span><h3>Chaveamento e resultados</h3></div><b>${edition.matches.length} jogos</b></header>${drawRecord(edition)}${bracket(edition)}</section>
     </section>`;
   }
 
@@ -483,6 +503,197 @@
       </form>
     </section>`;
     document.body.append(modal);
+  }
+
+  function drawBackup() {
+    try {
+      const value = JSON.parse(localStorage.getItem(DRAW_BACKUP_KEY) || 'null');
+      return value && typeof value === 'object' ? value : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function ensureDrawModal() {
+    if ($('#flashDrawModal')) return;
+    const modal = document.createElement('div');
+    modal.className = 'modal-backdrop flash-modal-backdrop';
+    modal.id = 'flashDrawModal';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'flashDrawTitle');
+    modal.innerHTML = `<section class="modal flash-modal flash-draw-modal">
+      <header><div><span class="eyebrow">Sorteio oficial</span><h2 id="flashDrawTitle">Sortear jogos</h2></div><button type="button" data-flash-draw-close aria-label="Fechar">×</button></header>
+      <div class="flash-draw-body">
+        <p class="flash-draw-summary" id="flashDrawSummary"></p>
+        <section class="flash-draw-selection">
+          <header><div><span class="eyebrow">Participantes</span><h3>Times no sorteio</h3></div><div class="flash-draw-tools"><b id="flashDrawTeamCount">0 selecionados</b><button type="button" data-flash-draw-all>Todos</button><button type="button" data-flash-draw-clear>Limpar</button></div></header>
+          <div class="flash-draw-team-grid" id="flashDrawTeams"></div>
+        </section>
+        <section class="flash-draw-result">
+          <header><div><span class="eyebrow">Prévia não publicada</span><h3>Confrontos sorteados</h3></div><button type="button" data-flash-draw-run>🎲 Sortear novamente</button></header>
+          <div class="flash-draw-preview" id="flashDrawPreview"></div>
+        </section>
+      </div>
+      <footer class="flash-draw-footer"><button type="button" class="danger" data-flash-draw-restore hidden>Desfazer último sorteio</button><span></span><button type="button" class="secondary" data-flash-draw-close>Cancelar</button><button type="button" class="primary" data-flash-draw-publish disabled>Publicar confrontos</button></footer>
+    </section>`;
+    document.body.append(modal);
+  }
+
+  function activeDrawEdition() {
+    return editions.find(item => item.id === drawEditionId) || null;
+  }
+
+  function selectedDrawTeams() {
+    return $$('#flashDrawTeams input[data-flash-draw-team]:checked').map(input => input.value);
+  }
+
+  function updateDrawTeamCount() {
+    const count = selectedDrawTeams().length;
+    const label = $('#flashDrawTeamCount');
+    if (label) label.textContent = `${count} ${count === 1 ? 'selecionado' : 'selecionados'}`;
+  }
+
+  function renderDrawTeams(edition) {
+    const root = $('#flashDrawTeams');
+    if (!root) return;
+    root.innerHTML = edition.participants.map((name, index) => `<label><input type="checkbox" data-flash-draw-team value="${esc(name)}" checked><span><i>${index + 1}</i>${esc(name)}</span></label>`).join('');
+    updateDrawTeamCount();
+  }
+
+  function renderDrawPreview() {
+    const root = $('#flashDrawPreview');
+    const publish = $('[data-flash-draw-publish]');
+    if (!root || !publish) return;
+    publish.disabled = !drawPreview;
+    if (!drawPreview) {
+      root.innerHTML = '<div class="flash-draw-empty"><b>Selecione pelo menos 2 times</b><span>O sorteio será exibido aqui antes de qualquer alteração na Copa Flash.</span></div>';
+      return;
+    }
+
+    const gameCount = drawPreview.pairs.length;
+    const byes = drawPreview.byes.length
+      ? `<aside class="flash-draw-byes"><span>Folga para ${esc(drawPreview.nextPhase)}</span><div>${drawPreview.byes.map(name => `<b>${esc(name)}</b>`).join('')}</div></aside>`
+      : '';
+    root.innerHTML = `<div class="flash-draw-certificate"><div><span>Rodada inicial</span><b>${esc(drawPreview.phase)}</b></div><div><span>Confrontos</span><b>${gameCount}</b></div><div><span>Código do sorteio</span><code>${esc(drawPreview.seed)}</code></div></div>
+      ${byes}
+      <div class="flash-draw-pairs">${drawPreview.pairs.map((pair, index) => `<article><span>Jogo ${index + 1}</span><div><b>${esc(pair.teamA)}</b><i>×</i><b>${esc(pair.teamB)}</b></div></article>`).join('')}</div>`;
+  }
+
+  function invalidateDrawPreview() {
+    drawPreview = null;
+    updateDrawTeamCount();
+    renderDrawPreview();
+  }
+
+  function runFlashDraw() {
+    const edition = activeDrawEdition();
+    if (!adminActive() || !edition) return;
+    try {
+      if (!window.ArenaBDAFlashDraw?.build) throw new Error('O motor de sorteio ainda não carregou');
+      const plan = window.ArenaBDAFlashDraw.build(selectedDrawTeams());
+      drawPreview = { editionId: edition.id, ...plan };
+      renderDrawPreview();
+    } catch (error) {
+      drawPreview = null;
+      renderDrawPreview();
+      notify(error.message || 'Não foi possível realizar o sorteio');
+    }
+  }
+
+  function openFlashDraw(id = selectedId) {
+    if (!adminActive()) return;
+    const edition = editions.find(item => item.id === id);
+    if (!edition) return;
+    if (edition.participants.length < 2) {
+      notify('Cadastre pelo menos 2 times na edição antes de sortear');
+      return;
+    }
+    if (!window.ArenaBDAFlashDraw?.build) {
+      notify('O motor de sorteio ainda não carregou. Tente novamente.');
+      return;
+    }
+    ensureDrawModal();
+    drawEditionId = edition.id;
+    drawPreview = null;
+    $('#flashDrawTitle').textContent = `Sorteio — ${edition.name}`;
+    $('#flashDrawSummary').textContent = 'Escolha os participantes, confira a prévia e publique somente quando o resultado estiver correto.';
+    renderDrawTeams(edition);
+    renderDrawPreview();
+    const backup = drawBackup();
+    $('[data-flash-draw-restore]').hidden = !(backup?.edition && backup.editionId === edition.id);
+    $('#flashDrawModal').classList.add('show');
+    document.body.classList.add('flash-modal-open');
+    runFlashDraw();
+  }
+
+  function closeFlashDraw() {
+    $('#flashDrawModal')?.classList.remove('show');
+    if (!$('#flashEditionModal')?.classList.contains('show') && !$('#flashImportModal')?.classList.contains('show')) {
+      document.body.classList.remove('flash-modal-open');
+    }
+    drawEditionId = '';
+    drawPreview = null;
+  }
+
+  function publishFlashDraw() {
+    if (!adminActive()) return;
+    const edition = activeDrawEdition();
+    if (!edition || !drawPreview || drawPreview.editionId !== edition.id) return;
+    const previousMatches = edition.matches.filter(match => match.phase === drawPreview.phase);
+    if (previousMatches.length && !confirm(`Já existem ${previousMatches.length} jogos em “${drawPreview.phase}”. Substituir esses confrontos pelo novo sorteio?`)) return;
+
+    try {
+      localStorage.setItem(DRAW_BACKUP_KEY, JSON.stringify({
+        editionId: edition.id,
+        savedAt: Date.now(),
+        edition: shapeEdition(edition)
+      }));
+    } catch {}
+
+    const now = Date.now();
+    const generated = drawPreview.pairs.map((pair, index) => shapeMatch({
+      id: `flash-draw-${slug(edition.id)}-${now.toString(36)}-${index + 1}`,
+      phase: drawPreview.phase,
+      teamA: pair.teamA,
+      teamB: pair.teamB,
+      status: 'Agendado'
+    }, index));
+    const next = shapeEdition({
+      ...edition,
+      status: edition.status === 'Planejada' ? 'Em andamento' : edition.status,
+      participants: uniqueNames([...edition.participants, ...drawPreview.participants]),
+      matches: [...edition.matches.filter(match => match.phase !== drawPreview.phase), ...generated],
+      lastDraw: {
+        seed: drawPreview.seed,
+        phase: drawPreview.phase,
+        nextPhase: drawPreview.nextPhase,
+        participants: drawPreview.participants,
+        byes: drawPreview.byes,
+        drawnAt: now
+      },
+      updatedAt: now
+    });
+    editions[editions.findIndex(item => item.id === edition.id)] = next;
+    selectedId = next.id;
+    closeFlashDraw();
+    persist();
+    notify(`${generated.length} ${generated.length === 1 ? 'confronto publicado' : 'confrontos publicados'} em ${drawPreview?.phase || next.lastDraw.phase}`);
+  }
+
+  function restoreFlashDraw() {
+    if (!adminActive()) return;
+    const backup = drawBackup();
+    if (!backup?.edition || backup.editionId !== drawEditionId) return;
+    if (!confirm('Desfazer o último sorteio publicado nesta Copa Flash?')) return;
+    const index = editions.findIndex(item => item.id === backup.editionId);
+    if (index < 0) return;
+    editions[index] = shapeEdition({ ...backup.edition, updatedAt: Date.now() });
+    selectedId = editions[index].id;
+    localStorage.removeItem(DRAW_BACKUP_KEY);
+    closeFlashDraw();
+    persist();
+    notify('Último sorteio desfeito');
   }
 
   function updateImportPreview() {
@@ -618,7 +829,7 @@
       .flash-hero h1{margin:7px 0 10px;color:#fff4d2;font:900 clamp(58px,10vw,112px)/.78 "Barlow Condensed",sans-serif;letter-spacing:-.035em;text-transform:uppercase}.flash-hero p{max-width:650px;margin:0;color:#d6c8b8;font-size:13px;line-height:1.65}.flash-hero-actions{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin-top:20px}.flash-hero-actions>span{padding:8px 10px;border:1px solid rgba(255,255,255,.10);border-radius:999px;color:#c8b9a8;background:rgba(255,255,255,.04);font-size:8px;font-weight:900;text-transform:uppercase}.flash-hero-actions>span[data-state=ok]{color:#8ff0b5}.flash-hero-actions>span[data-state=error]{color:#ffadb5}.flash-hero-actions>button{min-height:39px;padding:0 11px;border:1px solid rgba(255,207,74,.22);border-radius:11px;color:#ffe596;background:rgba(255,207,74,.065);font-size:8px;font-weight:900;text-transform:uppercase}.flash-hero-actions>button.primary{color:#1d1203}
       .flash-hero aside{display:grid;grid-template-columns:1fr 1fr;gap:8px}.flash-hero aside div{min-height:91px;padding:15px;border:1px solid rgba(255,207,74,.17);border-radius:17px;background:rgba(255,255,255,.045)}.flash-hero aside b,.flash-hero aside span{display:block}.flash-hero aside b{color:var(--flash);font:900 32px/1 "Barlow Condensed",sans-serif}.flash-hero aside span{margin-top:7px;color:#b9aa9a;font-size:8px;font-weight:800;text-transform:uppercase}
       .flash-editions{display:grid;gap:10px}.flash-editions>header,.flash-detail-head,.flash-participants>header,.flash-results>header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}.flash-editions h2,.flash-detail h2,.flash-ranking h2{margin:4px 0 0;font-size:clamp(27px,4vw,40px);text-transform:uppercase}.flash-editions>header>span{color:var(--muted);font-size:8px;text-transform:uppercase}.flash-edition-scroll{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(245px,29%);gap:10px;overflow-x:auto;padding:2px 1px 8px;scroll-snap-type:x proximity;scrollbar-width:thin}.flash-edition-card{overflow:hidden;scroll-snap-align:start;border:1px solid var(--line);border-radius:19px;background:linear-gradient(155deg,rgba(27,22,14,.98),rgba(8,10,8,.98))}.flash-edition-card.active{border-color:rgba(255,207,74,.48);box-shadow:0 12px 28px rgba(255,139,61,.09)}.flash-edition-card>button{display:grid;width:100%;min-height:185px;padding:15px;border:0;color:var(--text);background:transparent;text-align:left}.flash-edition-status{justify-self:start;padding:6px 8px;border-radius:999px;color:var(--flash);background:rgba(255,207,74,.09);font-size:7px;font-weight:900;text-transform:uppercase}.flash-edition-card h3{margin:12px 0 4px;font-size:24px;text-transform:uppercase}.flash-edition-card p{margin:0;color:var(--muted);font-size:9px}.flash-edition-card>button>div{display:flex;gap:14px;margin-top:auto;color:var(--muted);font-size:8px;text-transform:uppercase}.flash-edition-card>button>div b{color:var(--text)}.flash-edition-card>button>strong{overflow:hidden;margin-top:9px;color:#ffe596;font-size:9px;text-overflow:ellipsis;white-space:nowrap}.flash-edition-card footer{display:flex;border-top:1px solid var(--line)}.flash-edition-card footer button{flex:1;min-height:38px;border:0;color:var(--flash);background:rgba(255,255,255,.025);font-size:8px;font-weight:900;text-transform:uppercase}.flash-edition-card footer button+button{border-left:1px solid var(--line)}.flash-edition-card footer button.danger{color:#ffadb5}
-      .flash-layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(310px,.6fr);gap:13px;align-items:start}.flash-layout>main,.flash-ranking{min-width:0}.flash-detail,.flash-ranking{padding:18px;border:1px solid var(--line);border-radius:23px;background:linear-gradient(150deg,rgba(17,31,23,.96),rgba(5,12,8,.98));box-shadow:0 16px 42px rgba(0,0,0,.24)}.flash-detail-head{padding-bottom:14px;border-bottom:1px solid var(--line)}.flash-detail-head p,.flash-ranking p{margin:3px 0 0;color:var(--muted);font-size:9px}.flash-detail-head>button{min-height:39px;padding:0 12px;border:1px solid rgba(255,207,74,.24);border-radius:11px;color:var(--flash);background:rgba(255,207,74,.06);font-size:8px;font-weight:900;text-transform:uppercase}
+      .flash-layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(310px,.6fr);gap:13px;align-items:start}.flash-layout>main,.flash-ranking{min-width:0}.flash-detail,.flash-ranking{padding:18px;border:1px solid var(--line);border-radius:23px;background:linear-gradient(150deg,rgba(17,31,23,.96),rgba(5,12,8,.98));box-shadow:0 16px 42px rgba(0,0,0,.24)}.flash-detail-head{padding-bottom:14px;border-bottom:1px solid var(--line)}.flash-detail-head p,.flash-ranking p{margin:3px 0 0;color:var(--muted);font-size:9px}.flash-detail-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}.flash-detail-actions button{min-height:39px;padding:0 12px;border:1px solid rgba(255,207,74,.24);border-radius:11px;color:var(--flash);background:rgba(255,207,74,.06);font-size:8px;font-weight:900;text-transform:uppercase}.flash-detail-actions button.primary{color:#1d1203}
       .flash-podium{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:13px 0}.flash-podium article{display:grid;grid-template-columns:auto 1fr;grid-template-areas:"icon label" "icon name";column-gap:11px;align-items:center;min-height:91px;padding:14px;border:1px solid rgba(255,207,74,.15);border-radius:16px;background:radial-gradient(circle at 0 50%,rgba(255,207,74,.10),transparent 37%),rgba(255,255,255,.025)}.flash-podium span{grid-area:label;color:var(--muted);font-size:8px;font-weight:800;text-transform:uppercase}.flash-podium i{grid-area:icon;font-style:normal;font-size:34px}.flash-podium strong{grid-area:name;overflow:hidden;margin-top:4px;color:#fff4cf;font-size:11px;text-overflow:ellipsis;white-space:nowrap}
       .flash-participants,.flash-results{margin-top:13px}.flash-participants>header,.flash-results>header{margin-bottom:9px}.flash-participants h3,.flash-results h3{margin:3px 0 0;font-size:22px;text-transform:uppercase}.flash-participants>header>b,.flash-results>header>b{padding:7px 9px;border-radius:999px;color:var(--flash);background:rgba(255,207,74,.08);font-size:8px}.flash-participants>div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.flash-participants>div>span{display:flex;align-items:center;gap:8px;min-width:0;padding:9px;border:1px solid var(--line);border-radius:11px;background:rgba(255,255,255,.025);font-size:8px;font-weight:750}.flash-participants>div>span i{display:grid;place-items:center;width:21px;height:21px;flex:0 0 auto;border-radius:7px;color:#1d1203;background:var(--flash);font-size:7px;font-style:normal;font-weight:900}
       .flash-bracket{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(225px,1fr);gap:9px;overflow-x:auto;padding:1px 1px 7px;scroll-snap-type:x proximity;scrollbar-width:thin}.flash-bracket>section{scroll-snap-align:start}.flash-bracket>section>header{display:flex;justify-content:space-between;gap:8px;margin-bottom:6px;color:var(--flash);font-size:8px;font-weight:900;text-transform:uppercase}.flash-bracket>section>header b{color:var(--muted);font-size:7px}.flash-match{overflow:hidden;margin-bottom:7px;border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.025)}.flash-match header{display:flex;justify-content:space-between;padding:7px 9px;border-bottom:1px solid var(--line);color:var(--muted);font-size:7px;text-transform:uppercase}.flash-match>div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:8px 10px;font-size:9px}.flash-match>div+div{border-top:1px solid rgba(255,255,255,.045)}.flash-match>div.winner{color:#fff1c5;background:rgba(255,207,74,.065);font-weight:850}.flash-match>div b{color:var(--flash);font-size:12px}.flash-match>small{display:block;padding:6px 9px;color:var(--muted);background:rgba(0,0,0,.16);font-size:7px;text-align:center}
@@ -633,14 +844,50 @@
     document.head.append(style);
   }
 
+  function installDrawStyles() {
+    if ($('#flashDrawStyles')) return;
+    const style = document.createElement('style');
+    style.id = 'flashDrawStyles';
+    style.textContent = `
+      .flash-draw-record{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;padding:9px 10px;border:1px solid rgba(255,207,74,.17);border-radius:12px;background:rgba(255,207,74,.045)}.flash-draw-record p{display:flex;align-items:center;flex-wrap:wrap;gap:6px;min-width:0;margin:0}.flash-draw-record p span,.flash-draw-record>div>span{color:var(--muted);font-size:7px;font-weight:900;text-transform:uppercase}.flash-draw-record p strong{color:#ffe596;font-size:8px}.flash-draw-record code{overflow:hidden;max-width:220px;color:#8ff0b5;font-size:7px;text-overflow:ellipsis;white-space:nowrap}.flash-draw-record>div{display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end;gap:5px}.flash-draw-record>div b{padding:5px 7px;border-radius:999px;color:#a8f3c4;background:rgba(79,223,143,.09);font-size:7px}
+      .flash-draw-modal{width:min(860px,100%)}.flash-draw-body{display:grid;gap:16px;padding:17px 19px}.flash-draw-summary{margin:0;color:var(--muted);font-size:9px;line-height:1.55}
+      .flash-draw-selection,.flash-draw-result{padding:14px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.022)}.flash-draw-selection>header,.flash-draw-result>header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:11px}.flash-draw-selection h3,.flash-draw-result h3{margin:3px 0 0;font-size:20px;text-transform:uppercase}
+      .flash-draw-tools{display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end;gap:6px}.flash-draw-tools b{margin-right:3px;color:#ffe596;font-size:8px;text-transform:uppercase}.flash-draw-tools button,.flash-draw-result>header>button{min-height:34px;padding:0 9px;border:1px solid rgba(255,207,74,.20);border-radius:9px;color:var(--flash);background:rgba(255,207,74,.055);font-size:7px;font-weight:900;text-transform:uppercase}
+      .flash-draw-team-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.flash-draw-team-grid label{display:block;cursor:pointer}.flash-draw-team-grid input{position:absolute;opacity:0;pointer-events:none}.flash-draw-team-grid span{display:flex;align-items:center;gap:8px;min-height:42px;padding:8px;border:1px solid var(--line);border-radius:11px;color:var(--muted);background:#07100c;font-size:8px;font-weight:800}.flash-draw-team-grid i{display:grid;place-items:center;width:24px;height:24px;flex:0 0 auto;border-radius:7px;color:var(--muted);background:rgba(255,255,255,.06);font-size:7px;font-style:normal}.flash-draw-team-grid input:checked+span{border-color:rgba(255,207,74,.35);color:#fff1c5;background:rgba(255,207,74,.07)}.flash-draw-team-grid input:checked+span i{color:#1d1203;background:var(--flash)}.flash-draw-team-grid input:focus-visible+span{outline:2px solid var(--flash);outline-offset:2px}
+      .flash-draw-preview{display:grid;gap:9px}.flash-draw-empty{display:grid;place-items:center;gap:5px;min-height:130px;padding:20px;border:1px dashed var(--line);border-radius:13px;color:var(--muted);text-align:center}.flash-draw-empty b{color:var(--text);font-size:10px}.flash-draw-empty span{font-size:8px}.flash-draw-certificate{display:grid;grid-template-columns:1fr 95px minmax(180px,1.2fr);gap:7px;padding:9px;border:1px solid rgba(255,207,74,.20);border-radius:12px;background:rgba(255,207,74,.055)}.flash-draw-certificate>div{display:grid;gap:4px;min-width:0}.flash-draw-certificate span,.flash-draw-byes>span{color:var(--muted);font-size:7px;font-weight:900;text-transform:uppercase}.flash-draw-certificate b{color:#ffe596;font-size:10px}.flash-draw-certificate code{overflow:hidden;color:#8ff0b5;font-size:7px;text-overflow:ellipsis;white-space:nowrap}
+      .flash-draw-byes{padding:10px;border:1px solid rgba(79,223,143,.19);border-radius:12px;background:rgba(79,223,143,.045)}.flash-draw-byes>div{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}.flash-draw-byes b{padding:6px 8px;border-radius:999px;color:#a8f3c4;background:rgba(79,223,143,.09);font-size:7px}.flash-draw-pairs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.flash-draw-pairs article{overflow:hidden;border:1px solid var(--line);border-radius:12px;background:#07100c}.flash-draw-pairs article>span{display:block;padding:6px 9px;border-bottom:1px solid var(--line);color:var(--muted);font-size:7px;font-weight:900;text-transform:uppercase}.flash-draw-pairs article>div{display:grid;grid-template-columns:minmax(0,1fr) 18px minmax(0,1fr);align-items:center;gap:5px;min-height:54px;padding:9px;text-align:center}.flash-draw-pairs b{overflow:hidden;color:#fff1c5;font-size:8px;text-overflow:ellipsis}.flash-draw-pairs i{color:var(--flash);font-size:10px;font-style:normal}
+      .flash-draw-footer{position:sticky;bottom:0;display:grid;grid-template-columns:auto 1fr auto auto;gap:8px;padding:13px 19px;border-top:1px solid var(--line);background:rgba(16,29,22,.98)}.flash-draw-footer button{min-height:39px}.flash-draw-footer button.danger{border:1px solid rgba(255,105,120,.22);border-radius:10px;color:#ffadb5;background:rgba(255,105,120,.06);font-size:8px;font-weight:900;text-transform:uppercase}.flash-draw-footer button[disabled]{cursor:not-allowed;opacity:.42}
+      @media(max-width:620px){.flash-detail-actions{justify-content:flex-start}.flash-draw-record{align-items:flex-start;flex-direction:column}.flash-draw-record>div{justify-content:flex-start}.flash-draw-selection>header,.flash-draw-result>header{align-items:flex-start;flex-direction:column}.flash-draw-tools{justify-content:flex-start}.flash-draw-team-grid,.flash-draw-pairs{grid-template-columns:1fr}.flash-draw-certificate{grid-template-columns:1fr 78px}.flash-draw-certificate>div:last-child{grid-column:1/-1}.flash-draw-footer{grid-template-columns:1fr 1fr}.flash-draw-footer span{display:none}.flash-draw-footer button{width:100%}.flash-draw-footer button.danger{grid-column:1/-1}}
+      @media(max-width:430px){.flash-draw-body{padding:13px}.flash-draw-footer{grid-template-columns:1fr}.flash-draw-certificate{grid-template-columns:1fr}.flash-draw-certificate>div:last-child{grid-column:auto}.flash-draw-footer button.danger{grid-column:auto}}
+    `;
+    document.head.append(style);
+  }
+
   document.addEventListener('click', event => {
     if (event.target.id === 'flashEditionModal') { closeEditor(); return; }
     if (event.target.id === 'flashImportModal') { closeImport(); return; }
+    if (event.target.id === 'flashDrawModal') { closeFlashDraw(); return; }
     const add = event.target.closest('[data-flash-add]');
     if (add) { openEditor(); return; }
     if (event.target.closest('[data-flash-import]')) { openImport(); return; }
     if (event.target.closest('[data-flash-export]')) { exportBackup(); return; }
     if (event.target.closest('[data-flash-import-close]')) { closeImport(); return; }
+    if (event.target.closest('[data-flash-draw-close]')) { closeFlashDraw(); return; }
+    const draw = event.target.closest('[data-flash-draw]');
+    if (draw) { openFlashDraw(draw.dataset.flashDraw); return; }
+    if (event.target.closest('[data-flash-draw-run]')) { runFlashDraw(); return; }
+    if (event.target.closest('[data-flash-draw-publish]')) { publishFlashDraw(); return; }
+    if (event.target.closest('[data-flash-draw-restore]')) { restoreFlashDraw(); return; }
+    if (event.target.closest('[data-flash-draw-all]')) {
+      $$('#flashDrawTeams input[data-flash-draw-team]').forEach(input => { input.checked = true; });
+      invalidateDrawPreview();
+      return;
+    }
+    if (event.target.closest('[data-flash-draw-clear]')) {
+      $$('#flashDrawTeams input[data-flash-draw-team]').forEach(input => { input.checked = false; });
+      invalidateDrawPreview();
+      return;
+    }
     const select = event.target.closest('[data-flash-select]');
     if (select) { selectedId = select.dataset.flashSelect; render(); return; }
     const edit = event.target.closest('[data-flash-edit]');
@@ -677,6 +924,10 @@
   });
 
   document.addEventListener('change', event => {
+    if (event.target.matches('[data-flash-draw-team]')) {
+      invalidateDrawPreview();
+      return;
+    }
     const field = event.target.closest('[data-flash-match-field]');
     if (!field) return;
     field.dispatchEvent(new Event('input', { bubbles: true }));
@@ -688,7 +939,8 @@
   });
 
   document.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && $('#flashEditionModal')?.classList.contains('show')) closeEditor();
+    if (event.key === 'Escape' && $('#flashDrawModal')?.classList.contains('show')) closeFlashDraw();
+    else if (event.key === 'Escape' && $('#flashEditionModal')?.classList.contains('show')) closeEditor();
     else if (event.key === 'Escape' && $('#flashImportModal')?.classList.contains('show')) closeImport();
   });
 
@@ -703,8 +955,10 @@
   });
 
   installStyles();
+  installDrawStyles();
   ensureModal();
   ensureImportModal();
+  ensureDrawModal();
   connectCloud();
   render();
   window.ArenaBDAFlashCups = Object.freeze({
@@ -713,6 +967,8 @@
     parseImport,
     exportBackup,
     editions: () => editions.map(item => ({ ...item, participants: [...item.participants], matches: item.matches.map(match => ({ ...match })) })),
-    openEditor
+    openEditor,
+    openDraw: openFlashDraw,
+    buildDraw: (teams, seed) => window.ArenaBDAFlashDraw?.build?.(teams, seed)
   });
 })();
