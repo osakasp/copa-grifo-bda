@@ -22,8 +22,9 @@
       './temporada-bda.js?v=20260822-7'
     ],
     flash: [
-      './flash-cup-draw-engine.js?v=20260822-9',
-      './copas-flash.js?v=20260822-9'
+      './flash-cup-draw-engine.js?v=20260822-10',
+      './flash-cup-knockout-engine.js?v=20260822-10',
+      './copas-flash.js?v=20260822-10'
     ],
     feedback: [
       './feedback-bda.js?v=20260803-1'
