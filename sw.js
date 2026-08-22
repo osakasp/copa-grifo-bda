@@ -1,4 +1,4 @@
-const VERSION = 'v111-hard-sync-cache-all-devices';
+const VERSION = 'v112-provisional-knockout-completed-groups';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
@@ -8,17 +8,18 @@ const CACHE = Object.freeze({
 const ACTIVE_CACHES = new Set(Object.values(CACHE));
 const SUPER_LEAGUE_RULE_SRC = './super-league-rule-v3.js?v=20260822-3';
 const SUPER_LEAGUE_SYNC_SRC = './arena-super-league-sync-gate.js?v=20260822-1';
-const CLEANUP_SRC = './arena-v3-cleanup.js?v=20260822-3';
+const CLEANUP_SRC = './arena-v3-cleanup.js?v=20260822-4';
 const REDESIGN_SRC = './arena-redesign-v1.js?v=20260822-3';
 const MOBILE_POLISH_SRC = './arena-mobile-polish.js?v=20260822-3';
 const MOBILE_BRACKET_SRC = './arena-mobile-bracket-v4.js?v=20260822-3';
+const PROVISIONAL_KNOCKOUT_SRC = './arena-provisional-knockout.js?v=20260822-1';
 const TEAM_EDITOR_SRC = './arena-team-editor.js?v=20260822-3';
 const TEAM_CLOUD_SYNC_SRC = './arena-team-cloud-sync.js?v=20260822-3';
 const TOURNAMENT_TRIM_SRC = './arena-tournament-trim.js?v=20260822-3';
 const SHELL = [
   './',
   './index.html',
-  './preview-v2.html?v=20260822-3',
+  './preview-v2.html?v=20260822-4',
   './favicon.svg',
   './site.webmanifest',
   CLEANUP_SRC,
@@ -27,6 +28,7 @@ const SHELL = [
   REDESIGN_SRC,
   MOBILE_POLISH_SRC,
   MOBILE_BRACKET_SRC,
+  PROVISIONAL_KNOCKOUT_SRC,
   TEAM_EDITOR_SRC,
   TEAM_CLOUD_SYNC_SRC,
   TOURNAMENT_TRIM_SRC,
@@ -127,7 +129,7 @@ async function previewV3(request) {
     if (canCache(request, response)) cache.put(request, response.clone()).catch(() => {});
     return await cleanupResponse(response);
   } catch {
-    const cached = await cache.match(request) || await cache.match('./preview-v2.html?v=20260822-3');
+    const cached = await cache.match(request) || await cache.match('./preview-v2.html?v=20260822-4');
     return cached ? cleanupResponse(cached) : Response.error();
   }
 }
@@ -174,7 +176,7 @@ self.addEventListener('fetch', event => {
 
   const isDocument = request.mode === 'navigate' || request.destination === 'document' || url.pathname.endsWith('.html');
   const isCriticalArenaScript = request.destination === 'script'
-    && /\/(firebase-auth|firestore-sync|classificacao-automatica|arena-v3-cleanup|arena-super-league-sync-gate|arena-redesign-v1|arena-mobile-polish|arena-mobile-bracket-v4|arena-team-editor|arena-team-cloud-sync|arena-tournament-trim|super-league-rule-v3|super-league-guard|super-league-runtime-fix|super-league-schedule-repair|bda-logo|arena-home-active)\.js$/.test(url.pathname);
+    && /\/(firebase-auth|firestore-sync|classificacao-automatica|arena-v3-cleanup|arena-super-league-sync-gate|arena-redesign-v1|arena-mobile-polish|arena-mobile-bracket-v4|arena-provisional-knockout|arena-team-editor|arena-team-cloud-sync|arena-tournament-trim|super-league-rule-v3|super-league-guard|super-league-runtime-fix|super-league-schedule-repair|bda-logo|arena-home-active)\.js$/.test(url.pathname);
 
   if (isDocument || isCriticalArenaScript) return event.respondWith(networkFirst(request));
   if (request.destination === 'image') return event.respondWith(imageCacheFirst(request));
