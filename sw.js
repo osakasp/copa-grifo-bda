@@ -1,5 +1,5 @@
-const VERSION = 'v117-flash-knockout';
-const REV = '20260822-10';
+const VERSION = 'v118-super-league-three-qualifiers';
+const REV = '20260822-11';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
