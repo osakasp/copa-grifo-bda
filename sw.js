@@ -1,5 +1,6 @@
-const VERSION = 'v119-render-loop-fix';
-const REV = '20260822-12';
+const VERSION = 'v120-loader-stability';
+const REV = '20260822-13';
+const LEGACY_BOOT_REV = '20260822-10';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
   shell: `${CACHE_PREFIX}shell-${VERSION}`,
@@ -80,8 +81,7 @@ self.addEventListener('activate', event => {
     const clients = await self.clients.matchAll({ type:'window', includeUncontrolled:true });
     await Promise.all(clients.map(async client => {
       try {
-        client.postMessage({ type:'ARENA_BUILD_ACTIVATED', version:VERSION, revision:REV });
-        if (typeof client.navigate === 'function') await client.navigate(client.url);
+        client.postMessage({ type:'ARENA_BUILD_ACTIVATED', version:VERSION, revision:REV, reloadRequired:false });
       } catch {}
     }));
   })());
@@ -90,7 +90,7 @@ self.addEventListener('activate', event => {
 self.addEventListener('message', event => {
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
   if (event.data?.type === 'GET_ARENA_BUILD') {
-    event.source?.postMessage?.({ type:'ARENA_BUILD', version:VERSION, revision:REV });
+    event.source?.postMessage?.({ type:'ARENA_BUILD', version:VERSION, revision:REV, reloadRequired:false });
   }
   if (event.data?.type === 'PURGE_OLD_ARENA_CACHES') {
     event.waitUntil(caches.keys().then(keys => Promise.all(keys
@@ -128,16 +128,23 @@ function forceCurrentCleanup(html) {
   return /<\/body>/i.test(stripped) ? stripped.replace(/<\/body>/i, `${script}</body>`) : `${stripped}${script}`;
 }
 
-function cleanupResponse(response) {
+function normalizeIndexHtml(html) {
+  return String(html || '')
+    .replace(new RegExp(LEGACY_BOOT_REV, 'g'), REV)
+    .replace(/\s*\.then\(\s*registration\s*=>\s*registration\.update\(\)\s*\)/g, '');
+}
+
+function rewrittenHtmlResponse(response, transform) {
   if (!response?.ok) return Promise.resolve(response);
   return response.clone().text().then(html => {
-    const next = forceCurrentCleanup(html);
+    const next = transform(html);
     const headers = new Headers(response.headers);
     headers.delete('content-length');
     headers.delete('content-encoding');
     headers.delete('etag');
     headers.set('cache-control', 'no-store, no-cache, must-revalidate');
     headers.set('x-arena-build', VERSION);
+    headers.set('x-arena-revision', REV);
     return new Response(next, {
       status:response.status,
       statusText:response.statusText,
@@ -146,7 +153,23 @@ function cleanupResponse(response) {
   });
 }
 
-async function previewV113(request) {
+function cleanupResponse(response) {
+  return rewrittenHtmlResponse(response, forceCurrentCleanup);
+}
+
+async function indexCurrent(request) {
+  const cache = await caches.open(CACHE.shell);
+  try {
+    const response = await fetch(request, { cache:'no-store' });
+    if (canCache(request, response)) cache.put(request, response.clone()).catch(() => {});
+    return await rewrittenHtmlResponse(response, normalizeIndexHtml);
+  } catch {
+    const cached = await cache.match(request) || await cache.match('./index.html');
+    return cached ? rewrittenHtmlResponse(cached, normalizeIndexHtml) : Response.error();
+  }
+}
+
+async function previewCurrent(request) {
   const cache = await caches.open(CACHE.shell);
   try {
     const response = await fetch(request, { cache:'no-store' });
@@ -194,8 +217,12 @@ self.addEventListener('fetch', event => {
   if (url.origin !== self.location.origin) return;
 
   if (url.pathname.endsWith('/preview-v2.html') || url.pathname.endsWith('preview-v2.html')) {
-    return event.respondWith(previewV113(request));
+    return event.respondWith(previewCurrent(request));
   }
+
+  const isRootDocument = request.mode === 'navigate'
+    && (url.pathname.endsWith('/') || url.pathname.endsWith('/index.html') || url.pathname.endsWith('index.html'));
+  if (isRootDocument) return event.respondWith(indexCurrent(request));
 
   const isDocument = request.mode === 'navigate' || request.destination === 'document' || url.pathname.endsWith('.html');
   const isCriticalArenaScript = request.destination === 'script'
