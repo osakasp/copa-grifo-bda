@@ -1,10 +1,10 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAV3Cleanup?.version >= 18) return;
+  if (window.ArenaBDAV3Cleanup?.version >= 19) return;
 
-  const BUILD = 'v117';
-  const REV = '20260822-10';
+  const BUILD = 'v118';
+  const REV = '20260822-11';
   const SUPER_LEAGUE_RULE_SRC = `./super-league-rule.js?v=${REV}`;
   const SUPER_LEAGUE_SYNC_SRC = `./arena-super-league-sync-gate.js?v=${REV}`;
   const REDESIGN_SRC = `./arena-redesign-v1.js?v=${REV}`;
@@ -92,7 +92,7 @@
   }
 
   function ensureSuperLeagueRuleModule() {
-    ensureScript({ globalName:'ArenaBDASuperLeagueRule', selector:'script[data-super-league-rule]', src:SUPER_LEAGUE_RULE_SRC, datasetName:'superLeagueRule', label:'a regra atual da Super League', minVersion:2 });
+    ensureScript({ globalName:'ArenaBDASuperLeagueRule', selector:'script[data-super-league-rule]', src:SUPER_LEAGUE_RULE_SRC, datasetName:'superLeagueRule', label:'a regra atual da Super League', minVersion:3 });
   }
 
   function ensureSuperLeagueSyncModule() {
@@ -100,11 +100,11 @@
   }
 
   function ensureMobileBracketModule() {
-    ensureScript({ globalName:'ArenaBDAMobileBracketV4', selector:'script[data-arena-mobile-bracket-v4]', src:MOBILE_BRACKET_SRC, datasetName:'arenaMobileBracketV4', label:'o chaveamento atual da Super League', minVersion:6 });
+    ensureScript({ globalName:'ArenaBDAMobileBracketV4', selector:'script[data-arena-mobile-bracket-v4]', src:MOBILE_BRACKET_SRC, datasetName:'arenaMobileBracketV4', label:'o chaveamento atual da Super League', minVersion:7 });
   }
 
   function ensureProvisionalKnockoutModule() {
-    ensureScript({ globalName:'ArenaBDAProvisionalKnockout', selector:'script[data-arena-provisional-knockout]', src:PROVISIONAL_KNOCKOUT_SRC, datasetName:'arenaProvisionalKnockout', label:'as vagas confirmadas das eliminatórias', minVersion:2 });
+    ensureScript({ globalName:'ArenaBDAProvisionalKnockout', selector:'script[data-arena-provisional-knockout]', src:PROVISIONAL_KNOCKOUT_SRC, datasetName:'arenaProvisionalKnockout', label:'as vagas confirmadas das eliminatórias', minVersion:3 });
   }
 
   function ensureTeamEditorModule() {
@@ -203,7 +203,7 @@
   observer.observe(document.documentElement, { childList:true, subtree:true });
 
   window.ArenaBDAV3Cleanup = Object.freeze({
-    version:18,
+    version:19,
     build:BUILD,
     revision:REV,
     cleanup,
