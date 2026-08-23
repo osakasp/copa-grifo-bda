@@ -1,10 +1,10 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAV3Cleanup?.version >= 20) return;
+  if (window.ArenaBDAV3Cleanup?.version >= 21) return;
 
-  const BUILD = 'v119';
-  const REV = '20260822-12';
+  const BUILD = 'v120';
+  const REV = '20260822-13';
   const SUPER_LEAGUE_RULE_SRC = `./super-league-rule.js?v=${REV}`;
   const SUPER_LEAGUE_SYNC_SRC = `./arena-super-league-sync-gate.js?v=${REV}`;
   const REDESIGN_SRC = `./arena-redesign-v1.js?v=${REV}`;
@@ -203,7 +203,7 @@
   observer.observe(document.documentElement, { childList:true, subtree:true });
 
   window.ArenaBDAV3Cleanup = Object.freeze({
-    version:20,
+    version:21,
     build:BUILD,
     revision:REV,
     cleanup,
