@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAProvisionalKnockout?.version >= 3) return;
+  if (window.ArenaBDAProvisionalKnockout?.version >= 4) return;
 
   const TID = 'bda-super-league';
   const STYLE_ID = 'arenaProvisionalKnockoutStyles';
@@ -33,7 +33,7 @@
   }
 
   function installStyles() {
-    document.getElementById(STYLE_ID)?.remove();
+    if (document.getElementById(STYLE_ID)) return;
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
@@ -108,7 +108,7 @@
   observer.observe(document.documentElement, { childList:true, subtree:true });
 
   window.ArenaBDAProvisionalKnockout = Object.freeze({
-    version:3,
+    version:4,
     render,
     entries:() => entries().map(entry => ({ ...entry }))
   });
