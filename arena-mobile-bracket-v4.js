@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAMobileBracketV4?.version >= 7) return;
+  if (window.ArenaBDAMobileBracketV4?.version >= 8) return;
 
   const TID = 'bda-super-league';
   const MATCH_KEY = 'bda-v3-confrontos';
@@ -160,7 +160,7 @@
   }
 
   function installStyles(){
-    document.getElementById(STYLE_ID)?.remove();
+    if(document.getElementById(STYLE_ID)) return;
     const style=document.createElement('style');
     style.id=STYLE_ID;
     style.textContent=`
@@ -191,6 +191,6 @@
   const observer=new MutationObserver(schedule);
   observer.observe(document.documentElement,{childList:true,subtree:true});
 
-  window.ArenaBDAMobileBracketV4=Object.freeze({version:7,refresh,render,preferredPhase,phases:Object.freeze([...phases])});
+  window.ArenaBDAMobileBracketV4=Object.freeze({version:8,refresh,render,preferredPhase,phases:Object.freeze([...phases])});
   refresh();
 })();
