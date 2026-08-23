@@ -1,440 +1,66 @@
 (() => {
   'use strict';
+  if (window.ArenaBDASuperLeagueRule?.version >= 3) return;
 
-  if (window.ArenaBDASuperLeagueRule?.version >= 2) return;
+  const TID='bda-super-league', MATCH_KEY='bda-v3-confrontos', TOURNAMENT_KEY='bda-v3-tournaments';
+  const BACKUP_KEY='bda-v118-super-league-repechage-backup', STYLE_ID='superLeagueThreeQualifierStyles';
+  let frame=0;
+  const read=(k,f)=>{try{return JSON.parse(localStorage.getItem(k))??f}catch{return f}};
+  const clone=v=>JSON.parse(JSON.stringify(v));
+  const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
+  const sig=v=>JSON.stringify(v);
+  const runtime=()=>window.ArenaBDASuperLeagueRuntimeFix||null;
+  const isAdmin=()=>Boolean(window.ArenaBDAAuth?.isAdmin?.());
+  const store=()=>{const v=read(MATCH_KEY,{});return v&&typeof v==='object'?v:{}};
+  const games=()=>Array.isArray(store()[TID])?store()[TID]:[];
+  const tournaments=()=>Array.isArray(read(TOURNAMENT_KEY,[]))?read(TOURNAMENT_KEY,[]):[];
+  const setText=(el,text)=>{if(el&&el.textContent!==text)el.textContent=text};
+  const notify=m=>typeof window.toast==='function'?window.toast(m):console.info(m);
+  const scored=g=>g?.wo==='a'||g?.wo==='b'||(g?.a!==''&&g?.a!=null&&g?.b!==''&&g?.b!=null&&!Number.isNaN(Number(g.a))&&!Number.isNaN(Number(g.b)));
+  const phase=g=>{const p=norm(g?.phase);if(p.includes('repesc'))return'rep';if(p.includes('play-in')||p.includes('play in'))return'playin';if(p.includes('quart'))return'qf';if(p.includes('semi'))return'sf';if(p==='final'||p.includes('grande final'))return'final';return''};
+  const knockout=g=>String(g?.id||'').startsWith('mata-super-league-')||Boolean(phase(g));
 
-  const TID = 'bda-super-league';
-  const MATCH_KEY = 'bda-v3-confrontos';
-  const TOURNAMENT_KEY = 'bda-v3-tournaments';
-  const BACKUP_KEY = 'bda-v114-super-league-legacy-knockout-backup';
-  const STYLE_ID = 'superLeagueDirectRuleStyles';
-  const DIRECT_QUALIFIERS = 2;
-  let refreshFrame = 0;
+  function groupSort(a,b){return Number(b?.pts||0)-Number(a?.pts||0)||Number(b?.v||0)-Number(a?.v||0)||Number(b?.sg||0)-Number(a?.sg||0)||Number(b?.gp||0)-Number(a?.gp||0)||String(a?.name||'').localeCompare(String(b?.name||''),'pt-BR')}
+  function rate(r,f){const j=Math.max(1,Number(r?.j||0));return f==='pts'?Number(r?.pts||0)/(j*3):Number(r?.[f]||0)/j}
+  function crossSort(a,b){return rate(b,'pts')-rate(a,'pts')||rate(b,'v')-rate(a,'v')||rate(b,'sg')-rate(a,'sg')||rate(b,'gp')-rate(a,'gp')||Number(b?.pts||0)-Number(a?.pts||0)||String(a?.name||'').localeCompare(String(b?.name||''),'pt-BR')}
+  function groups(){const d=runtime()?.calculate?.();return Array.isArray(d)&&d.length===4?d.map(g=>({...g,rows:[...(g.rows||[])].sort(groupSort)})):[]}
+  function complete(g){const r=g?.rows||[], expected=Math.max(0,r.length-1);return r.length>=3&&r.every(x=>Number(x?.j||0)>=expected)}
+  function groupsComplete(){const g=groups();return g.length===4&&g.every(complete)}
+  function slices(){const g=groups();if(g.length!==4)return null;const leaders=[],seconds=[],thirds=[];g.forEach(x=>{if(x.rows[0])leaders.push({...x.rows[0],group:x.name});if(x.rows[1])seconds.push({...x.rows[1],group:x.name});if(x.rows[2])thirds.push({...x.rows[2],group:x.name})});const seed=a=>[...a].sort(crossSort).map((x,i)=>({...x,seed:i+1}));return{groups:g,leaders:seed(leaders),seconds:seed(seconds),thirds:seed(thirds)}}
+  function finalStructureExists(list=games()){const c={};(list||[]).filter(knockout).forEach(g=>{const k=phase(g);if(k)c[k]=(c[k]||0)+1});return c.rep===2&&c.playin===2&&c.qf===4&&c.sf===2&&c.final===1}
 
-  const clone = value => JSON.parse(JSON.stringify(value));
-  const norm = value => String(value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-    .toLowerCase();
-  const signature = value => JSON.stringify(value);
-  const read = (key, fallback) => {
-    try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
-    catch { return fallback; }
-  };
+  function desiredTournament(t={}){const generated=finalStructureExists();return{...t,qualifiersPerGroup:3,description:'Full Razz • 21 clubes • 3 classificados por grupo: 1º e 2º seguem na fase principal e o 3º vai para a repescagem. Campeão: R$ 20 • Vice: R$ 10.',groupSettings:{...(t.groupSettings||{}),qualifiersPerGroup:3},groupGenerator:{...(t.groupGenerator||{}),qualifiers:3,knockoutGenerated:generated,knockoutMode:'third-place-repechage-playin',repechageQualifiers:2,directQuarterfinalSeconds:2,playInQualifiers:2,knockoutGames:generated?11:0}}}
+  function installStorageGuard(){if(Storage.prototype.setItem.__arenaSlThree)return;const prev=Storage.prototype.setItem;const wrapped=function(k,v){let next=v;if(this===localStorage&&k===TOURNAMENT_KEY){try{const a=JSON.parse(v);if(Array.isArray(a))next=JSON.stringify(a.map(t=>String(t?.id||'')===TID?desiredTournament(t):t))}catch{}}return prev.call(this,k,next)};Object.defineProperty(wrapped,'__arenaSlThree',{value:true});Storage.prototype.setItem=wrapped}
+  function ensureConfig(){const a=tournaments(),i=a.findIndex(t=>String(t?.id||'')===TID);if(i<0)return false;const before=a[i],after=desiredTournament(before);const key=t=>[t?.qualifiersPerGroup,t?.groupSettings?.qualifiersPerGroup,t?.groupGenerator?.qualifiers,t?.groupGenerator?.knockoutMode,t?.groupGenerator?.knockoutGenerated,t?.groupGenerator?.knockoutGames,t?.description];if(sig(key(before))===sig(key(after)))return false;const next=clone(a);next[i]=after;localStorage.setItem(TOURNAMENT_KEY,JSON.stringify(next));window.dispatchEvent(new CustomEvent('arena:tournaments-updated',{detail:{tournamentId:TID,reason:'super-league-three-qualifiers-restored'}}));return true}
+  function cleanupDirectSkeleton(){const all=games();if(!all.length||finalStructureExists(all))return false;const k=all.filter(knockout);if(!k.length||k.some(g=>phase(g)==='rep'||phase(g)==='playin')||k.some(scored))return false;if(!k.every(g=>/^mata-super-league-(?:qf\d|sf\d|final)$/i.test(String(g?.id||''))))return false;try{localStorage.setItem(BACKUP_KEY,JSON.stringify({savedAt:Date.now(),reason:'remove-direct-top2-skeleton',games:clone(k)}))}catch{}const s=store();s[TID]=all.filter(g=>!knockout(g));localStorage.setItem(MATCH_KEY,JSON.stringify(s));window.dispatchEvent(new CustomEvent('arena:matches-updated',{detail:{tournamentId:TID,reason:'super-league-remove-direct-top2-skeleton',count:s[TID].length}}));return true}
 
-  function runtime() {
-    return window.ArenaBDASuperLeagueRuntimeFix || null;
+  function perms(a){if(a.length<=1)return[a];const out=[];a.forEach((x,i)=>perms([...a.slice(0,i),...a.slice(i+1)]).forEach(t=>out.push([x,...t])));return out}
+  function best(left,right,target){let best=null;perms(right).forEach(order=>{let score=0;order.forEach((e,i)=>{const gs=e.possibleGroups||(e.group?[e.group]:[]);if(gs.includes(left[i]?.group))score+=10000;score+=Math.abs(Number(e.seed||0)-target(i))});if(!best||score<best.score)best={score,order}});return best?.order||right}
+  function base(id,p,pos,a,b,note){const now=Date.now();return{id,tieId:id,leg:1,phase:p,pos,status:'Agendado',ta:a,tb:b,a:'',b:'',pa:'',pb:'',wo:'none',date:'',time:'',place:'',note,created:now+pos,updated:now+pos}}
+  const samePair=(g,a,b)=>[norm(g?.ta),norm(g?.tb)].sort().join('|')===[norm(a),norm(b)].sort().join('|');
+  function backups(){return[BACKUP_KEY,'bda-v114-super-league-legacy-knockout-backup','bda-v7-super-league-final-bracket-backup'].flatMap(k=>{const v=read(k,null);return Array.isArray(v)?v:Array.isArray(v?.games)?v.games:[]})}
+  function preserve(candidate,sources){const old=sources.find(g=>phase(g)===phase(candidate)&&samePair(g,candidate.ta,candidate.tb));if(!old)return candidate;return{...candidate,status:old.status||candidate.status,a:old.a??'',b:old.b??'',pa:old.pa??'',pb:old.pb??'',wo:old.wo||'none',date:old.date||'',time:old.time||'',place:old.place||'',created:old.created||candidate.created,updated:old.updated||old.created||candidate.updated}}
+  function buildFinal(existing=games()){
+    const d=slices();if(!d||d.leaders.length!==4||d.seconds.length!==4||d.thirds.length!==4)return[];const src=[...(existing||[]),...backups()],t=d.thirds;
+    const rep=[base('mata-super-league-rep-1','Repescagem',1,t[0].name,t[3].name,'1º melhor 3º x 4º melhor 3º'),base('mata-super-league-rep-2','Repescagem',2,t[1].name,t[2].name,'2º melhor 3º x 3º melhor 3º')].map(g=>preserve(g,src));
+    const repSlots=[{gameId:rep[0].id,seed:2,possibleGroups:[t[0].group,t[3].group]},{gameId:rep[1].id,seed:1,possibleGroups:[t[1].group,t[2].group]}], lower=d.seconds.slice(2), assigned=best(lower,repSlots,i=>i+1);
+    const play=lower.map((s,i)=>{const r=assigned[i],g=base(`mata-super-league-playin-${i+1}`,'Play-in',i+1,s.name,`Vencedor ${r.gameId}`,`${s.seed}º melhor 2º x vencedor da repescagem`);g._groups=[s.group,...r.possibleGroups];return preserve(g,src)});
+    const direct=d.seconds.slice(0,2), slots=[{label:direct[0].name,seed:1,possibleGroups:[direct[0].group]},{label:direct[1].name,seed:2,possibleGroups:[direct[1].group]},{label:`Vencedor ${play[0].id}`,seed:3,possibleGroups:play[0]._groups},{label:`Vencedor ${play[1].id}`,seed:4,possibleGroups:play[1]._groups}], qSlots=best(d.leaders,slots,i=>4-i);
+    const qf=d.leaders.map((l,i)=>preserve(base(`mata-super-league-qf-${i+1}`,'Quartas de final',i+1,l.name,qSlots[i].label,`Líder ${l.group} • cabeça de chave ${l.seed}`),src));
+    const sf=[base('mata-super-league-sf-1','Semifinal',1,'Vencedor mata-super-league-qf-1','Vencedor mata-super-league-qf-4','Semifinal 1'),base('mata-super-league-sf-2','Semifinal',2,'Vencedor mata-super-league-qf-2','Vencedor mata-super-league-qf-3','Semifinal 2')].map(g=>preserve(g,src));
+    const fin=preserve(base('mata-super-league-final','Final',1,'Vencedor mata-super-league-sf-1','Vencedor mata-super-league-sf-2','Final da BDA Super League'),src);
+    return[...rep,...play,...qf,...sf,fin].map(g=>{const c={...g};delete c._groups;return c})
   }
+  async function generate(){if(!isAdmin())return notify('Apenas o administrador pode gerar a fase final');ensureConfig();if(!groupsComplete())return notify('Finalize todos os jogos da fase de grupos primeiro');if(finalStructureExists())return notify('A fase final completa já foi gerada');const current=games(),ko=buildFinal(current);if(ko.length!==11)return notify('Não foi possível montar repescagem, play-in e mata-mata');try{localStorage.setItem(BACKUP_KEY,JSON.stringify({savedAt:Date.now(),reason:'generate-three-qualifier-final',games:clone(current.filter(knockout))}))}catch{}const s=store();s[TID]=[...current.filter(g=>!knockout(g)),...ko];localStorage.setItem(MATCH_KEY,JSON.stringify(s));const a=tournaments(),i=a.findIndex(t=>String(t?.id||'')===TID);if(i>=0){const t=desiredTournament(a[i]);t.status='Em andamento';t.phase='Repescagem';t.groupGenerator={...(t.groupGenerator||{}),qualifiers:3,knockoutGenerated:true,knockoutMode:'third-place-repechage-playin',repechageQualifiers:2,directQuarterfinalSeconds:2,playInQualifiers:2,knockoutGames:11,knockoutGeneratedAt:Date.now()};a[i]=t;localStorage.setItem(TOURNAMENT_KEY,JSON.stringify(a))}window.dispatchEvent(new CustomEvent('arena:matches-updated',{detail:{tournamentId:TID,reason:'super-league-three-qualifier-final-generated',count:ko.length}}));window.dispatchEvent(new CustomEvent('arena:tournaments-updated',{detail:{tournamentId:TID,reason:'super-league-three-qualifier-final-generated'}}));try{await window.ArenaBDASuperLeagueSyncGate?.uploadAdminLatest?.()}catch{}notify('Fase final criada com repescagem, play-in, quartas, semifinal e final');refresh()}
 
-  function isAdmin() {
-    return Boolean(window.ArenaBDAAuth?.isAdmin?.());
-  }
+  function installStyles(){document.getElementById('superLeagueDirectRuleStyles')?.remove();if(document.getElementById(STYLE_ID))return;const st=document.createElement('style');st.id=STYLE_ID;st.textContent=`#giManager[data-tid="${TID}"] #autoStandings>.arena-zone-legend:not(#superLeagueRuleLegend){display:none!important}#superLeagueRuleLegend{display:flex!important;flex-wrap:wrap!important;gap:8px!important}#superLeagueRuleLegend .arena-sl-rep-dot i{background:#d8b248!important}#giManager[data-tid="${TID}"] #autoStandings .stand-group tbody>tr:nth-child(-n+2) .stand-pos{color:#041108!important;background:#4fdf8f!important}#giManager[data-tid="${TID}"] #autoStandings .stand-group tbody>tr:nth-child(3) .stand-pos{color:#171207!important;background:#d8b248!important}#giManager[data-tid="${TID}"] #autoStandings .stand-group tbody>tr:nth-child(n+4) .stand-pos{color:#728178!important;background:#111b15!important}#giManager[data-tid="${TID}"] #autoStandings .stand-group tbody>tr .stand-club small{display:none!important}#giManager[data-tid="${TID}"] #autoStandings .stand-group tbody>tr:nth-child(-n+2) .stand-club span::after{content:'Classificado';display:block!important;margin-top:3px;color:#69e69b!important;font-size:7px;font-weight:800}#giManager[data-tid="${TID}"] #autoStandings .stand-group tbody>tr:nth-child(3) .stand-club span::after{content:'Repescagem';display:block!important;margin-top:3px;color:#e7c664!important;font-size:7px;font-weight:800}`;document.head.appendChild(st)}
+  function patchUi(){const m=document.querySelector(`#giManager[data-tid="${TID}"]`);if(!m)return;installStyles();const p=m.querySelector('#autoStandings');p?.querySelectorAll('.stand-group').forEach(sec=>{const meta=sec.querySelector(':scope > header > span');if(meta){const clubs=(meta.textContent.match(/(\d+)\s*club/i)||[])[1];setText(meta,`3 classificados${clubs?` • ${clubs} clubes`:''}`)}[...sec.querySelectorAll('tbody > tr:not(.arena-mobile-stat-detail)')].forEach((r,i)=>r.dataset.zone=i<2?'direct':i===2?'repechage':'out')});if(p){let l=p.querySelector('#superLeagueRuleLegend');if(!l){l=document.createElement('div');l.id='superLeagueRuleLegend';l.className='arena-zone-legend';(p.querySelector('#standCapture')||p.firstChild)?.before?.(l)}l.innerHTML='<span class="qualified"><i></i>1º e 2º classificados</span><span class="arena-sl-rep-dot"><i></i>3º classificado • repescagem</span><span><i></i>4º em diante eliminados</span>';setText(p.querySelector('.stand-rule'),'Os 3 primeiros de cada grupo se classificam: 1º e 2º seguem na fase principal e o 3º vai para a repescagem. Desempate: pontos, vitórias, saldo de gols e gols marcados.')}const card=m.querySelector('.league-knockout-card');if(card){setText(card.querySelector('h3'),'Fase final da Super League');setText(card.querySelector('p'),'Os líderes e os 2 melhores segundos vão direto às quartas. Os outros 2 segundos enfrentam os vencedores da repescagem entre os 3º colocados.');setText(card.querySelector('footer span'),'Repescagem • Play-in • Quartas • Semifinal • Final');const b=card.querySelector('[data-generate-knockout]');if(b){b.hidden=!isAdmin();b.disabled=!groupsComplete()||finalStructureExists();setText(b,finalStructureExists()?'Fase final gerada':groupsComplete()?'Gerar fase final':'Aguardando fase de grupos')}}}
+  function provisionalEntries(){const all=groupsComplete(),d=slices(),seed=new Map((d?.seconds||[]).map(x=>[norm(x.name),x.seed]));return groups().filter(complete).flatMap(g=>{const out=[];if(g.rows[0])out.push({name:g.rows[0].name,group:g.name,position:1,destination:'Quartas de final',zone:'direct'});if(g.rows[1]){const s=seed.get(norm(g.rows[1].name));out.push({name:g.rows[1].name,group:g.name,position:2,destination:all?(s<=2?'Quartas de final':'Play-in'):'Quartas ou Play-in',zone:all&&s<=2?'direct':'qualified'})}if(g.rows[2])out.push({name:g.rows[2].name,group:g.name,position:3,destination:'Repescagem',zone:'repechage'});return out})}
+  function refresh(){if(frame)return;frame=requestAnimationFrame(()=>{frame=0;cleanupDirectSkeleton();ensureConfig();patchUi()})}
 
-  function notify(message) {
-    if (typeof window.toast === 'function') window.toast(message);
-    else console.info(message);
-  }
-
-  function setText(element, value) {
-    if (element && element.textContent !== value) element.textContent = value;
-  }
-
-  function setHtml(element, value) {
-    if (element && element.innerHTML !== value) element.innerHTML = value;
-  }
-
-  function matchStore() {
-    const value = read(MATCH_KEY, {});
-    return value && typeof value === 'object' ? value : {};
-  }
-
-  function localGames() {
-    const value = matchStore()[TID];
-    return Array.isArray(value) ? value : [];
-  }
-
-  function tournaments() {
-    const value = read(TOURNAMENT_KEY, []);
-    return Array.isArray(value) ? value : [];
-  }
-
-  function isKnockout(game) {
-    const id = String(game?.id || '');
-    const phase = norm(game?.phase);
-    return id.startsWith('mata-super-league-')
-      || /repesc|play-in|play in|prelim|quart|semi|\bfinal\b/.test(phase);
-  }
-
-  function hasLegacyPhase(game) {
-    return /repesc|play-in|play in|prelim/.test(norm([
-      game?.id,
-      game?.phase,
-      game?.note,
-      game?.ta,
-      game?.tb
-    ].join(' ')));
-  }
-
-  function baseGame(id, phase, pos, home, away, note) {
-    const created = 1760000000000 + pos;
-    return {
-      id,
-      tieId: id,
-      leg: 1,
-      phase,
-      pos,
-      status: 'Agendado',
-      ta: home,
-      tb: away,
-      a: '',
-      b: '',
-      pa: '',
-      pb: '',
-      wo: 'none',
-      date: '',
-      time: '',
-      place: '',
-      note,
-      created,
-      updated: created
-    };
-  }
-
-  function directTemplate() {
-    return [
-      baseGame('mata-super-league-qf1', 'Quartas de final', 1, '1º Grupo A', '2º Grupo B', 'QF1'),
-      baseGame('mata-super-league-qf2', 'Quartas de final', 2, '1º Grupo B', '2º Grupo A', 'QF2'),
-      baseGame('mata-super-league-qf3', 'Quartas de final', 3, '1º Grupo C', '2º Grupo D', 'QF3'),
-      baseGame('mata-super-league-qf4', 'Quartas de final', 4, '1º Grupo D', '2º Grupo C', 'QF4'),
-      baseGame('mata-super-league-sf1', 'Semifinal', 1, 'Vencedor mata-super-league-qf1', 'Vencedor mata-super-league-qf3', 'SF1'),
-      baseGame('mata-super-league-sf2', 'Semifinal', 2, 'Vencedor mata-super-league-qf2', 'Vencedor mata-super-league-qf4', 'SF2'),
-      baseGame('mata-super-league-final', 'Final', 1, 'Vencedor mata-super-league-sf1', 'Vencedor mata-super-league-sf2', 'Final')
-    ];
-  }
-
-  function reuseDirectGame(template, existing) {
-    const current = existing.find(game => String(game?.id || '') === template.id);
-    if (!current || hasLegacyPhase(current)) return template;
-    return {
-      ...template,
-      ...current,
-      id: template.id,
-      tieId: template.id,
-      phase: template.phase,
-      pos: template.pos,
-      note: current.note || template.note
-    };
-  }
-
-  function normalizeGames(games) {
-    const list = Array.isArray(games) ? games : [];
-    const groupGames = list.filter(game => !isKnockout(game));
-    const legacyStructure = list.some(game => isKnockout(game) && hasLegacyPhase(game));
-    const direct = legacyStructure
-      ? directTemplate()
-      : directTemplate().map(game => reuseDirectGame(game, list));
-    return [...groupGames, ...direct];
-  }
-
-  function migrateLegacyKnockout() {
-    const current = localGames();
-    if (!current.length) return false;
-    const next = normalizeGames(current);
-    if (signature(next) === signature(current)) return false;
-
-    try {
-      const legacy = current.filter(isKnockout);
-      if (legacy.length) {
-        localStorage.setItem(BACKUP_KEY, JSON.stringify({ savedAt: Date.now(), games: legacy }));
-      }
-    } catch {}
-
-    const store = matchStore();
-    store[TID] = next;
-    localStorage.setItem(MATCH_KEY, JSON.stringify(store));
-    window.dispatchEvent(new CustomEvent('arena:matches-updated', {
-      detail: { tournamentId: TID, reason: 'super-league-direct-top2-migration', count: next.length }
-    }));
-    return true;
-  }
-
-  function resetKnockout(reason = 'super-league-groups-changed') {
-    const current = localGames();
-    const legacy = current.filter(isKnockout);
-    const now = Date.now();
-    const next = [
-      ...current.filter(game => !isKnockout(game)),
-      ...directTemplate().map((game, index) => ({ ...game, updated: now + index }))
-    ];
-    if (signature(next) === signature(current)) return false;
-
-    try {
-      if (legacy.length) {
-        localStorage.setItem(BACKUP_KEY, JSON.stringify({ savedAt: now, reason, games: legacy }));
-      }
-    } catch {}
-
-    const store = matchStore();
-    store[TID] = next;
-    localStorage.setItem(MATCH_KEY, JSON.stringify(store));
-    window.dispatchEvent(new CustomEvent('arena:matches-updated', {
-      detail: { tournamentId: TID, reason, count: next.length }
-    }));
-    return true;
-  }
-
-  function sortedGroups() {
-    const data = runtime()?.calculate?.();
-    if (!Array.isArray(data) || data.length !== 4) return [];
-    return data.map(group => ({
-      ...group,
-      rows: [...(group.rows || [])].sort((a, b) =>
-        Number(b?.pts || 0) - Number(a?.pts || 0)
-        || Number(b?.v || 0) - Number(a?.v || 0)
-        || Number(b?.sg || 0) - Number(a?.sg || 0)
-        || Number(b?.gp || 0) - Number(a?.gp || 0)
-        || String(a?.name || '').localeCompare(String(b?.name || ''), 'pt-BR'))
-    }));
-  }
-
-  function groupsComplete() {
-    const groups = sortedGroups();
-    return groups.length === 4 && groups.every(group => {
-      const expected = Math.max(0, group.rows.length - 1);
-      return group.rows.length >= 2 && group.rows.every(row => Number(row?.j || 0) >= expected);
-    });
-  }
-
-  function slices() {
-    const groups = sortedGroups();
-    if (groups.length !== 4) return null;
-    return {
-      groups,
-      qualifiers: groups.flatMap(group => group.rows.slice(0, DIRECT_QUALIFIERS).map((row, index) => ({
-        ...row,
-        group: group.name,
-        groupRank: index + 1
-      })))
-    };
-  }
-
-  function isPlaceholder(value) {
-    return /^[12][ºo]\s+grupo\s+[a-d]$/i.test(String(value || '').trim());
-  }
-
-  function finalStructureExists(games = localGames()) {
-    const knockout = (Array.isArray(games) ? games : []).filter(isKnockout);
-    const quarters = knockout.filter(game => norm(game?.phase).includes('quart'));
-    const semis = knockout.filter(game => norm(game?.phase).includes('semi'));
-    const finals = knockout.filter(game => norm(game?.phase) === 'final');
-    return quarters.length === 4
-      && semis.length === 2
-      && finals.length === 1
-      && quarters.every(game => !isPlaceholder(game?.ta) && !isPlaceholder(game?.tb));
-  }
-
-  function samePair(game, home, away) {
-    const current = [norm(game?.ta), norm(game?.tb)].sort().join('|');
-    const expected = [norm(home), norm(away)].sort().join('|');
-    return Boolean(current && current === expected);
-  }
-
-  function preserveResult(template, existing) {
-    const current = existing.find(game => String(game?.id || '') === template.id && samePair(game, template.ta, template.tb));
-    if (!current) return template;
-    return {
-      ...template,
-      ...current,
-      id: template.id,
-      tieId: template.id,
-      phase: template.phase,
-      pos: template.pos,
-      ta: template.ta,
-      tb: template.tb,
-      note: template.note
-    };
-  }
-
-  function buildFinal(existing = localGames()) {
-    const data = slices();
-    if (!data || data.groups.some(group => group.rows.length < 2)) return [];
-    const [a, b, c, d] = data.groups;
-    const games = [
-      baseGame('mata-super-league-qf1', 'Quartas de final', 1, a.rows[0].name, b.rows[1].name, '1º Grupo A x 2º Grupo B'),
-      baseGame('mata-super-league-qf2', 'Quartas de final', 2, b.rows[0].name, a.rows[1].name, '1º Grupo B x 2º Grupo A'),
-      baseGame('mata-super-league-qf3', 'Quartas de final', 3, c.rows[0].name, d.rows[1].name, '1º Grupo C x 2º Grupo D'),
-      baseGame('mata-super-league-qf4', 'Quartas de final', 4, d.rows[0].name, c.rows[1].name, '1º Grupo D x 2º Grupo C'),
-      baseGame('mata-super-league-sf1', 'Semifinal', 1, 'Vencedor mata-super-league-qf1', 'Vencedor mata-super-league-qf3', 'SF1'),
-      baseGame('mata-super-league-sf2', 'Semifinal', 2, 'Vencedor mata-super-league-qf2', 'Vencedor mata-super-league-qf4', 'SF2'),
-      baseGame('mata-super-league-final', 'Final', 1, 'Vencedor mata-super-league-sf1', 'Vencedor mata-super-league-sf2', 'Final')
-    ];
-    return games.map(game => preserveResult(game, existing));
-  }
-
-  function updateTournamentAfterGeneration() {
-    const list = tournaments();
-    const index = list.findIndex(item => String(item?.id || '') === TID);
-    if (index < 0) return;
-    const current = list[index] || {};
-    const generator = {
-      ...(current.groupGenerator || {}),
-      qualifiers: DIRECT_QUALIFIERS,
-      knockoutGenerated: true,
-      knockoutMode: 'direct-top-2',
-      knockoutGames: 7,
-      knockoutGeneratedAt: Date.now()
-    };
-    delete generator.repechageQualifiers;
-    delete generator.directQuarterfinalSeconds;
-    delete generator.playInQualifiers;
-    delete generator.repechageGeneratedAt;
-    list[index] = {
-      ...current,
-      phase: 'Quartas de final',
-      qualifiersPerGroup: DIRECT_QUALIFIERS,
-      groupSettings: { ...(current.groupSettings || {}), qualifiersPerGroup: DIRECT_QUALIFIERS },
-      groupGenerator: generator
-    };
-    localStorage.setItem(TOURNAMENT_KEY, JSON.stringify(list));
-  }
-
-  function generate() {
-    if (!isAdmin()) return notify('Apenas o administrador pode gerar a fase final');
-    if (!groupsComplete()) return notify('Finalize todos os jogos da fase de grupos primeiro');
-
-    const current = localGames();
-    const knockout = buildFinal(current);
-    if (knockout.length !== 7) return notify('Não foi possível montar as quartas de final');
-
-    const store = matchStore();
-    store[TID] = [...current.filter(game => !isKnockout(game)), ...knockout];
-    localStorage.setItem(MATCH_KEY, JSON.stringify(store));
-    updateTournamentAfterGeneration();
-    window.dispatchEvent(new CustomEvent('arena:matches-updated', {
-      detail: { tournamentId: TID, reason: 'super-league-direct-quarterfinals-generated', count: knockout.length }
-    }));
-    window.dispatchEvent(new CustomEvent('arena:tournaments-updated', {
-      detail: { tournamentId: TID, reason: 'super-league-direct-top2' }
-    }));
-    notify('Quartas de final criadas com os 2 melhores de cada grupo');
-    refresh();
-  }
-
-  function installStyles() {
-    if (document.getElementById(STYLE_ID)) return;
-    const style = document.createElement('style');
-    style.id = STYLE_ID;
-    style.textContent = `
-      #giManager[data-tid="${TID}"] #autoStandings>.arena-zone-legend:not(#superLeagueRuleLegend){display:none!important}
-      #superLeagueRuleLegend{display:flex!important}
-      #giManager[data-tid="${TID}"] #autoStandings .stand-group tbody>tr:nth-child(-n+2) .stand-pos{color:#041108!important;background:#4fdf8f!important}
-      #giManager[data-tid="${TID}"] #autoStandings .stand-group tbody>tr:nth-child(n+3) .stand-pos{color:#728178!important;background:#111b15!important}
-      #giManager[data-tid="${TID}"] #autoStandings .stand-group tbody>tr .stand-club small{display:none!important}
-      #giManager[data-tid="${TID}"] #autoStandings .stand-group tbody>tr:nth-child(-n+2) .stand-club span::after{content:'Classificado';display:block!important;margin-top:3px;color:#69e69b!important;font-size:7px;font-weight:800}
-    `;
-    document.head.append(style);
-  }
-
-  function patchUi() {
-    const manager = document.querySelector(`#giManager[data-tid="${TID}"]`);
-    if (!manager) return;
-    installStyles();
-    document.getElementById('superLeagueSecondPlaceRanking')?.remove();
-    document.getElementById('superLeagueThirdPlaceRanking')?.remove();
-
-    const panel = manager.querySelector('#autoStandings');
-    panel?.querySelectorAll('.stand-group').forEach(section => {
-      const meta = section.querySelector(':scope > header > span');
-      if (meta) {
-        const clubs = (meta.textContent.match(/(\d+)\s*club/i) || [])[1];
-        setText(meta, `2 classificados${clubs ? ` • ${clubs} clubes` : ''}`);
-      }
-      [...section.querySelectorAll('tbody > tr:not(.arena-mobile-stat-detail)')]
-        .forEach((row, index) => { row.dataset.zone = index < DIRECT_QUALIFIERS ? 'direct' : 'out'; });
-    });
-
-    if (panel) {
-      let legend = panel.querySelector('#superLeagueRuleLegend');
-      if (!legend) {
-        legend = document.createElement('div');
-        legend.id = 'superLeagueRuleLegend';
-        legend.className = 'arena-zone-legend';
-        (panel.querySelector('#standCapture') || panel.firstChild)?.before?.(legend);
-      }
-      legend.dataset.mode = 'super-league';
-      setHtml(legend, '<span class="qualified"><i></i>1º e 2º classificados</span><span><i></i>Demais eliminados</span>');
-      const rule = panel.querySelector('.stand-rule');
-      setText(rule, 'Os 2 melhores de cada grupo avançam diretamente às quartas de final. Desempate: pontos, vitórias, saldo de gols e gols marcados.');
-    }
-
-    const overview = manager.querySelector('#superLeagueGroupsOverview .slg-overview-head p');
-    const total = runtime()?.groups?.()?.reduce?.((sum, group) => sum + (group.teams?.length || 0), 0) || 21;
-    setText(overview, `${total} clubes em 4 grupos. Os 2 melhores de cada grupo avançam diretamente às quartas de final.`);
-    manager.querySelectorAll('#superLeagueGroupsOverview .slg-card header small')
-      .forEach(label => setText(label, '2 classificados'));
-
-    const card = manager.querySelector('.league-knockout-card');
-    if (card) {
-      const title = card.querySelector('h3');
-      const description = card.querySelector('p');
-      const footer = card.querySelector('footer span');
-      const button = card.querySelector('[data-generate-knockout]');
-      setText(title, 'Quartas de final da Super League');
-      setText(description, 'Os 2 melhores de cada grupo avançam diretamente. Cruzamentos: A1 x B2, B1 x A2, C1 x D2 e D1 x C2.');
-      setText(footer, '4 quartas • 2 semifinais • final');
-      if (button) {
-        button.hidden = !isAdmin();
-        button.disabled = !groupsComplete() || finalStructureExists();
-        setText(button, finalStructureExists()
-          ? 'Quartas geradas'
-          : groupsComplete() ? 'Gerar quartas' : 'Aguardando fase de grupos');
-      }
-    }
-  }
-
-  function refresh() {
-    if (refreshFrame) return;
-    refreshFrame = requestAnimationFrame(() => {
-      refreshFrame = 0;
-      migrateLegacyKnockout();
-      patchUi();
-    });
-  }
-
-  document.addEventListener('click', event => {
-    if (!(event.target instanceof Element)) return;
-    const button = event.target.closest('[data-generate-knockout],.arena-v4-generate-final');
-    if (!button || button.closest('#giManager')?.dataset?.tid !== TID) return;
-    event.preventDefault();
-    event.stopPropagation();
-    event.stopImmediatePropagation();
-    generate();
-  }, true);
-
-  ['arena:bundle-loaded', 'arena:matches-updated', 'arena:quick-score-saved', 'arena:tournaments-updated', 'arena:cloud-ready', 'arena:auth-changed']
-    .forEach(type => window.addEventListener(type, refresh));
-  window.addEventListener('storage', event => {
-    if ([MATCH_KEY, TOURNAMENT_KEY].includes(event.key)) refresh();
-  });
-
-  const observer = new MutationObserver(refresh);
-  observer.observe(document.documentElement, { childList: true, subtree: true });
-
-  window.ArenaBDASuperLeagueRule = Object.freeze({
-    version: 2,
-    qualifiers: DIRECT_QUALIFIERS,
-    refresh,
-    slices: () => clone(slices()),
-    buildKnockout: () => clone(buildFinal()),
-    generate,
-    groupsComplete,
-    finalStructureExists,
-    normalizeGames,
-    resetKnockout,
-    patchUi
-  });
-
-  migrateLegacyKnockout();
-  refresh();
+  document.addEventListener('click',e=>{const b=e.target.closest?.('#giManager[data-tid="bda-super-league"] [data-generate-knockout]');if(!b)return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();generate()},true);
+  ['arena:bundle-loaded','arena:cloud-ready','arena:auth-changed','arena:tournaments-updated','arena:matches-updated','arena:quick-score-saved','arena:super-league-cloud-synced'].forEach(t=>window.addEventListener(t,refresh));
+  new MutationObserver(refresh).observe(document.documentElement,{childList:true,subtree:true});
+  window.ArenaBDASuperLeagueRule=Object.freeze({version:3,qualifiers:3,groupsComplete,finalStructureExists,slices,buildFinal,generate,provisionalEntries,ensureTournamentConfig:ensureConfig,refresh});
+  installStorageGuard();cleanupDirectSkeleton();ensureConfig();refresh();
 })();

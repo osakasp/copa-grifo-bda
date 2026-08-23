@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAProvisionalKnockout?.version >= 2) return;
+  if (window.ArenaBDAProvisionalKnockout?.version >= 3) return;
 
   const TID = 'bda-super-league';
   const STYLE_ID = 'arenaProvisionalKnockoutStyles';
@@ -13,64 +13,15 @@
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 
-  const norm = value => String(value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-    .toLowerCase();
-
   function manager() {
     return document.querySelector(`#giManager[data-tid="${TID}"]`);
   }
-
-  function groupSort(a, b) {
-    return Number(b?.pts || 0) - Number(a?.pts || 0)
-      || Number(b?.v || 0) - Number(a?.v || 0)
-      || Number(b?.sg || 0) - Number(a?.sg || 0)
-      || Number(b?.gp || 0) - Number(a?.gp || 0)
-      || String(a?.name || '').localeCompare(String(b?.name || ''), 'pt-BR');
+  function entries() {
+    return window.ArenaBDASuperLeagueRule?.provisionalEntries?.() || [];
   }
-
-  function groupComplete(group) {
-    const rows = Array.isArray(group?.rows) ? group.rows : [];
-    if (rows.length < 3) return false;
-    const expected = Math.max(0, rows.length - 1);
-    return rows.every(row => Number(row?.j || 0) >= expected);
+  function finalStructureExists() {
+    return Boolean(window.ArenaBDASuperLeagueRule?.finalStructureExists?.());
   }
-
-  function completedGroups() {
-    const data = window.ArenaBDASuperLeagueRuntimeFix?.calculate?.();
-    if (!Array.isArray(data)) return [];
-    return data
-      .filter(groupComplete)
-      .map(group => ({
-        name: String(group?.name || 'Grupo'),
-        rows: [...(group.rows || [])].sort(groupSort)
-      }));
-  }
-
-  function qualifiedEntries() {
-    return completedGroups().flatMap(group => {
-      const [leader, second] = group.rows;
-      const items = [];
-      if (leader) items.push({
-        name: leader.name,
-        group: group.name,
-        position: 1,
-        destination: 'Quartas de final',
-        zone: 'direct'
-      });
-      if (second) items.push({
-        name: second.name,
-        group: group.name,
-        position: 2,
-        destination: 'Quartas de final',
-        zone: 'direct'
-      });
-      return items;
-    });
-  }
-
   function initials(name) {
     return String(name || 'BDA')
       .split(/\s+/)
@@ -81,32 +32,18 @@
       .toUpperCase();
   }
 
-  function finalStructureExists() {
-    return Boolean(window.ArenaBDASuperLeagueRule?.finalStructureExists?.());
-  }
-
   function installStyles() {
-    if (document.getElementById(STYLE_ID)) return;
+    document.getElementById(STYLE_ID)?.remove();
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
       .arena-provisional-qualified{margin:10px 0 12px;padding:12px;border:1px solid rgba(216,178,72,.22);border-radius:14px;background:linear-gradient(145deg,rgba(13,29,19,.96),rgba(5,12,8,.96))}
       .arena-provisional-qualified>header{display:flex;align-items:end;justify-content:space-between;gap:10px;margin-bottom:9px}
-      .arena-provisional-qualified>header h3{margin:3px 0 0;color:#f3f6f4;font-size:15px}
-      .arena-provisional-qualified>header small{color:#82958a;font-size:8px;text-align:right}
-      .arena-provisional-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
-      .arena-provisional-team{display:grid;grid-template-columns:32px minmax(0,1fr);align-items:center;gap:8px;min-height:58px;padding:8px;border:1px solid rgba(255,255,255,.07);border-radius:11px;background:rgba(255,255,255,.025)}
-      .arena-provisional-team>i{display:grid;place-items:center;width:32px;height:32px;border-radius:9px;color:#171207;background:#d8b248;font-size:8px;font-style:normal;font-weight:900}
-      .arena-provisional-team b{display:block;overflow:hidden;color:#eef4ef;font-size:10px;text-overflow:ellipsis;white-space:nowrap}
-      .arena-provisional-team span{display:block;margin-top:3px;color:#82958a;font-size:7px;font-weight:800}
-      .arena-provisional-team[data-zone="direct"] span{color:#69e69b}
-      @media(max-width:760px){
-        .arena-provisional-qualified>header{display:block}
-        .arena-provisional-qualified>header small{display:block;margin-top:4px;text-align:left}
-        .arena-provisional-list{grid-template-columns:1fr}
-      }
+      .arena-provisional-qualified>header h3{margin:3px 0 0;color:#f3f6f4;font-size:15px}.arena-provisional-qualified>header small{color:#82958a;font-size:8px;text-align:right}
+      .arena-provisional-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.arena-provisional-team{display:grid;grid-template-columns:32px minmax(0,1fr);align-items:center;gap:8px;min-height:58px;padding:8px;border:1px solid rgba(255,255,255,.07);border-radius:11px;background:rgba(255,255,255,.025)}.arena-provisional-team>i{display:grid;place-items:center;width:32px;height:32px;border-radius:9px;color:#171207;background:#d8b248;font-size:8px;font-style:normal;font-weight:900}.arena-provisional-team b{display:block;overflow:hidden;color:#eef4ef;font-size:10px;text-overflow:ellipsis;white-space:nowrap}.arena-provisional-team span{display:block;margin-top:3px;color:#82958a;font-size:7px;font-weight:800}.arena-provisional-team[data-zone="direct"] span{color:#69e69b}.arena-provisional-team[data-zone="qualified"] span{color:#b7c9ff}.arena-provisional-team[data-zone="repechage"]{border-color:rgba(216,178,72,.28);background:rgba(216,178,72,.045)}.arena-provisional-team[data-zone="repechage"] span{color:#e7c664}
+      @media(max-width:760px){.arena-provisional-qualified>header{display:block}.arena-provisional-qualified>header small{display:block;margin-top:4px;text-align:left}.arena-provisional-list{grid-template-columns:1fr}}
     `;
-    document.head.append(style);
+    document.head.appendChild(style);
   }
 
   function render() {
@@ -123,14 +60,14 @@
       return;
     }
 
-    const entries = qualifiedEntries();
-    if (!entries.length) {
+    const list = entries();
+    if (!list.length) {
       panel?.remove();
       return;
     }
 
-    const completed = new Set(entries.map(entry => entry.group)).size;
-    const signature = JSON.stringify(entries.map(entry => [entry.name, entry.group, entry.position, entry.destination]));
+    const completed = new Set(list.map(entry => entry.group)).size;
+    const signature = JSON.stringify(list.map(entry => [entry.name, entry.group, entry.position, entry.destination, entry.zone]));
     if (panel?.dataset.signature === signature) return;
 
     if (!panel) {
@@ -145,10 +82,10 @@
     panel.innerHTML = `
       <header>
         <div><span class="eyebrow">Eliminatórias</span><h3>Vagas já confirmadas</h3></div>
-        <small>${completed} ${completed === 1 ? 'grupo encerrado' : 'grupos encerrados'} • adversários podem estar a definir</small>
+        <small>${completed} ${completed === 1 ? 'grupo encerrado' : 'grupos encerrados'} • 3 classificados por grupo</small>
       </header>
       <div class="arena-provisional-list">
-        ${entries.map(entry => `
+        ${list.map(entry => `
           <article class="arena-provisional-team" data-zone="${esc(entry.zone)}">
             <i>${esc(initials(entry.name))}</i>
             <div>
@@ -164,16 +101,16 @@
     frame = requestAnimationFrame(render);
   }
 
-  ['arena:bundle-loaded','arena:matches-updated','arena:quick-score-saved','arena:tournaments-updated','arena:cloud-ready','arena:auth-changed']
+  ['arena:bundle-loaded','arena:matches-updated','arena:quick-score-saved','arena:tournaments-updated','arena:cloud-ready','arena:auth-changed','arena:super-league-cloud-synced']
     .forEach(type => window.addEventListener(type, schedule));
 
   const observer = new MutationObserver(schedule);
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  observer.observe(document.documentElement, { childList:true, subtree:true });
 
   window.ArenaBDAProvisionalKnockout = Object.freeze({
-    version: 2,
+    version:3,
     render,
-    entries: () => qualifiedEntries().map(entry => ({ ...entry }))
+    entries:() => entries().map(entry => ({ ...entry }))
   });
 
   render();
