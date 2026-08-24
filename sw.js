@@ -1,5 +1,5 @@
-const VERSION = 'v120-loader-stability';
-const REV = '20260822-13';
+const VERSION = 'v121-scorer-photos';
+const REV = '20260822-14';
 const LEGACY_BOOT_REV = '20260822-10';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
@@ -22,6 +22,7 @@ const TEAM_CLOUD_SYNC_SRC = `./arena-team-cloud-sync.js?v=${REV}`;
 const TOURNAMENT_TRIM_SRC = `./arena-tournament-trim.js?v=${REV}`;
 const MATCH_DETAILS_SRC = `./arena-match-details.js?v=${REV}`;
 const MATCH_MEDIA_SRC = `./arena-match-media.js?v=${REV}`;
+const SCORER_PHOTOS_SRC = `./arena-scorer-photos.js?v=${REV}`;
 const FLASH_DRAW_ENGINE_SRC = `./flash-cup-draw-engine.js?v=${REV}`;
 const FLASH_KNOCKOUT_ENGINE_SRC = `./flash-cup-knockout-engine.js?v=${REV}`;
 const FLASH_CUPS_SRC = `./copas-flash.js?v=${REV}`;
@@ -45,6 +46,7 @@ const SHELL = [
   TOURNAMENT_TRIM_SRC,
   MATCH_DETAILS_SRC,
   MATCH_MEDIA_SRC,
+  SCORER_PHOTOS_SRC,
   FLASH_DRAW_ENGINE_SRC,
   FLASH_KNOCKOUT_ENGINE_SRC,
   FLASH_CUPS_SRC,
@@ -226,7 +228,7 @@ self.addEventListener('fetch', event => {
 
   const isDocument = request.mode === 'navigate' || request.destination === 'document' || url.pathname.endsWith('.html');
   const isCriticalArenaScript = request.destination === 'script'
-    && /\/(firebase-auth|firestore-sync|classificacao-automatica|arena-v3-cleanup|arena-super-league-sync-gate|arena-redesign-v1|arena-design-polish-v2|arena-mobile-polish|arena-mobile-bracket-v4|arena-provisional-knockout|arena-team-editor|arena-team-cloud-sync|arena-tournament-trim|arena-match-details|arena-match-media|flash-cup-draw-engine|flash-cup-knockout-engine|copas-flash|super-league-rule|super-league-guard|super-league-runtime-fix|bda-logo|arena-home-active)\.js$/.test(url.pathname);
+    && /\/(firebase-auth|firestore-sync|classificacao-automatica|arena-v3-cleanup|arena-super-league-sync-gate|arena-redesign-v1|arena-design-polish-v2|arena-mobile-polish|arena-mobile-bracket-v4|arena-provisional-knockout|arena-team-editor|arena-team-cloud-sync|arena-tournament-trim|arena-match-details|arena-match-media|arena-scorer-photos|flash-cup-draw-engine|flash-cup-knockout-engine|copas-flash|super-league-rule|super-league-guard|super-league-runtime-fix|bda-logo|arena-home-active)\.js$/.test(url.pathname);
 
   if (isDocument || isCriticalArenaScript) return event.respondWith(networkFirst(request));
   if (request.destination === 'image') return event.respondWith(imageCacheFirst(request));
