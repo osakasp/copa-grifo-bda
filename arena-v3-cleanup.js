@@ -1,10 +1,10 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAV3Cleanup?.version >= 21) return;
+  if (window.ArenaBDAV3Cleanup?.version >= 22) return;
 
-  const BUILD = 'v120';
-  const REV = '20260822-13';
+  const BUILD = 'v121';
+  const REV = '20260822-14';
   const SUPER_LEAGUE_RULE_SRC = `./super-league-rule.js?v=${REV}`;
   const SUPER_LEAGUE_SYNC_SRC = `./arena-super-league-sync-gate.js?v=${REV}`;
   const REDESIGN_SRC = `./arena-redesign-v1.js?v=${REV}`;
@@ -16,6 +16,7 @@
   const TOURNAMENT_TRIM_SRC = `./arena-tournament-trim.js?v=${REV}`;
   const MATCH_DETAILS_SRC = `./arena-match-details.js?v=${REV}`;
   const MATCH_MEDIA_SRC = `./arena-match-media.js?v=${REV}`;
+  const SCORER_PHOTOS_SRC = `./arena-scorer-photos.js?v=${REV}`;
 
   const LEGACY_SELECTORS = [
     '[data-page="community"]',
@@ -127,6 +128,10 @@
     ensureScript({ globalName:'ArenaBDAMatchMedia', selector:'script[data-arena-match-media-module]', src:MATCH_MEDIA_SRC, datasetName:'arenaMatchMediaModule', label:'os prints das partidas', minVersion:1 });
   }
 
+  function ensureScorerPhotosModule() {
+    ensureScript({ globalName:'ArenaBDAScorerPhotos', selector:'script[data-arena-scorer-photos]', src:SCORER_PHOTOS_SRC, datasetName:'arenaScorerPhotos', label:'as fotos dos artilheiros', minVersion:1 });
+  }
+
   function ensureSuperLeagueCloud() {
     const active = document.querySelector('#giManager[data-tid="bda-super-league"]');
     if (!active || typeof window.ArenaBDAEnsureCloud !== 'function') return;
@@ -183,6 +188,7 @@
     ensureTournamentTrimModule();
     ensureMatchDetailsModule();
     ensureMatchMediaModule();
+    ensureScorerPhotosModule();
     ensureSuperLeagueCloud();
     announceBuild();
   }
@@ -203,7 +209,7 @@
   observer.observe(document.documentElement, { childList:true, subtree:true });
 
   window.ArenaBDAV3Cleanup = Object.freeze({
-    version:21,
+    version:22,
     build:BUILD,
     revision:REV,
     cleanup,
@@ -218,6 +224,7 @@
     tournamentTrimSource:TOURNAMENT_TRIM_SRC,
     matchDetailsSource:MATCH_DETAILS_SRC,
     matchMediaSource:MATCH_MEDIA_SRC,
+    scorerPhotosSource:SCORER_PHOTOS_SRC,
     legacySelectors:Object.freeze([...LEGACY_SELECTORS])
   });
 
