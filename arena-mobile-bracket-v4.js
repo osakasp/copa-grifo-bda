@@ -22,9 +22,9 @@
     return Array.isArray(list) ? list : [];
   }
   function teams(){
-    if(Array.isArray(window.teams)) return window.teams;
     const list = read(TEAM_KEY,[]);
-    return Array.isArray(list) ? list : [];
+    if(Array.isArray(list) && list.length) return list;
+    return Array.isArray(window.teams) ? window.teams : [];
   }
   function teamCore(name){
     return norm(name)
