@@ -1,10 +1,10 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAV3Cleanup?.version >= 23) return;
+  if (window.ArenaBDAV3Cleanup?.version >= 24) return;
 
-  const BUILD = 'v122';
-  const REV = '20260825-1';
+  const BUILD = 'v123';
+  const REV = '20260825-2';
   const SUPER_LEAGUE_RULE_SRC = `./super-league-rule.js?v=${REV}`;
   const SUPER_LEAGUE_SYNC_SRC = `./arena-super-league-sync-gate.js?v=${REV}`;
   const REDESIGN_SRC = `./arena-redesign-v1.js?v=${REV}`;
@@ -101,7 +101,7 @@
   }
 
   function ensureMobileBracketModule() {
-    ensureScript({ globalName:'ArenaBDAMobileBracketV4', selector:'script[data-arena-mobile-bracket-v4]', src:MOBILE_BRACKET_SRC, datasetName:'arenaMobileBracketV4', label:'o chaveamento atual da Super League', minVersion:8 });
+    ensureScript({ globalName:'ArenaBDAMobileBracketV4', selector:'script[data-arena-mobile-bracket-v4]', src:MOBILE_BRACKET_SRC, datasetName:'arenaMobileBracketV4', label:'o chaveamento atual da Super League', minVersion:9 });
   }
 
   function ensureProvisionalKnockoutModule() {
@@ -171,6 +171,7 @@
   function cleanup() {
     document.documentElement.dataset.arenaUi = 'v3';
     document.documentElement.dataset.arenaBuild = BUILD;
+    document.documentElement.dataset.arenaDocumentMode = 'single';
     removeLegacyStorage();
     removeLegacyCommunity();
     removeLegacyScripts();
@@ -209,9 +210,10 @@
   observer.observe(document.documentElement, { childList:true, subtree:true });
 
   window.ArenaBDAV3Cleanup = Object.freeze({
-    version:23,
+    version:24,
     build:BUILD,
     revision:REV,
+    documentMode:'single',
     cleanup,
     superLeagueRuleSource:SUPER_LEAGUE_RULE_SRC,
     superLeagueSyncSource:SUPER_LEAGUE_SYNC_SRC,
