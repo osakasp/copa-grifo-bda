@@ -1,5 +1,6 @@
-const VERSION = 'v125-admin-native-submit-guard';
+const VERSION = 'v126-admin-login-no-form';
 const REV = '20260825-2';
+const AUTH_REV = '20260825-5';
 const AUTH_CONSUMERS_REV = '20260825-4';
 const LEGACY_BOOT_REV = '20260822-10';
 const CACHE_PREFIX = 'arena-bda-';
@@ -27,6 +28,7 @@ const SCORER_PHOTOS_SRC = `./arena-scorer-photos.js?v=${REV}`;
 const FLASH_DRAW_ENGINE_SRC = `./flash-cup-draw-engine.js?v=${REV}`;
 const FLASH_KNOCKOUT_ENGINE_SRC = `./flash-cup-knockout-engine.js?v=${REV}`;
 const FLASH_CUPS_SRC = `./copas-flash.js?v=${REV}`;
+const AUTH_SRC = `./firebase-auth.js?v=${AUTH_REV}`;
 const AUTH_CONSUMERS_SRC = `./arena-auth-consumers.js?v=${AUTH_CONSUMERS_REV}`;
 
 const SHELL = [
@@ -42,6 +44,7 @@ const SHELL = [
   `./arena-home-active.js?v=${REV}`,
   `./arena-lazy-features.js?v=${REV}`,
   `./arena-interface.bundle.js?v=${REV}`,
+  AUTH_SRC,
   AUTH_CONSUMERS_SRC,
   CLEANUP_SRC,
   SUPER_LEAGUE_RULE_SRC,
@@ -142,6 +145,7 @@ function forceCurrentCleanup(html) {
 function normalizeIndexHtml(html) {
   return String(html || '')
     .replace(new RegExp(LEGACY_BOOT_REV, 'g'), REV)
+    .replace(/\.\/firebase-auth\.js\?v=[^'"`\s]+/g, AUTH_SRC)
     .replace(/\.\/arena-auth-consumers\.js\?v=[^'"`\s]+/g, AUTH_CONSUMERS_SRC)
     .replace(/\s*\.then\(\s*registration\s*=>\s*registration\.update\(\)\s*\)/g, '');
 }

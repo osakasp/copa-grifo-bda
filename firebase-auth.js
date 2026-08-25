@@ -89,7 +89,6 @@
       error.code = 'auth/not-admin';
       throw error;
     }
-    publish(credential.user);
     return credential;
   }
 
@@ -174,7 +173,7 @@
         </div>
         <p id="adminAuthDescription">Entre para gerenciar campeonatos, times, grupos e placares.</p>
         <p id="adminAuthStatus" class="admin-auth-status" hidden aria-live="polite">Conectando...</p>
-        <form id="adminAuthForm">
+        <div id="adminAuthForm" role="form" aria-labelledby="adminModalTitle">
           <div class="form-grid">
             <label>E-mail
               <input id="adminEmail" type="email" autocomplete="username" inputmode="email" placeholder="E-mail administrativo" required>
@@ -185,9 +184,9 @@
           </div>
           <div class="form-actions">
             <button type="button" class="secondary" id="adminCancelBtn">Cancelar</button>
-            <button type="submit" class="primary" id="adminLoginBtn">Entrar</button>
+            <button type="button" class="primary" id="adminLoginBtn">Entrar</button>
           </div>
-        </form>
+        </div>
         <button type="button" class="ghost" id="adminResetBtn">Esqueci minha senha</button>
         <small class="admin-auth-note">Acesso restrito à administração da Arena BDA.</small>
       </div>`;
@@ -254,7 +253,6 @@
       if (passwordInput) passwordInput.value = '';
       closeAuthModal();
       showToast('Acesso administrativo confirmado');
-      if (typeof navigate === 'function') navigate('tournament');
     } catch (error) {
       setPending(false);
       showToast(authErrorMessage(error));
@@ -284,7 +282,12 @@
     }
   });
 
-  document.getElementById('adminAuthForm')?.addEventListener('submit', submitAuth);
+  document.getElementById('adminLoginBtn')?.addEventListener('click', submitAuth);
+  document.getElementById('adminAuthForm')?.addEventListener('keydown', event => {
+    if (event.key !== 'Enter' || event.isComposing) return;
+    event.preventDefault();
+    submitAuth(event);
+  });
   document.getElementById('adminCancelBtn')?.addEventListener('click', closeAuthModal);
   document.getElementById('adminResetBtn')?.addEventListener('click', async () => {
     const email = normalizeEmail(document.getElementById('adminEmail')?.value);
@@ -307,8 +310,9 @@
   });
 
   window.ArenaBDAAuthUI = Object.freeze({
+    version: 3,
     open: openAuthModal,
     close: closeAuthModal,
-    mode: () => 'login'
+    mode: () => 'login-no-native-form'
   });
 })();
