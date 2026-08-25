@@ -79,12 +79,12 @@
         `./arena-v3-cleanup.js?v=${REV}`
       ];
       const cloudScripts = [
-        './firebase-auth.js?v=20260817-2',
+        './firebase-auth.js?v=20260825-5',
         './notificacoes-bda.js?v=20260816-3',
         `./firestore-sync.js?v=${REV}`,
         './cloud-recovery.js?v=20260801-4',
         './admin-panel.js?v=20260814-1',
-        './arena-auth-consumers.js?v=20260726-1',
+        './arena-auth-consumers.js?v=20260825-4',
         './site-health.js?v=20260814-2'
       ];
 
@@ -95,7 +95,6 @@
       let cloudReady = false;
       let lastInteractionAt = performance.now();
       let cloudIdleTimer = 0;
-      let adminFlowUntil = 0;
 
       if ('serviceWorker' in navigator && location.protocol !== 'file:') {
         window.addEventListener('load', () => {
@@ -296,15 +295,6 @@
           document.addEventListener(type, noteInteraction, { passive:true, capture:true });
         });
 
-        window.addEventListener('arena:auth-changed', () => {
-          if (performance.now() > adminFlowUntil) return;
-          showTransition('Sincronizando a Arena BDA', 'Atualizando seu acesso e os dados do site...');
-          clearTimeout(transitionTimer);
-          transitionTimer = window.setTimeout(() => {
-            if (cloudReady) settleAndReveal(loadGeneration, 80).catch(() => {});
-          }, 360);
-        });
-
         document.addEventListener('click', event => {
           const element = event.target instanceof Element ? event.target : null;
           const cloudFeature = element?.closest('[data-go="feedback"],[data-mobile-go="feedback"],[data-sheet-go="feedback"]');
@@ -316,7 +306,6 @@
 
           const adminButton = element?.closest('#adminBtn');
           if (!adminButton) return;
-          adminFlowUntil = performance.now() + (10 * 60 * 1000);
           const authReady = Boolean(window.ArenaBDAAuth?.auth);
           if (cloudReady && authReady) return;
 
