@@ -71,8 +71,16 @@
     if (state?.isAdmin || arenaAlreadyVisible) suppressLegacyAuthOverlay();
   }
 
+  function blockNativeAdminSubmit(event) {
+    const form = event.target instanceof HTMLFormElement ? event.target : null;
+    if (!form || form.id !== 'adminAuthForm') return;
+    event.preventDefault();
+    form.dataset.arenaNativeSubmitBlocked = 'true';
+  }
+
   ensureStabilityStyle();
   window.addEventListener('arena:auth-changed', stabilizeAuthEvent, { capture: true });
+  document.addEventListener('submit', blockNativeAdminSubmit, { capture: true });
 
   function apply(state) {
     const signature = stateSignature(state);
@@ -102,10 +110,11 @@
 
   auth.subscribe(apply);
   window.ArenaBDAAdminPermissions = {
-    version: 2,
+    version: 3,
     isAdmin: () => auth.isAdmin(),
     email: () => auth.currentEmail(),
     refresh: () => apply(auth.state()),
-    suppressLegacyAuthOverlay
+    suppressLegacyAuthOverlay,
+    blocksNativeSubmit: true
   };
 })();
