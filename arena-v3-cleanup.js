@@ -1,9 +1,9 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAV3Cleanup?.version >= 24) return;
+  if (window.ArenaBDAV3Cleanup?.version >= 25) return;
 
-  const BUILD = 'v123';
+  const BUILD = 'v124';
   const REV = '20260825-2';
   const SUPER_LEAGUE_RULE_SRC = `./super-league-rule.js?v=${REV}`;
   const SUPER_LEAGUE_SYNC_SRC = `./arena-super-league-sync-gate.js?v=${REV}`;
@@ -203,17 +203,18 @@
     });
   }
 
-  ['arena:bundle-loaded','arena:cloud-ready','arena:auth-changed','arena:tournaments-updated','arena:matches-updated','arena:super-league-cloud-synced']
+  ['arena:bundle-loaded','arena:cloud-ready','arena:tournaments-updated','arena:matches-updated','arena:super-league-cloud-synced']
     .forEach(type => window.addEventListener(type, scheduleCleanup));
 
   const observer = new MutationObserver(scheduleCleanup);
   observer.observe(document.documentElement, { childList:true, subtree:true });
 
   window.ArenaBDAV3Cleanup = Object.freeze({
-    version:24,
+    version:25,
     build:BUILD,
     revision:REV,
     documentMode:'single',
+    authStable:true,
     cleanup,
     superLeagueRuleSource:SUPER_LEAGUE_RULE_SRC,
     superLeagueSyncSource:SUPER_LEAGUE_SYNC_SRC,
