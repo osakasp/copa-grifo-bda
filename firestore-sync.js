@@ -1,6 +1,7 @@
 (() => {
   'use strict';
 
+  const VERSION = 'v128-no-sync-reload';
   const COLLECTION = 'arenaData';
   const META_ID = 'meta';
   const MAX_ITEM_BYTES = 800 * 1024;
@@ -270,8 +271,57 @@
       .map(snapshot => decodeRemoteValue(name, snapshot.data().value));
   }
 
+  function syncGlobalArray(name, values) {
+    const next = clone(values);
+    try {
+      if (name === 'teams' && Array.isArray(window.teams)) {
+        window.teams.splice(0, window.teams.length, ...next);
+      }
+      if (name === 'champions' && Array.isArray(window.champions)) {
+        window.champions.splice(0, window.champions.length, ...next);
+      }
+      if (name === 'championRanking' && Array.isArray(window.ArenaBDAChampionRanking?.champions)) {
+        window.ArenaBDAChampionRanking.champions.splice(0, window.ArenaBDAChampionRanking.champions.length, ...next);
+      }
+    } catch (error) {
+      console.warn('[Arena BDA] Não foi possível atualizar um dataset em memória', name, error);
+    }
+  }
+
+  function dispatchDatasetRefresh(changedNames, source = 'cloud') {
+    if (!Array.isArray(changedNames) || !changedNames.length) return;
+
+    changedNames.forEach(name => {
+      const config = DATASETS[name];
+      const newValue = localStorage.getItem(config.key);
+      try {
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: config.key,
+          newValue,
+          storageArea: localStorage,
+          url: location.href
+        }));
+      } catch {}
+      window.dispatchEvent(new CustomEvent(`arena:${name}-updated`, {
+        detail: { source, key: config.key, version: VERSION }
+      }));
+    });
+
+    try {
+      if (changedNames.includes('teams') && typeof renderTeams === 'function') renderTeams();
+      if (changedNames.includes('champions') && typeof renderChampions === 'function') renderChampions();
+      if ((changedNames.includes('teams') || changedNames.includes('champions')) && typeof updateAdminUI === 'function') updateAdminUI();
+    } catch (error) {
+      console.warn('[Arena BDA] A interface base não pôde ser redesenhada após a sincronização', error);
+    }
+
+    window.dispatchEvent(new CustomEvent('arena:cloud-data-applied', {
+      detail: { datasets: [...changedNames], source, version: VERSION }
+    }));
+  }
+
   function applyRemoteDatasets(remote) {
-    let changed = false;
+    const changedNames = [];
     applyingRemote = true;
     try {
       Object.entries(remote).forEach(([name, values]) => {
@@ -282,13 +332,14 @@
         const localValues = readLocal(name);
         if (stableStringify(localValues) === stableStringify(nextValues)) return;
         nativeSetItem.call(localStorage, config.key, JSON.stringify(nextValues));
-        changed = true;
+        syncGlobalArray(name, nextValues);
+        changedNames.push(name);
       });
     } finally {
       applyingRemote = false;
     }
     scheduleTournamentCloudRepair();
-    return changed;
+    return changedNames;
   }
 
   function errorMessage(error) {
@@ -439,12 +490,12 @@
       currentMeta = meta;
       cloudInitialized = true;
       updateControls();
-      const changed = applyRemoteDatasets(remote);
+      const changedNames = applyRemoteDatasets(remote);
       setStatus('Sincronizado', 'ok');
 
-      if (changed) {
-        sessionStorage.setItem('arena-cloud-message', 'Dados atualizados pela nuvem');
-        location.reload();
+      if (changedNames.length) {
+        dispatchDatasetRefresh(changedNames, 'manual-download');
+        notify('Dados atualizados pela nuvem');
       } else if (forceNotice) {
         notify('Este aparelho já está atualizado');
       }
@@ -486,12 +537,6 @@
 
   buildInterface();
   installStorageHooks();
-
-  const reloadMessage = sessionStorage.getItem('arena-cloud-message');
-  if (reloadMessage) {
-    sessionStorage.removeItem('arena-cloud-message');
-    setTimeout(() => notify(reloadMessage), 300);
-  }
 
   authCore.subscribe(() => {
     updateControls();
@@ -536,11 +581,10 @@
         remote[name] = await readRemoteDataset(name, Number(meta.counts?.[name] || 0));
         seenRevisions[name] = meta.revisions?.[name] || '';
       }
-      const changed = applyRemoteDatasets(remote);
+      const appliedNames = applyRemoteDatasets(remote);
       setStatus('Sincronizado', 'ok');
-      if (changed) {
-        sessionStorage.setItem('arena-cloud-message', 'Alterações sincronizadas entre os aparelhos');
-        location.reload();
+      if (appliedNames.length) {
+        dispatchDatasetRefresh(appliedNames, 'realtime');
       } else {
         scheduleTournamentCloudRepair();
       }
@@ -556,6 +600,7 @@
   });
 
   window.ArenaBDACloudSync = Object.freeze({
+    version: VERSION,
     uploadAll,
     downloadAll,
     uploadDataset,
