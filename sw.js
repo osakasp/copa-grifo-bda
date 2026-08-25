@@ -1,5 +1,5 @@
-const VERSION = 'v121-scorer-photos';
-const REV = '20260822-14';
+const VERSION = 'v122-auto-super-league-final';
+const REV = '20260825-1';
 const LEGACY_BOOT_REV = '20260822-10';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
