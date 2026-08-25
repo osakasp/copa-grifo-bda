@@ -1,9 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION = '2026.08.14.2';
+  const VERSION = '2026.08.25.3';
   const q = selector => document.querySelector(selector);
-  let reloading = false;
   let errorCount = 0;
   let errorWindow = 0;
   const signatures = new Set();
@@ -43,12 +42,13 @@
   function updateMetadata() {
     document.title = 'Arena BDA | Campeonatos do Clã';
     const description = q('meta[name="description"]');
-    if (description) description.content = 'Campeonatos, clubes, resultados, notícias e comunidade do Clã BDA.';
+    if (description) description.content = 'Campeonatos, clubes, resultados e notícias do Clã BDA.';
     const brand = q('.brand-copy strong');
     const subtitle = q('.brand-copy span');
     if (brand) brand.textContent = 'Arena BDA';
     if (subtitle && /protótipo|login protegido/i.test(subtitle.textContent)) subtitle.textContent = 'Campeonatos oficiais do Clã';
     document.documentElement.dataset.arenaVersion = VERSION;
+    document.documentElement.dataset.arenaHealthOwnsServiceWorker = 'false';
   }
 
   function secureLegacyFallback() {
@@ -62,8 +62,8 @@
     }
     const modal = q('#adminModal');
     if (modal) {
-      modal.innerHTML = '<div class="modal"><h2>Acesso seguro indisponível</h2><p>O Firebase não carregou. Atualize a página e verifique sua conexão.</p><div class="form-actions"><button type="button" class="primary" data-safe-admin-reload>Atualizar página</button></div></div>';
-      q('[data-safe-admin-reload]')?.addEventListener('click', () => location.reload());
+      modal.innerHTML = '<div class="modal"><h2>Acesso seguro indisponível</h2><p>O Firebase não carregou. Verifique sua conexão e tente novamente.</p><div class="form-actions"><button type="button" class="primary" data-safe-admin-close>Fechar</button></div></div>';
+      q('[data-safe-admin-close]')?.addEventListener('click', () => modal.classList.remove('show'));
     }
   }
 
@@ -88,45 +88,6 @@
     window.addEventListener('offline', sync);
   }
 
-  async function registerServiceWorker() {
-    if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-    try {
-      const registration = await navigator.serviceWorker.register('./sw.js', { scope: './', updateViaCache: 'none' });
-      registration.update().catch(() => {});
-
-      const offerUpdate = worker => {
-        if (!worker || !navigator.serviceWorker.controller) return;
-        showBanner({
-          icon: 'UP',
-          title: 'Atualização disponível',
-          description: 'Recarregue para usar a versão mais recente da Arena.',
-          action: 'Atualizar',
-          onAction: banner => {
-            const button = banner.querySelector('[data-arena-health-action]');
-            if (button) { button.disabled = true; button.textContent = 'Atualizando...'; }
-            worker.postMessage({ type: 'SKIP_WAITING' });
-          }
-        });
-      };
-
-      if (registration.waiting) offerUpdate(registration.waiting);
-      registration.addEventListener('updatefound', () => {
-        const worker = registration.installing;
-        worker?.addEventListener('statechange', () => {
-          if (worker.state === 'installed') offerUpdate(registration.waiting || worker);
-        });
-      });
-
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (reloading) return;
-        reloading = true;
-        location.reload();
-      });
-    } catch (error) {
-      console.warn('Service worker não pôde ser registrado', error);
-    }
-  }
-
   function setupErrorRecovery() {
     const record = error => {
       const text = String(error?.message || error || 'erro desconhecido');
@@ -146,9 +107,7 @@
         showBanner({
           icon: 'ER',
           title: 'Alguma função não respondeu',
-          description: 'Você pode continuar usando a Arena. Recarregue apenas se algum botão permanecer sem resposta.',
-          action: 'Recarregar',
-          onAction: () => location.reload()
+          description: 'Você pode continuar usando a Arena. Atualize manualmente apenas se algum botão permanecer sem resposta.'
         });
       }
     };
@@ -160,17 +119,16 @@
   secureLegacyFallback();
   setupConnectivity();
   setupErrorRecovery();
-  registerServiceWorker();
 
   window.ArenaBDAHealth = Object.freeze({
     version: VERSION,
+    ownsServiceWorker: false,
     refresh: () => location.reload(),
     clearAppCache: async () => {
       if ('caches' in window) {
         const keys = await caches.keys();
         await Promise.all(keys.filter(key => /^arena-bda-|^copa-grifo-/.test(key)).map(key => caches.delete(key)));
       }
-      location.reload();
     }
   });
 })();
