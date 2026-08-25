@@ -1,5 +1,5 @@
-const VERSION = 'v122-auto-super-league-final';
-const REV = '20260825-1';
+const VERSION = 'v123-single-document-history';
+const REV = '20260825-2';
 const LEGACY_BOOT_REV = '20260822-10';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
@@ -33,6 +33,13 @@ const SHELL = [
   `./preview-v2.html?v=${REV}`,
   './favicon.svg',
   './site.webmanifest',
+  './arena-runtime.bundle.js?v=20260814-4',
+  `./confrontos-validos.js?v=${REV}`,
+  `./super-league-guard.js?v=${REV}`,
+  `./arena-bda.js?v=${REV}`,
+  `./arena-home-active.js?v=${REV}`,
+  `./arena-lazy-features.js?v=${REV}`,
+  `./arena-interface.bundle.js?v=${REV}`,
   CLEANUP_SRC,
   SUPER_LEAGUE_RULE_SRC,
   SUPER_LEAGUE_SYNC_SRC,
@@ -52,8 +59,7 @@ const SHELL = [
   FLASH_CUPS_SRC,
   './arena-pro-motion.js?v=20260818-1',
   `./super-league-runtime-fix.js?v=${REV}`,
-  './bda-logo.js?v=20260819-1',
-  `./arena-home-active.js?v=${REV}`
+  './bda-logo.js?v=20260819-1'
 ];
 
 async function precacheFresh() {
@@ -83,7 +89,7 @@ self.addEventListener('activate', event => {
     const clients = await self.clients.matchAll({ type:'window', includeUncontrolled:true });
     await Promise.all(clients.map(async client => {
       try {
-        client.postMessage({ type:'ARENA_BUILD_ACTIVATED', version:VERSION, revision:REV, reloadRequired:false });
+        client.postMessage({ type:'ARENA_BUILD_ACTIVATED', version:VERSION, revision:REV, reloadRequired:false, documentMode:'single' });
       } catch {}
     }));
   })());
@@ -92,7 +98,7 @@ self.addEventListener('activate', event => {
 self.addEventListener('message', event => {
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
   if (event.data?.type === 'GET_ARENA_BUILD') {
-    event.source?.postMessage?.({ type:'ARENA_BUILD', version:VERSION, revision:REV, reloadRequired:false });
+    event.source?.postMessage?.({ type:'ARENA_BUILD', version:VERSION, revision:REV, reloadRequired:false, documentMode:'single' });
   }
   if (event.data?.type === 'PURGE_OLD_ARENA_CACHES') {
     event.waitUntil(caches.keys().then(keys => Promise.all(keys
@@ -147,6 +153,7 @@ function rewrittenHtmlResponse(response, transform) {
     headers.set('cache-control', 'no-store, no-cache, must-revalidate');
     headers.set('x-arena-build', VERSION);
     headers.set('x-arena-revision', REV);
+    headers.set('x-arena-document-mode', 'single');
     return new Response(next, {
       status:response.status,
       statusText:response.statusText,
@@ -228,7 +235,7 @@ self.addEventListener('fetch', event => {
 
   const isDocument = request.mode === 'navigate' || request.destination === 'document' || url.pathname.endsWith('.html');
   const isCriticalArenaScript = request.destination === 'script'
-    && /\/(firebase-auth|firestore-sync|classificacao-automatica|arena-v3-cleanup|arena-super-league-sync-gate|arena-redesign-v1|arena-design-polish-v2|arena-mobile-polish|arena-mobile-bracket-v4|arena-provisional-knockout|arena-team-editor|arena-team-cloud-sync|arena-tournament-trim|arena-match-details|arena-match-media|arena-scorer-photos|flash-cup-draw-engine|flash-cup-knockout-engine|copas-flash|super-league-rule|super-league-guard|super-league-runtime-fix|bda-logo|arena-home-active)\.js$/.test(url.pathname);
+    && /\/(firebase-auth|firestore-sync|classificacao-automatica|arena-v3-cleanup|arena-super-league-sync-gate|arena-redesign-v1|arena-design-polish-v2|arena-mobile-polish|arena-mobile-bracket-v4|arena-provisional-knockout|arena-team-editor|arena-team-cloud-sync|arena-tournament-trim|arena-match-details|arena-match-media|arena-scorer-photos|flash-cup-draw-engine|flash-cup-knockout-engine|copas-flash|super-league-rule|super-league-guard|super-league-runtime-fix|bda-logo|arena-home-active|arena-bda|arena-lazy-features|arena-interface\.bundle|arena-runtime\.bundle|confrontos-validos)\.js$/.test(url.pathname);
 
   if (isDocument || isCriticalArenaScript) return event.respondWith(networkFirst(request));
   if (request.destination === 'image') return event.respondWith(imageCacheFirst(request));
