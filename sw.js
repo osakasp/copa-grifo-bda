@@ -1,7 +1,8 @@
-const VERSION = 'v126-admin-login-no-form';
+const VERSION = 'v127-site-health-no-auto-reload';
 const REV = '20260825-2';
 const AUTH_REV = '20260825-5';
 const AUTH_CONSUMERS_REV = '20260825-4';
+const SITE_HEALTH_REV = '20260825-6';
 const LEGACY_BOOT_REV = '20260822-10';
 const CACHE_PREFIX = 'arena-bda-';
 const CACHE = Object.freeze({
@@ -30,6 +31,7 @@ const FLASH_KNOCKOUT_ENGINE_SRC = `./flash-cup-knockout-engine.js?v=${REV}`;
 const FLASH_CUPS_SRC = `./copas-flash.js?v=${REV}`;
 const AUTH_SRC = `./firebase-auth.js?v=${AUTH_REV}`;
 const AUTH_CONSUMERS_SRC = `./arena-auth-consumers.js?v=${AUTH_CONSUMERS_REV}`;
+const SITE_HEALTH_SRC = `./site-health.js?v=${SITE_HEALTH_REV}`;
 
 const SHELL = [
   './',
@@ -46,6 +48,7 @@ const SHELL = [
   `./arena-interface.bundle.js?v=${REV}`,
   AUTH_SRC,
   AUTH_CONSUMERS_SRC,
+  SITE_HEALTH_SRC,
   CLEANUP_SRC,
   SUPER_LEAGUE_RULE_SRC,
   SUPER_LEAGUE_SYNC_SRC,
@@ -147,6 +150,7 @@ function normalizeIndexHtml(html) {
     .replace(new RegExp(LEGACY_BOOT_REV, 'g'), REV)
     .replace(/\.\/firebase-auth\.js\?v=[^'"`\s]+/g, AUTH_SRC)
     .replace(/\.\/arena-auth-consumers\.js\?v=[^'"`\s]+/g, AUTH_CONSUMERS_SRC)
+    .replace(/\.\/site-health\.js\?v=[^'"`\s]+/g, SITE_HEALTH_SRC)
     .replace(/\s*\.then\(\s*registration\s*=>\s*registration\.update\(\)\s*\)/g, '');
 }
 
@@ -243,7 +247,7 @@ self.addEventListener('fetch', event => {
 
   const isDocument = request.mode === 'navigate' || request.destination === 'document' || url.pathname.endsWith('.html');
   const isCriticalArenaScript = request.destination === 'script'
-    && /\/(firebase-auth|firestore-sync|arena-auth-consumers|classificacao-automatica|arena-v3-cleanup|arena-super-league-sync-gate|arena-redesign-v1|arena-design-polish-v2|arena-mobile-polish|arena-mobile-bracket-v4|arena-provisional-knockout|arena-team-editor|arena-team-cloud-sync|arena-tournament-trim|arena-match-details|arena-match-media|arena-scorer-photos|flash-cup-draw-engine|flash-cup-knockout-engine|copas-flash|super-league-rule|super-league-guard|super-league-runtime-fix|bda-logo|arena-home-active|arena-bda|arena-lazy-features|arena-interface\.bundle|arena-runtime\.bundle|confrontos-validos)\.js$/.test(url.pathname);
+    && /\/(firebase-auth|firestore-sync|arena-auth-consumers|site-health|classificacao-automatica|arena-v3-cleanup|arena-super-league-sync-gate|arena-redesign-v1|arena-design-polish-v2|arena-mobile-polish|arena-mobile-bracket-v4|arena-provisional-knockout|arena-team-editor|arena-team-cloud-sync|arena-tournament-trim|arena-match-details|arena-match-media|arena-scorer-photos|flash-cup-draw-engine|flash-cup-knockout-engine|copas-flash|super-league-rule|super-league-guard|super-league-runtime-fix|bda-logo|arena-home-active|arena-bda|arena-lazy-features|arena-interface\.bundle|arena-runtime\.bundle|confrontos-validos)\.js$/.test(url.pathname);
 
   if (isDocument || isCriticalArenaScript) return event.respondWith(networkFirst(request));
   if (request.destination === 'image') return event.respondWith(imageCacheFirst(request));
