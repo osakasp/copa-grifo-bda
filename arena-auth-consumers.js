@@ -53,7 +53,8 @@
   }
 
   function stabilizeAuthEvent(event) {
-    const signature = stateSignature(event?.detail || auth.state());
+    const state = event?.detail || auth.state();
+    const signature = stateSignature(state);
     const now = performance.now();
     const duplicate = signature === lastEventSignature && (now - lastEventAt) <= DUPLICATE_WINDOW_MS;
 
@@ -65,7 +66,9 @@
       return;
     }
 
-    suppressLegacyAuthOverlay();
+    const boot = document.getElementById('arenaBoot');
+    const arenaAlreadyVisible = Boolean(boot?.classList.contains('hidden'));
+    if (state?.isAdmin || arenaAlreadyVisible) suppressLegacyAuthOverlay();
   }
 
   ensureStabilityStyle();
