@@ -1,10 +1,11 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAMobileBracketV4?.version >= 8) return;
+  if (window.ArenaBDAMobileBracketV4?.version >= 9) return;
 
   const TID = 'bda-super-league';
   const MATCH_KEY = 'bda-v3-confrontos';
+  const TEAM_KEY = 'bda-v2-teams';
   const STYLE_ID = 'arenaMobileBracketV4Styles';
   const phases = ['Repescagem','Play-in','Quartas de final','Semifinal','Final'];
   let activePhase = 'Repescagem';
@@ -19,6 +20,29 @@
     const store = read(MATCH_KEY,{});
     const list = store && typeof store === 'object' ? store[TID] : [];
     return Array.isArray(list) ? list : [];
+  }
+  function teams(){
+    if(Array.isArray(window.teams)) return window.teams;
+    const list = read(TEAM_KEY,[]);
+    return Array.isArray(list) ? list : [];
+  }
+  function teamCore(name){
+    return norm(name)
+      .replace(/\b(?:bda|fc)\b/g,' ')
+      .replace(/[^a-z0-9]+/g,' ')
+      .replace(/\s+/g,' ')
+      .trim();
+  }
+  function teamMeta(name){
+    const value = String(name || '').trim();
+    if(!value || /^aguardando vencedor$/i.test(value)) return null;
+    const list = teams();
+    const exact = list.find(team => norm(team?.name) === norm(value));
+    if(exact) return exact;
+    const core = teamCore(value);
+    if(!core) return null;
+    const matches = list.filter(team => teamCore(team?.name) === core);
+    return matches.length === 1 ? matches[0] : null;
   }
   function phaseFor(game){
     const phase = norm(game?.phase);
@@ -84,11 +108,19 @@
   function scoreText(game,side){ const value=score(game,side); return value == null ? '–' : String(value); }
   function badgeLabel(name){
     if(/aguardando vencedor/i.test(name)) return 'AG';
+    const team = teamMeta(name);
+    if(team?.code) return String(team.code).trim().slice(0,4).toUpperCase();
     return String(name || 'BDA').split(/\s+/).filter(Boolean).slice(0,2).map(part=>part[0]).join('').toUpperCase();
+  }
+  function badgeContent(name){
+    const team = teamMeta(name);
+    const badge = String(team?.badge || '').trim();
+    if(badge) return `<img src="${esc(badge)}" alt="Escudo de ${esc(name)}">`;
+    return `<span>${esc(badgeLabel(name))}</span>`;
   }
   function matchCard(game){
     const home = resolve(game.ta), away = resolve(game.tb), decided = winner(game);
-    return `<article class="arena-v4-bracket-card" data-game-id="${esc(game.id)}"><span class="arena-v4-match-note">${esc(game.note || 'Jogo único')}</span><div class="${decided&&norm(decided)===norm(home)?'winner':''}"><i>${esc(badgeLabel(home))}</i><b>${esc(home)}</b><strong>${esc(scoreText(game,'a'))}</strong></div><div class="${decided&&norm(decided)===norm(away)?'winner':''}"><i>${esc(badgeLabel(away))}</i><b>${esc(away)}</b><strong>${esc(scoreText(game,'b'))}</strong></div><small>${done(game)?'Resultado definido':'Jogo único'}</small></article>`;
+    return `<article class="arena-v4-bracket-card" data-game-id="${esc(game.id)}"><span class="arena-v4-match-note">${esc(game.note || 'Jogo único')}</span><div class="${decided&&norm(decided)===norm(home)?'winner':''}"><i class="arena-v4-team-badge">${badgeContent(home)}</i><b>${esc(home)}</b><strong>${esc(scoreText(game,'a'))}</strong></div><div class="${decided&&norm(decided)===norm(away)?'winner':''}"><i class="arena-v4-team-badge">${badgeContent(away)}</i><b>${esc(away)}</b><strong>${esc(scoreText(game,'b'))}</strong></div><small>${done(game)?'Resultado definido':'Jogo único'}</small></article>`;
   }
   function structureExists(){ return Boolean(window.ArenaBDASuperLeagueRule?.finalStructureExists?.()); }
   function groupsComplete(){ return Boolean(window.ArenaBDASuperLeagueRule?.groupsComplete?.()); }
@@ -133,7 +165,8 @@
     }
     if(!phases.includes(activePhase)) activePhase=preferredPhase();
     const list = phaseGames(activePhase);
-    const sig = JSON.stringify([activePhase,groupsComplete(),structureExists(),provisional().map(e=>[e.name,e.group,e.position,e.destination]),list.map(game=>[game.id,game.ta,game.tb,game.a,game.b,game.pa,game.pb,game.wo,game.updated])]);
+    const teamSignature = teams().map(team => [team?.name,team?.badge,team?.code]);
+    const sig = JSON.stringify([activePhase,groupsComplete(),structureExists(),teamSignature,provisional().map(e=>[e.name,e.group,e.position,e.destination]),list.map(game=>[game.id,game.ta,game.tb,game.a,game.b,game.pa,game.pb,game.wo,game.updated])]);
     if(shell.dataset.signature === sig) return;
     shell.dataset.signature = sig;
     shell.innerHTML = `<header class="arena-v4-bracket-head"><div><span class="eyebrow">Mata-mata</span><h2>Fase final</h2></div><small>Repescagem → Play-in → Quartas → Semifinal → Final</small></header><nav class="arena-v4-bracket-tabs" aria-label="Fases do mata-mata">${phases.map(phase=>`<button type="button" data-arena-v4-phase="${esc(phase)}" class="${phase===activePhase?'active':''}">${esc(phase==='Quartas de final'?'Quartas':phase)}</button>`).join('')}</nav><div class="arena-v4-bracket-stage">${phasePanel(activePhase)}</div>`;
@@ -165,7 +198,7 @@
     style.id=STYLE_ID;
     style.textContent=`
       #giManager[data-tid="${TID}"].arena-sl-v4-bracket-mode :is(.gi-bracket-progress,.gi-bracket-scroll,.arena-v3-bracket-shell){display:none!important}
-      .arena-v4-bracket-shell{margin-top:10px}.arena-v4-bracket-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:10px}.arena-v4-bracket-head h2{margin:3px 0 0;font-size:26px;text-transform:none}.arena-v4-bracket-head small{color:var(--muted);font-size:8px;text-align:right}.arena-v4-bracket-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;padding:5px;border:1px solid var(--line);border-radius:12px;background:#06100a}.arena-v4-bracket-tabs button{min-height:38px;padding:0 8px;border:0;border-radius:8px;color:#84958b;background:transparent;font-size:9px;font-weight:850}.arena-v4-bracket-tabs button.active{color:#14130c;background:#d8b248}.arena-v4-bracket-stage{margin-top:8px}.arena-v4-bracket-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.arena-v4-bracket-card{padding:10px;border:1px solid rgba(255,255,255,.075);border-radius:13px;background:#09150d}.arena-v4-match-note{display:block;margin-bottom:7px;color:#82958a;font-size:7px}.arena-v4-bracket-card>div{display:grid;grid-template-columns:28px minmax(0,1fr) 26px;align-items:center;gap:7px;min-height:42px;padding:5px;border-top:1px solid rgba(255,255,255,.055)}.arena-v4-bracket-card>div.winner{color:#69e69b;background:rgba(79,223,143,.045)}.arena-v4-bracket-card i{display:grid;place-items:center;width:28px;height:28px;border-radius:9px;color:#171207;background:#d8b248;font-size:7px;font-style:normal;font-weight:900}.arena-v4-bracket-card b{overflow:hidden;font-size:10px;text-overflow:ellipsis;white-space:nowrap}.arena-v4-bracket-card strong{text-align:center;font:900 19px 'Barlow Condensed',sans-serif}.arena-v4-bracket-card>small{display:block;margin-top:6px;color:#718279;font-size:7px;text-align:center}.arena-v4-bracket-empty{display:grid;place-items:center;min-height:180px;padding:22px;border:1px dashed rgba(216,178,72,.26);border-radius:14px;color:#91a197;background:#06100a;text-align:center}.arena-v4-bracket-empty>span{font-size:26px}.arena-v4-bracket-empty>b{margin-top:7px;color:#eef4ef;font-size:15px}.arena-v4-bracket-empty>p{max-width:500px;margin:6px 0 12px;font-size:9px;line-height:1.5}
+      .arena-v4-bracket-shell{margin-top:10px}.arena-v4-bracket-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:10px}.arena-v4-bracket-head h2{margin:3px 0 0;font-size:26px;text-transform:none}.arena-v4-bracket-head small{color:var(--muted);font-size:8px;text-align:right}.arena-v4-bracket-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;padding:5px;border:1px solid var(--line);border-radius:12px;background:#06100a}.arena-v4-bracket-tabs button{min-height:38px;padding:0 8px;border:0;border-radius:8px;color:#84958b;background:transparent;font-size:9px;font-weight:850}.arena-v4-bracket-tabs button.active{color:#14130c;background:#d8b248}.arena-v4-bracket-stage{margin-top:8px}.arena-v4-bracket-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.arena-v4-bracket-card{padding:10px;border:1px solid rgba(255,255,255,.075);border-radius:13px;background:#09150d}.arena-v4-match-note{display:block;margin-bottom:7px;color:#82958a;font-size:7px}.arena-v4-bracket-card>div{display:grid;grid-template-columns:34px minmax(0,1fr) 26px;align-items:center;gap:8px;min-height:46px;padding:5px;border-top:1px solid rgba(255,255,255,.055)}.arena-v4-bracket-card>div.winner{color:#69e69b;background:rgba(79,223,143,.045)}.arena-v4-bracket-card i.arena-v4-team-badge{display:grid;place-items:center;width:34px;height:34px;overflow:hidden;border:1px solid rgba(216,178,72,.22);border-radius:10px;color:#171207;background:#d8b248;font-size:7px;font-style:normal;font-weight:900}.arena-v4-team-badge img{display:block;width:100%;height:100%;padding:2px;object-fit:contain;background:#030805}.arena-v4-team-badge span{display:grid;place-items:center;width:100%;height:100%}.arena-v4-bracket-card b{overflow:hidden;font-size:10px;text-overflow:ellipsis;white-space:nowrap}.arena-v4-bracket-card strong{text-align:center;font:900 19px 'Barlow Condensed',sans-serif}.arena-v4-bracket-card>small{display:block;margin-top:6px;color:#718279;font-size:7px;text-align:center}.arena-v4-bracket-empty{display:grid;place-items:center;min-height:180px;padding:22px;border:1px dashed rgba(216,178,72,.26);border-radius:14px;color:#91a197;background:#06100a;text-align:center}.arena-v4-bracket-empty>span{font-size:26px}.arena-v4-bracket-empty>b{margin-top:7px;color:#eef4ef;font-size:15px}.arena-v4-bracket-empty>p{max-width:500px;margin:6px 0 12px;font-size:9px;line-height:1.5}
       @media(max-width:760px){.arena-v4-bracket-head{display:block}.arena-v4-bracket-head small{display:block;margin-top:5px;text-align:left}.arena-v4-bracket-tabs{position:sticky;top:66px;z-index:22;display:flex;overflow-x:auto;justify-content:flex-start;scrollbar-width:none}.arena-v4-bracket-tabs::-webkit-scrollbar{display:none}.arena-v4-bracket-tabs button{min-width:94px}.arena-v4-bracket-list{grid-template-columns:1fr}}
     `;
     document.head.appendChild(style);
@@ -186,11 +219,12 @@
     if(generate){ event.preventDefault(); window.ArenaBDASuperLeagueRule?.generate?.(); }
   });
 
-  ['arena:bundle-loaded','arena:matches-updated','arena:tournaments-updated','arena:auth-changed','arena:cloud-ready','arena:quick-score-saved','arena:super-league-cloud-synced']
+  ['arena:bundle-loaded','arena:matches-updated','arena:tournaments-updated','arena:auth-changed','arena:cloud-ready','arena:teams-updated','arena:quick-score-saved','arena:super-league-cloud-synced']
     .forEach(type=>window.addEventListener(type,schedule));
+  window.addEventListener('storage',event=>{ if(event.key===TEAM_KEY) schedule(); });
   const observer=new MutationObserver(schedule);
   observer.observe(document.documentElement,{childList:true,subtree:true});
 
-  window.ArenaBDAMobileBracketV4=Object.freeze({version:8,refresh,render,preferredPhase,phases:Object.freeze([...phases])});
+  window.ArenaBDAMobileBracketV4=Object.freeze({version:9,refresh,render,preferredPhase,phases:Object.freeze([...phases]),teamMeta});
   refresh();
 })();
