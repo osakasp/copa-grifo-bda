@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAHomeActive?.version >= 5) return;
+  if (window.ArenaBDAHomeActive?.version >= 6) return;
 
   const TOURNAMENT_KEY = 'bda-v3-tournaments';
   const HOME_SELECTOR = '[data-page="home"]';
@@ -62,11 +62,72 @@
       .arena-active-meta span{overflow:hidden;text-overflow:ellipsis}
       .arena-active-meta span+span::before{content:"•";margin-right:6px;color:#587062}
       .arena-active-open{min-height:34px;padding:0 10px;border-radius:9px;white-space:nowrap;font-size:8px}
+
+      /* Densidade global: mesmas funções, menos ruído e menos altura. */
+      .section-head{margin-top:16px!important;margin-bottom:8px!important;gap:8px!important}
+      .section-head h2{font-size:21px!important;line-height:1!important}
+      .section-head p{margin-top:2px!important;font-size:10px!important;line-height:1.35!important}
+      .quick-stats{gap:8px!important;margin:10px 0!important}
+      .quick-stats .stat{padding:11px 10px!important;border-radius:14px!important}
+      .quick-stats .stat b{font-size:23px!important}
+      .quick-stats .stat span{margin-top:3px!important;font-size:8px!important}
+      .champion-grid,.team-grid{gap:8px!important}
+      .champion-card{min-height:158px!important;padding:13px!important;border-radius:16px!important}
+      .champion-card h3{margin:8px 0 4px!important;font-size:23px!important}
+      .champion-card p{font-size:10px!important}
+      .champion-card .quote{display:-webkit-box!important;overflow:hidden!important;margin-top:9px!important;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-height:1.35!important}
+      .team-card{padding:11px!important;border-radius:16px!important}
+      .team-card-head{gap:8px!important}
+      .team-mini-badge{width:38px!important;height:38px!important;border-radius:11px!important}
+      .team-card h3{font-size:17px!important}
+      .team-meta{margin-top:9px!important;padding-top:8px!important;font-size:9px!important}
+      .admin-panel{margin-bottom:10px!important;padding:11px!important;border-radius:14px!important}
+      .admin-panel h3{margin-bottom:3px!important;font-size:18px!important}
+      .admin-panel p{font-size:10px!important;line-height:1.35!important}
+      .admin-tools{gap:6px!important;margin-top:9px!important}
+      .admin-tools button,.cloud-tools button{min-height:38px!important;padding:0 12px!important;border-radius:10px!important;font-size:10px!important}
+      .form-card{padding:12px!important;border-radius:16px!important}
+      .form-grid{gap:8px!important}
+      .form-grid label{gap:4px!important;font-size:9px!important}
+      input,select,textarea{padding:10px!important;border-radius:10px!important}
+      textarea{min-height:76px!important}
+      .form-actions{gap:7px!important;margin-top:9px!important}
+      .modal{padding:16px!important;border-radius:18px!important}
+      .modal h2{font-size:24px!important}
+      .modal p{font-size:10px!important;line-height:1.4!important}
+
+      [data-page="tournament"] .arena-page-hero{min-height:auto!important;padding:14px 16px!important;border-radius:18px!important}
+      [data-page="tournament"] .arena-page-hero h1{font-size:clamp(30px,7vw,46px)!important;line-height:.92!important}
+      [data-page="tournament"] .arena-page-hero p{font-size:10px!important;line-height:1.4!important}
+      [data-page="tournament"] .arena-grid{gap:8px!important}
+      [data-page="tournament"] .arena-card{min-height:178px!important;border-radius:17px!important}
+      [data-page="tournament"] .arena-cover{height:90px!important}
+      [data-page="tournament"] .arena-body{padding:10px!important}
+      [data-page="tournament"] .arena-body h3{font-size:20px!important}
+      [data-page="tournament"] .arena-meta{gap:5px!important;margin-top:8px!important}
+      [data-page="tournament"] .arena-meta span{padding:6px!important;border-radius:9px!important}
+      [data-page="tournament"] .arena-detail{margin-top:12px!important}
+      [data-page="tournament"] .arena-detail .arena-hero{min-height:188px!important;padding:15px!important;border-radius:18px!important}
+      [data-page="tournament"] .arena-hero-copy h2{font-size:clamp(30px,7vw,44px)!important}
+      [data-page="tournament"] .arena-hero-copy p{font-size:10px!important;line-height:1.4!important}
+      [data-page="tournament"] .arena-actions{gap:6px!important;margin-top:9px!important}
+      [data-page="tournament"] .arena-actions button{min-height:36px!important;padding:0 11px!important;font-size:9px!important}
+      [data-page="tournament"] .arena-stats{gap:7px!important;margin-top:8px!important}
+      [data-page="tournament"] .arena-stat{padding:9px!important;border-radius:11px!important}
+      [data-page="tournament"] .arena-stat b{font-size:16px!important}
+      [data-page="tournament"] .arena-clubs{gap:5px!important}
+      [data-page="tournament"] .arena-club{padding:6px 8px!important;font-size:9px!important}
+
       @media(max-width:720px){
         .arena-active-grid{grid-template-columns:1fr}
         .arena-active-heading p{display:none}
+        .champion-grid,.team-grid{grid-template-columns:1fr!important}
+        .champion-card{min-height:136px!important}
+        [data-page="tournament"] .arena-page-hero p,.section-head p{display:none!important}
+        [data-page="tournament"] .arena-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}
       }
       @media(max-width:430px){
+        main{padding:12px!important}
         .arena-active-heading{align-items:flex-end}
         .arena-active-heading h2{font-size:21px}
         .arena-active-count{display:none}
@@ -75,6 +136,14 @@
         .arena-active-card h3{font-size:19px}
         .arena-active-meta span:nth-child(n+3){display:none}
         .arena-active-open{min-height:32px;padding:0 8px}
+        .admin-panel p{display:none!important}
+        .admin-tools{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}
+        .admin-tools button,.cloud-tools button{width:100%!important}
+        .champion-card .quote{-webkit-line-clamp:1}
+        [data-page="tournament"] .arena-page-hero{padding:12px!important}
+        [data-page="tournament"] .arena-card{min-height:160px!important}
+        [data-page="tournament"] .arena-cover{height:78px!important}
+        [data-page="tournament"] .arena-detail .arena-hero{min-height:168px!important;padding:13px!important}
       }
     `;
   }
@@ -253,7 +322,7 @@
   });
 
   window.ArenaBDAHomeActive = Object.freeze({
-    version: 5,
+    version: 6,
     refresh,
     openTournamentDirectly,
     repairSuperLeagueStandingsOrder
