@@ -1,9 +1,9 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAV3Cleanup?.version >= 25) return;
+  if (window.ArenaBDAV3Cleanup?.version >= 26) return;
 
-  const BUILD = 'v124';
+  const BUILD = 'v128';
   const REV = '20260825-2';
   const SUPER_LEAGUE_RULE_SRC = `./super-league-rule.js?v=${REV}`;
   const SUPER_LEAGUE_SYNC_SRC = `./arena-super-league-sync-gate.js?v=${REV}`;
@@ -22,7 +22,11 @@
     '[data-page="community"]',
     '[data-go="community"]',
     '[data-mobile-go="community"]',
-    '[data-sheet-go="community"]'
+    '[data-sheet-go="community"]',
+    '[data-page="flash"]',
+    '[data-go="flash"]',
+    '[data-mobile-go="flash"]',
+    '[data-sheet-go="flash"]'
   ];
 
   const LEGACY_SCRIPT_PARTS = [
@@ -155,6 +159,18 @@
       const visible = [...nav.querySelectorAll('button')].filter(button => button.isConnected && !button.hidden);
       if (visible.length) nav.style.gridTemplateColumns = `repeat(${visible.length},minmax(0,1fr))`;
     });
+
+    const moreCount = document.querySelector('.arena-side-more-toggle .arena-nav-copy small');
+    if (moreCount) {
+      const visibleSecondary = document.querySelectorAll('.arena-side-secondary[data-go]').length;
+      moreCount.textContent = `${visibleSecondary} áreas`;
+    }
+
+    if (location.hash === '#flash' || !document.querySelector('.page.active')) {
+      try { history.replaceState(history.state, '', `${location.pathname}${location.search}`); } catch {}
+      if (typeof window.navigate === 'function') window.navigate('home', { replace:true });
+      else document.querySelector('[data-page="home"]')?.classList.add('active');
+    }
   }
 
   function scrubLegacyCopy() {
@@ -210,7 +226,7 @@
   observer.observe(document.documentElement, { childList:true, subtree:true });
 
   window.ArenaBDAV3Cleanup = Object.freeze({
-    version:25,
+    version:26,
     build:BUILD,
     revision:REV,
     documentMode:'single',
