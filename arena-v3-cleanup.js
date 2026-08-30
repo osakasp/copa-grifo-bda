@@ -163,7 +163,8 @@
     const moreCount = document.querySelector('.arena-side-more-toggle .arena-nav-copy small');
     if (moreCount) {
       const visibleSecondary = document.querySelectorAll('.arena-side-secondary[data-go]').length;
-      moreCount.textContent = `${visibleSecondary} áreas`;
+      const label = `${visibleSecondary} áreas`;
+      if (moreCount.textContent !== label) moreCount.textContent = label;
     }
 
     if (location.hash === '#flash' || !document.querySelector('.page.active')) {
