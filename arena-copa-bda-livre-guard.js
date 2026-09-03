@@ -1,9 +1,9 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDACopaBDALivreGuard?.version >= 1) return;
+  if (window.ArenaBDACopaBDALivreGuard?.version >= 2) return;
 
-  const VERSION = 1;
+  const VERSION = 2;
   const TOURNAMENT_KEY = 'bda-v3-tournaments';
   const MATCH_KEY = 'bda-v3-confrontos';
   const BACKUP_KEY = 'bda-v3-copa-bda-livre-backup';
@@ -90,6 +90,11 @@
     return tournaments().find(isCopaBDALivre) || null;
   }
 
+  function matchesCurrentCupId(value) {
+    const cup = currentCup();
+    return slug(value) === CANONICAL_ID || Boolean(cup?.id && String(value) === String(cup.id));
+  }
+
   function same(a, b) {
     try { return JSON.stringify(a) === JSON.stringify(b); }
     catch { return false; }
@@ -115,7 +120,11 @@
     const existingParticipants = Array.isArray(existing?.participants) ? existing.participants : [];
     const backupParticipants = Array.isArray(backup?.participants) ? backup.participants : [];
     const participants = fromGames.length ? fromGames : (existingParticipants.length ? existingParticipants : backupParticipants);
-    const active = games.length > 0 || String(existing?.status || backup?.status || '').toLowerCase() === 'em andamento';
+    const previousStatus = String(existing?.status || backup?.status || '').trim();
+    const finishedTournament = ['Finalizado', 'Encerrado'].includes(previousStatus);
+    const status = finishedTournament
+      ? previousStatus
+      : (games.length ? 'Em andamento' : (previousStatus || 'Em andamento'));
 
     const repaired = {
       ...(backup ? clone(backup) : {}),
@@ -124,7 +133,7 @@
       name: CANONICAL_NAME,
       edition: existing?.edition || backup?.edition || 'Edição atual',
       format: existing?.format || backup?.format || 'Mata-mata',
-      status: active ? 'Em andamento' : (existing?.status || backup?.status || 'Em andamento'),
+      status,
       phase: games.length ? inferredPhase(games, existing?.phase || backup?.phase || 'Preliminar') : (existing?.phase || backup?.phase || 'Preliminar'),
       maxTeams: Number(existing?.maxTeams || backup?.maxTeams) || participants.length || 0,
       badge: existing?.badge || backup?.badge || '🏆',
@@ -193,7 +202,7 @@
 
   function cupIsOpen() {
     const managerId = document.querySelector('#giManager')?.dataset?.tid;
-    if (managerId && slug(managerId) === CANONICAL_ID) return true;
+    if (managerId && matchesCurrentCupId(managerId)) return true;
     const heading = document.querySelector('#arenaDetail .arena-hero-copy h2')?.textContent;
     return slug(heading) === CANONICAL_ID;
   }
@@ -226,7 +235,7 @@
       : null;
     if (!target) return;
     const id = target.dataset.openTournament || target.dataset.homeTournament || '';
-    if (slug(id) !== CANONICAL_ID) return;
+    if (!matchesCurrentCupId(id)) return;
     window.setTimeout(prepareCloud, 0);
   }, true);
 
