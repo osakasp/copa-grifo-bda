@@ -1,9 +1,10 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDATeamCloudSync?.version >= 1) return;
+  if (window.ArenaBDATeamCloudSync?.version >= 2) return;
 
   const MATCH_KEY = 'bda-v3-confrontos';
+  const COPA_BDA_LIVRE_GUARD_SRC = './arena-copa-bda-livre-guard.js?v=20260903-1';
   let timer = 0;
 
   function readMatches() {
@@ -25,6 +26,19 @@
 
   function currentEmail() {
     return String(window.ArenaBDAAuth?.currentEmail?.() || '');
+  }
+
+  function ensureCopaBDALivreGuard() {
+    if (window.ArenaBDACopaBDALivreGuard?.version >= 1) return;
+    if (document.querySelector('script[data-arena-copa-bda-livre-guard]')) return;
+    const script = document.createElement('script');
+    script.src = COPA_BDA_LIVRE_GUARD_SRC;
+    script.async = false;
+    script.dataset.arenaCopaBdaLivreGuard = 'true';
+    script.addEventListener('error', () => {
+      console.warn('[Arena BDA] Não foi possível carregar a proteção da Copa BDA LIVRE');
+    }, { once: true });
+    (document.body || document.head || document.documentElement).appendChild(script);
   }
 
   async function syncAllMatchStores() {
@@ -63,10 +77,15 @@
   }
 
   window.addEventListener('arena:teams-updated', event => handleUpdate(event.detail));
+  window.addEventListener('arena:cloud-ready', ensureCopaBDALivreGuard);
+  window.addEventListener('arena:tournaments-updated', ensureCopaBDALivreGuard);
 
   window.ArenaBDATeamCloudSync = Object.freeze({
-    version: 1,
+    version: 2,
     sync: syncAllMatchStores,
-    refreshTeamsPage
+    refreshTeamsPage,
+    copaBDALivreGuardSource: COPA_BDA_LIVRE_GUARD_SRC
   });
+
+  ensureCopaBDALivreGuard();
 })();
