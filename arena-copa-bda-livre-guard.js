@@ -1,13 +1,14 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDACopaBDALivreGuard?.version >= 4) return;
+  if (window.ArenaBDACopaBDALivreGuard?.version >= 5) return;
 
-  const VERSION = 4;
+  const VERSION = 5;
   const TOURNAMENT_KEY = 'bda-v3-tournaments';
   const MATCH_KEY = 'bda-v3-confrontos';
   const BACKUP_KEY = 'bda-v3-copa-bda-livre-backup';
-  const CATALOG_REFRESH_KEY = 'arena-copa-bda-livre-catalog-refresh-v4';
+  const CATALOG_REFRESH_PREFIX = 'arena-copa-bda-livre-catalog-refresh-v5:';
+  const OPEN_AFTER_REFRESH_KEY = 'arena-copa-bda-livre-open-after-refresh-v5';
   const CANONICAL_ID = 'copa-bda-livre';
   const CANONICAL_NAME = 'Copa BDA LIVRE';
   const REMOTE_PREFIX = `confrontos-${CANONICAL_ID}`;
@@ -112,15 +113,48 @@
     return String(unfinished?.phase || games[0]?.phase || fallback);
   }
 
+  function cupIsOpen() {
+    const managerId = document.querySelector('#giManager')?.dataset?.tid;
+    if (managerId && matchesCurrentCupId(managerId)) return true;
+    const heading = document.querySelector('#arenaDetail .arena-hero-copy h2')?.textContent;
+    return slug(heading) === CANONICAL_ID;
+  }
+
+  function rememberOpenCup(tournamentId) {
+    if (!cupIsOpen()) return;
+    try { sessionStorage.setItem(OPEN_AFTER_REFRESH_KEY, String(tournamentId || CANONICAL_ID)); } catch {}
+  }
+
+  function reopenIfRequested() {
+    let requested = '';
+    try { requested = sessionStorage.getItem(OPEN_AFTER_REFRESH_KEY) || ''; } catch {}
+    if (!requested) return false;
+
+    const button = [...document.querySelectorAll('#arenaGrid [data-open-tournament]')]
+      .find(item => String(item.dataset.openTournament || '') === requested);
+    if (!button) return false;
+
+    try { sessionStorage.removeItem(OPEN_AFTER_REFRESH_KEY); } catch {}
+    if (typeof window.navigate === 'function') window.navigate('tournament');
+    requestAnimationFrame(() => button.click());
+    return true;
+  }
+
   function ensureCatalogVisible(tournamentId) {
     const grid = document.getElementById('arenaGrid');
     if (!grid) return;
     const visible = [...grid.querySelectorAll('[data-open-tournament]')]
       .some(button => String(button.dataset.openTournament || '') === String(tournamentId));
-    if (visible) return;
+    if (visible) {
+      reopenIfRequested();
+      return;
+    }
+
+    const refreshKey = `${CATALOG_REFRESH_PREFIX}${String(tournamentId || CANONICAL_ID)}`;
     try {
-      if (sessionStorage.getItem(CATALOG_REFRESH_KEY) === '1') return;
-      sessionStorage.setItem(CATALOG_REFRESH_KEY, '1');
+      if (sessionStorage.getItem(refreshKey) === '1') return;
+      rememberOpenCup(tournamentId);
+      sessionStorage.setItem(refreshKey, '1');
     } catch {}
     window.setTimeout(() => location.reload(), 90);
   }
@@ -137,7 +171,8 @@
     const index = list.findIndex(isCopaBDALivre);
     const backup = savedBackup();
     const existing = index >= 0 ? list[index] : null;
-    const id = String(existing?.id || backup?.id || CANONICAL_ID);
+    const localMatchId = Object.keys(matchStore()).find(key => isCupIdLike(key)) || '';
+    const id = String(existing?.id || backup?.id || localMatchId || CANONICAL_ID);
     const games = gamesFor(id);
     const fromGames = uniqueParticipants(games);
     const existingParticipants = Array.isArray(existing?.participants) ? existing.participants : [];
@@ -213,8 +248,10 @@
   }
 
   async function findRemoteCupSnapshot(db, cup) {
-    const direct = await db.collection('arenaData').doc(`confrontos-${cup.id}`).get();
-    if (direct.exists) return direct;
+    if (cup?.id && isCupIdLike(cup.id)) {
+      const direct = await db.collection('arenaData').doc(`confrontos-${cup.id}`).get();
+      if (direct.exists) return direct;
+    }
 
     const fieldPath = firebase.firestore.FieldPath?.documentId?.();
     if (!fieldPath) return null;
@@ -268,16 +305,15 @@
   async function hydrateFromCloud() {
     if (hydrating || !window.firebase || typeof firebase.firestore !== 'function') return false;
     const cup = currentCup();
-    if (!cup) return false;
     hydrating = true;
     try {
       const db = firebase.firestore();
       const snapshot = await findRemoteCupSnapshot(db, cup);
       if (!snapshot?.exists) return false;
-      const previousId = cup.id;
+      const previousId = cup?.id || '';
       const adopted = adoptRemoteTournament(snapshot) || cup;
       const remote = snapshot.data()?.games;
-      return saveRemoteGames(adopted.id, remote, previousId);
+      return adopted ? saveRemoteGames(adopted.id, remote, previousId) : false;
     } catch (error) {
       console.warn('[Arena BDA] A Copa BDA LIVRE apareceu, mas os jogos não puderam ser baixados agora', error);
       return false;
@@ -286,15 +322,7 @@
     }
   }
 
-  function cupIsOpen() {
-    const managerId = document.querySelector('#giManager')?.dataset?.tid;
-    if (managerId && matchesCurrentCupId(managerId)) return true;
-    const heading = document.querySelector('#arenaDetail .arena-hero-copy h2')?.textContent;
-    return slug(heading) === CANONICAL_ID;
-  }
-
-  async function prepareCloud() {
-    if (!cupIsOpen()) return;
+  async function ensureCloudAndHydrate() {
     if (!window.firebase || typeof firebase.firestore !== 'function') {
       if (!cloudRequested && typeof window.ArenaBDAEnsureCloud === 'function') {
         cloudRequested = true;
@@ -303,7 +331,12 @@
         finally { cloudRequested = false; }
       }
     }
-    await hydrateFromCloud();
+    return hydrateFromCloud();
+  }
+
+  function prepareCloud() {
+    if (!cupIsOpen()) return Promise.resolve(false);
+    return ensureCloudAndHydrate();
   }
 
   function scheduleRepair() {
@@ -311,6 +344,7 @@
     repairFrame = requestAnimationFrame(() => {
       repairFrame = 0;
       ensureTournament();
+      reopenIfRequested();
       if (cupIsOpen()) prepareCloud();
     });
   }
@@ -336,9 +370,11 @@
     id: CANONICAL_ID,
     name: CANONICAL_NAME,
     repair: ensureTournament,
-    hydrate: prepareCloud
+    hydrate: ensureCloudAndHydrate
   });
 
   ensureTournament();
-  if (cupIsOpen()) prepareCloud();
+  reopenIfRequested();
+  const idle = window.requestIdleCallback || (callback => window.setTimeout(callback, 1200));
+  idle(() => ensureCloudAndHydrate());
 })();
