@@ -1,15 +1,16 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDACopaBDALivreGuard?.version >= 3) return;
+  if (window.ArenaBDACopaBDALivreGuard?.version >= 4) return;
 
-  const VERSION = 3;
+  const VERSION = 4;
   const TOURNAMENT_KEY = 'bda-v3-tournaments';
   const MATCH_KEY = 'bda-v3-confrontos';
   const BACKUP_KEY = 'bda-v3-copa-bda-livre-backup';
-  const CATALOG_REFRESH_KEY = 'arena-copa-bda-livre-catalog-refresh-v3';
+  const CATALOG_REFRESH_KEY = 'arena-copa-bda-livre-catalog-refresh-v4';
   const CANONICAL_ID = 'copa-bda-livre';
   const CANONICAL_NAME = 'Copa BDA LIVRE';
+  const REMOTE_PREFIX = `confrontos-${CANONICAL_ID}`;
 
   let hydrating = false;
   let cloudRequested = false;
@@ -24,6 +25,7 @@
   const slug = value => normalize(value)
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
+  const isCupIdLike = value => slug(value).startsWith(CANONICAL_ID);
 
   function read(key, fallback) {
     try {
@@ -48,7 +50,7 @@
     if (!item) return false;
     const id = slug(item.id || '');
     const name = slug(item.name || '');
-    return id === CANONICAL_ID || name === CANONICAL_ID || name.includes('copa-bda-livre');
+    return id.startsWith(CANONICAL_ID) || name === CANONICAL_ID || name.includes('copa-bda-livre');
   }
 
   function savedBackup() {
@@ -83,7 +85,7 @@
   function gamesFor(id = CANONICAL_ID) {
     const store = matchStore();
     if (Array.isArray(store[id])) return store[id];
-    const alternateKey = Object.keys(store).find(key => slug(key) === CANONICAL_ID);
+    const alternateKey = Object.keys(store).find(key => isCupIdLike(key));
     return alternateKey && Array.isArray(store[alternateKey]) ? store[alternateKey] : [];
   }
 
@@ -93,7 +95,7 @@
 
   function matchesCurrentCupId(value) {
     const cup = currentCup();
-    return slug(value) === CANONICAL_ID || Boolean(cup?.id && String(value) === String(cup.id));
+    return isCupIdLike(value) || Boolean(cup?.id && String(value) === String(cup.id));
   }
 
   function same(a, b) {
@@ -123,6 +125,13 @@
     window.setTimeout(() => location.reload(), 90);
   }
 
+  function repairedStatus(existing, backup, games) {
+    const previousStatus = String(existing?.status || backup?.status || '').trim();
+    if (['Finalizado', 'Encerrado'].includes(previousStatus)) return previousStatus;
+    if (games.length) return 'Em andamento';
+    return previousStatus || 'Em andamento';
+  }
+
   function ensureTournament() {
     const list = tournaments();
     const index = list.findIndex(isCopaBDALivre);
@@ -134,11 +143,6 @@
     const existingParticipants = Array.isArray(existing?.participants) ? existing.participants : [];
     const backupParticipants = Array.isArray(backup?.participants) ? backup.participants : [];
     const participants = fromGames.length ? fromGames : (existingParticipants.length ? existingParticipants : backupParticipants);
-    const previousStatus = String(existing?.status || backup?.status || '').trim();
-    const finishedTournament = ['Finalizado', 'Encerrado'].includes(previousStatus);
-    const status = finishedTournament
-      ? previousStatus
-      : (games.length ? 'Em andamento' : (previousStatus || 'Em andamento'));
 
     const repaired = {
       ...(backup ? clone(backup) : {}),
@@ -147,7 +151,7 @@
       name: CANONICAL_NAME,
       edition: existing?.edition || backup?.edition || 'Edição atual',
       format: existing?.format || backup?.format || 'Mata-mata',
-      status,
+      status: repairedStatus(existing, backup, games),
       phase: games.length ? inferredPhase(games, existing?.phase || backup?.phase || 'Preliminar') : (existing?.phase || backup?.phase || 'Preliminar'),
       maxTeams: Number(existing?.maxTeams || backup?.maxTeams) || participants.length || 0,
       badge: existing?.badge || backup?.badge || '🏆',
@@ -180,7 +184,7 @@
     }
   }
 
-  function saveRemoteGames(tournamentId, games) {
+  function saveRemoteGames(tournamentId, games, previousId = '') {
     if (!Array.isArray(games) || !games.length) return false;
     const store = matchStore();
     const local = Array.isArray(store[tournamentId]) ? store[tournamentId] : [];
@@ -188,6 +192,7 @@
     if (local.length && window.ArenaBDAAuth?.isAdmin?.()) return false;
 
     store[tournamentId] = games;
+    if (previousId && previousId !== tournamentId && isCupIdLike(previousId)) delete store[previousId];
     try {
       localStorage.setItem(MATCH_KEY, JSON.stringify(store));
       window.dispatchEvent(new CustomEvent('arena:matches-updated', {
@@ -201,15 +206,78 @@
     }
   }
 
+  function snapshotScore(snapshot) {
+    const data = snapshot?.data?.() || {};
+    const updated = data.updatedAt?.toMillis?.() || 0;
+    return updated || Number(data.draw?.createdAt) || 0;
+  }
+
+  async function findRemoteCupSnapshot(db, cup) {
+    const direct = await db.collection('arenaData').doc(`confrontos-${cup.id}`).get();
+    if (direct.exists) return direct;
+
+    const fieldPath = firebase.firestore.FieldPath?.documentId?.();
+    if (!fieldPath) return null;
+    const query = await db.collection('arenaData')
+      .orderBy(fieldPath)
+      .startAt(REMOTE_PREFIX)
+      .endAt(`${REMOTE_PREFIX}\uf8ff`)
+      .get();
+    if (query.empty) return null;
+    return [...query.docs].sort((a, b) => snapshotScore(b) - snapshotScore(a))[0] || null;
+  }
+
+  function adoptRemoteTournament(snapshot) {
+    const data = snapshot?.data?.() || {};
+    const remoteId = String(data.tournamentId || snapshot?.id?.replace(/^confrontos-/, '') || '').trim();
+    if (!remoteId || !isCupIdLike(remoteId)) return currentCup();
+
+    const list = tournaments();
+    const index = list.findIndex(isCopaBDALivre);
+    const current = index >= 0 ? list[index] : currentCup();
+    const games = Array.isArray(data.games) ? data.games : [];
+    const drawTeams = Array.isArray(data.draw?.teams) ? data.draw.teams.filter(Boolean) : [];
+    const participants = drawTeams.length ? drawTeams : uniqueParticipants(games);
+    const next = {
+      ...(current ? clone(current) : {}),
+      id: remoteId,
+      name: CANONICAL_NAME,
+      edition: current?.edition || 'Edição atual',
+      format: current?.format || 'Mata-mata',
+      status: repairedStatus(current, savedBackup(), games),
+      phase: inferredPhase(games, current?.phase || 'Preliminar'),
+      maxTeams: Number(current?.maxTeams) || participants.length || 0,
+      badge: current?.badge || '🏆',
+      participants: participants.length ? participants : (Array.isArray(current?.participants) ? current.participants : []),
+      description: current?.description || 'Competição Full Livre do Clã BDA em formato eliminatório.'
+    };
+
+    if (index >= 0) list[index] = next;
+    else list.push(next);
+    saveBackup(next);
+    try {
+      localStorage.setItem(TOURNAMENT_KEY, JSON.stringify(list));
+      window.dispatchEvent(new CustomEvent('arena:tournaments-updated', {
+        detail: { source: 'copa-bda-livre-cloud-id', tournamentId: remoteId }
+      }));
+      ensureCatalogVisible(remoteId);
+    } catch {}
+    return next;
+  }
+
   async function hydrateFromCloud() {
     if (hydrating || !window.firebase || typeof firebase.firestore !== 'function') return false;
     const cup = currentCup();
     if (!cup) return false;
     hydrating = true;
     try {
-      const snapshot = await firebase.firestore().collection('arenaData').doc(`confrontos-${cup.id}`).get();
-      const remote = snapshot.exists ? snapshot.data()?.games : null;
-      return saveRemoteGames(cup.id, remote);
+      const db = firebase.firestore();
+      const snapshot = await findRemoteCupSnapshot(db, cup);
+      if (!snapshot?.exists) return false;
+      const previousId = cup.id;
+      const adopted = adoptRemoteTournament(snapshot) || cup;
+      const remote = snapshot.data()?.games;
+      return saveRemoteGames(adopted.id, remote, previousId);
     } catch (error) {
       console.warn('[Arena BDA] A Copa BDA LIVRE apareceu, mas os jogos não puderam ser baixados agora', error);
       return false;
