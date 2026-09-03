@@ -1,10 +1,10 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDATeamCloudSync?.version >= 2) return;
+  if (window.ArenaBDATeamCloudSync?.version >= 3) return;
 
   const MATCH_KEY = 'bda-v3-confrontos';
-  const COPA_BDA_LIVRE_GUARD_SRC = './arena-copa-bda-livre-guard.js?v=20260903-1';
+  const COPA_BDA_LIVRE_GUARD_SRC = './arena-copa-bda-livre-guard.js?v=20260903-2';
   let timer = 0;
 
   function readMatches() {
@@ -29,8 +29,12 @@
   }
 
   function ensureCopaBDALivreGuard() {
-    if (window.ArenaBDACopaBDALivreGuard?.version >= 1) return;
-    if (document.querySelector('script[data-arena-copa-bda-livre-guard]')) return;
+    if (window.ArenaBDACopaBDALivreGuard?.version >= 5) return;
+    const existing = document.querySelector('script[data-arena-copa-bda-livre-guard]');
+    if (existing) {
+      if (!window.ArenaBDACopaBDALivreGuard || Number(window.ArenaBDACopaBDALivreGuard.version || 0) < 5) existing.remove();
+      else return;
+    }
     const script = document.createElement('script');
     script.src = COPA_BDA_LIVRE_GUARD_SRC;
     script.async = false;
@@ -81,7 +85,7 @@
   window.addEventListener('arena:tournaments-updated', ensureCopaBDALivreGuard);
 
   window.ArenaBDATeamCloudSync = Object.freeze({
-    version: 2,
+    version: 3,
     sync: syncAllMatchStores,
     refreshTeamsPage,
     copaBDALivreGuardSource: COPA_BDA_LIVRE_GUARD_SRC
