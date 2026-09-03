@@ -1,12 +1,13 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDACopaBDALivreGuard?.version >= 2) return;
+  if (window.ArenaBDACopaBDALivreGuard?.version >= 3) return;
 
-  const VERSION = 2;
+  const VERSION = 3;
   const TOURNAMENT_KEY = 'bda-v3-tournaments';
   const MATCH_KEY = 'bda-v3-confrontos';
   const BACKUP_KEY = 'bda-v3-copa-bda-livre-backup';
+  const CATALOG_REFRESH_KEY = 'arena-copa-bda-livre-catalog-refresh-v3';
   const CANONICAL_ID = 'copa-bda-livre';
   const CANONICAL_NAME = 'Copa BDA LIVRE';
 
@@ -109,6 +110,19 @@
     return String(unfinished?.phase || games[0]?.phase || fallback);
   }
 
+  function ensureCatalogVisible(tournamentId) {
+    const grid = document.getElementById('arenaGrid');
+    if (!grid) return;
+    const visible = [...grid.querySelectorAll('[data-open-tournament]')]
+      .some(button => String(button.dataset.openTournament || '') === String(tournamentId));
+    if (visible) return;
+    try {
+      if (sessionStorage.getItem(CATALOG_REFRESH_KEY) === '1') return;
+      sessionStorage.setItem(CATALOG_REFRESH_KEY, '1');
+    } catch {}
+    window.setTimeout(() => location.reload(), 90);
+  }
+
   function ensureTournament() {
     const list = tournaments();
     const index = list.findIndex(isCopaBDALivre);
@@ -144,7 +158,10 @@
     saveBackup(repaired);
 
     if (index >= 0) {
-      if (same(list[index], repaired)) return false;
+      if (same(list[index], repaired)) {
+        ensureCatalogVisible(repaired.id);
+        return false;
+      }
       list[index] = repaired;
     } else {
       list.push(repaired);
@@ -155,6 +172,7 @@
       window.dispatchEvent(new CustomEvent('arena:tournaments-updated', {
         detail: { source: 'copa-bda-livre-recovery', tournamentId: repaired.id }
       }));
+      ensureCatalogVisible(repaired.id);
       return true;
     } catch (error) {
       console.warn('[Arena BDA] Não foi possível recuperar a Copa BDA LIVRE no catálogo', error);
@@ -242,9 +260,7 @@
   ['arena:cloud-ready', 'arena:tournaments-updated', 'arena:matches-updated', 'arena:cloud-data-applied']
     .forEach(type => window.addEventListener(type, scheduleRepair));
 
-  const observer = new MutationObserver(() => {
-    if (cupIsOpen()) scheduleRepair();
-  });
+  const observer = new MutationObserver(scheduleRepair);
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
   window.ArenaBDACopaBDALivreGuard = Object.freeze({
