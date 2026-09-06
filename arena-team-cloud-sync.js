@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDATeamCloudSync?.version >= 7) return;
+  if (window.ArenaBDATeamCloudSync?.version >= 8) return;
 
   const MATCH_KEY = 'bda-v3-confrontos';
   const COPA_BDA_LIVRE_GUARD_SRC = './arena-copa-bda-livre-guard.js?v=20260903-3';
@@ -9,6 +9,7 @@
   const PHASE_BATCH_CAPTURE_SRC = './arena-capture-phase-batch.js?v=20260903-1';
   const ART_STUDIO_SRC = './arena-art-studio.js?v=20260906-1';
   const ART_STUDIO_PRO_SRC = './arena-art-studio-pro.js?v=20260906-1';
+  const ART_BROADCAST_SRC = './arena-art-studio-broadcast.js?v=20260906-1';
   let timer = 0;
 
   function readMatches() {
@@ -103,12 +104,24 @@
     });
   }
 
+  function ensureArtBroadcast() {
+    ensureScript({
+      globalName: 'ArenaBDAArtBroadcast',
+      minVersion: 1,
+      selector: 'script[data-arena-art-broadcast]',
+      src: ART_BROADCAST_SRC,
+      label: 'o visual broadcast da Central de Artes BDA',
+      datasetName: 'arenaArtBroadcast'
+    });
+  }
+
   function ensureRuntimeFixes() {
     ensureCopaBDALivreGuard();
     ensureCopaBDALivreLegs();
     ensurePhaseBatchCapture();
     ensureArtStudio();
     ensureArtStudioPro();
+    ensureArtBroadcast();
   }
 
   async function syncAllMatchStores() {
@@ -152,14 +165,15 @@
   window.addEventListener('arena:bundle-loaded', ensureRuntimeFixes);
 
   window.ArenaBDATeamCloudSync = Object.freeze({
-    version: 7,
+    version: 8,
     sync: syncAllMatchStores,
     refreshTeamsPage,
     copaBDALivreGuardSource: COPA_BDA_LIVRE_GUARD_SRC,
     copaBDALivreLegsSource: COPA_BDA_LIVRE_LEGS_SRC,
     phaseBatchCaptureSource: PHASE_BATCH_CAPTURE_SRC,
     artStudioSource: ART_STUDIO_SRC,
-    artStudioProSource: ART_STUDIO_PRO_SRC
+    artStudioProSource: ART_STUDIO_PRO_SRC,
+    artBroadcastSource: ART_BROADCAST_SRC
   });
 
   ensureRuntimeFixes();
