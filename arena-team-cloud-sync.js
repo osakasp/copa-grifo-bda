@@ -1,10 +1,11 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDATeamCloudSync?.version >= 4) return;
+  if (window.ArenaBDATeamCloudSync?.version >= 5) return;
 
   const MATCH_KEY = 'bda-v3-confrontos';
   const COPA_BDA_LIVRE_GUARD_SRC = './arena-copa-bda-livre-guard.js?v=20260903-3';
+  const COPA_BDA_LIVRE_LEGS_SRC = './arena-copa-bda-livre-legs.js?v=20260906-1';
   const PHASE_BATCH_CAPTURE_SRC = './arena-capture-phase-batch.js?v=20260903-1';
   let timer = 0;
 
@@ -56,6 +57,17 @@
     });
   }
 
+  function ensureCopaBDALivreLegs() {
+    ensureScript({
+      globalName: 'ArenaBDACopaBDALivreLegs',
+      minVersion: 1,
+      selector: 'script[data-arena-copa-bda-livre-legs]',
+      src: COPA_BDA_LIVRE_LEGS_SRC,
+      label: 'a regra de ida e volta da Copa BDA LIVRE',
+      datasetName: 'arenaCopaBdaLivreLegs'
+    });
+  }
+
   function ensurePhaseBatchCapture() {
     ensureScript({
       globalName: 'ArenaBDAPhaseBatchCapture',
@@ -69,6 +81,7 @@
 
   function ensureRuntimeFixes() {
     ensureCopaBDALivreGuard();
+    ensureCopaBDALivreLegs();
     ensurePhaseBatchCapture();
   }
 
@@ -113,10 +126,11 @@
   window.addEventListener('arena:bundle-loaded', ensureRuntimeFixes);
 
   window.ArenaBDATeamCloudSync = Object.freeze({
-    version: 4,
+    version: 5,
     sync: syncAllMatchStores,
     refreshTeamsPage,
     copaBDALivreGuardSource: COPA_BDA_LIVRE_GUARD_SRC,
+    copaBDALivreLegsSource: COPA_BDA_LIVRE_LEGS_SRC,
     phaseBatchCaptureSource: PHASE_BATCH_CAPTURE_SRC
   });
 
