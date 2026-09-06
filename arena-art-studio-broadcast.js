@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAArtBroadcast?.version >= 1) return;
-  const VERSION = 1;
+  if (window.ArenaBDAArtBroadcast?.version >= 2) return;
+  const VERSION = 2;
 
   function relabel() {
     const button = document.getElementById('arenaArtProButton');
@@ -11,20 +11,24 @@
     const title = modal?.querySelector('h2');
     const eyebrow = modal?.querySelector('header span');
     if (title) title.textContent = 'Estúdio Broadcast';
-    if (eyebrow) eyebrow.textContent = 'CENTRAL DE ARTES BDA • V3';
+    if (eyebrow) eyebrow.textContent = 'CENTRAL DE ARTES BDA • V3.1';
   }
 
+  document.getElementById('arenaArtBroadcastStyles')?.remove();
   const style = document.createElement('style');
   style.id = 'arenaArtBroadcastStyles';
   style.textContent = `
     .bda-art-stage{
       --broadcast-accent:#d8b248;
       --broadcast-accent-2:#5ee59b;
+      --broadcast-glow:rgba(216,178,72,.24);
+      --broadcast-edge:rgba(216,178,72,.42);
+      --broadcast-soft:rgba(216,178,72,.11);
       --broadcast-ink:#f7faf8;
       --broadcast-muted:#9baaa2;
       --broadcast-line:rgba(255,255,255,.1);
       background:
-        radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--broadcast-accent) 24%,transparent),transparent 28%),
+        radial-gradient(circle at 76% 18%,var(--broadcast-glow),transparent 28%),
         linear-gradient(120deg,rgba(255,255,255,.025),transparent 28%),
         linear-gradient(145deg,#0b130f 0%,#050805 58%,#020302 100%)!important;
       color:var(--broadcast-ink)!important;
@@ -37,8 +41,8 @@
       inset:-12% 54% 38% -12%;
       z-index:0;
       transform:skewX(-15deg) rotate(-2deg);
-      border-right:3px solid color-mix(in srgb,var(--broadcast-accent) 48%,transparent);
-      background:linear-gradient(135deg,color-mix(in srgb,var(--broadcast-accent) 12%,transparent),transparent 62%);
+      border-right:3px solid var(--broadcast-edge);
+      background:linear-gradient(135deg,var(--broadcast-soft),transparent 62%);
       opacity:.8;
     }
     .bda-art-stage::after{
@@ -101,7 +105,6 @@
       border-radius:18px!important;
       background:rgba(0,0,0,.22)!important;
       box-shadow:inset 0 0 0 1px var(--broadcast-line)!important;
-      backdrop-filter:blur(8px);
     }
     .bda-art-stage>header aside img{max-width:58px!important;max-height:58px!important;object-fit:contain}
     .bda-art-stage>main{
@@ -132,14 +135,12 @@
     .bda-art-team .bda-art-shield{
       width:220px!important;
       height:220px!important;
-      filter:drop-shadow(0 22px 30px rgba(0,0,0,.38));
     }
     .bda-art-team h2{
       max-width:350px!important;
       margin:20px 0 0!important;
       font:900 38px/.92 "Barlow Condensed",Impact,sans-serif!important;
       letter-spacing:.01em;
-      text-wrap:balance;
     }
     .bda-art-score{
       position:relative;
@@ -181,7 +182,7 @@
       background:var(--broadcast-accent);
       font-size:9px;
       font-style:normal;
-      font-weight:950;
+      font-weight:900;
       letter-spacing:.08em;
       text-transform:uppercase;
     }
@@ -202,7 +203,7 @@
     }
     .bda-art-leg>span,.bda-art-aggregate>span{color:var(--broadcast-accent)!important;font-size:8px!important;letter-spacing:.12em}
     .bda-art-leg div{text-align:right}
-    .bda-art-leg b{font-size:10px!important;font-weight:850}
+    .bda-art-leg b{font-size:10px!important;font-weight:800}
     .bda-art-leg small{display:block!important;margin-top:2px;color:var(--broadcast-muted)!important;font-size:7px!important}
     .bda-art-aggregate b{font:900 20px/1 "Barlow Condensed",sans-serif!important}
 
@@ -239,18 +240,13 @@
     .bda-pro-tie>footer{margin-top:6px!important;padding-top:6px!important;border-color:var(--broadcast-line)!important;color:var(--broadcast-accent)!important}
 
     .bda-pro-champion>span{display:none!important}
-    .bda-pro-champion .bda-art-shield.champion{
-      width:270px!important;
-      height:270px!important;
-      filter:drop-shadow(0 28px 46px rgba(0,0,0,.48));
-    }
+    .bda-pro-champion .bda-art-shield.champion{width:270px!important;height:270px!important}
     .bda-pro-champion>small{margin-top:18px!important;color:var(--broadcast-accent)!important;font-size:14px!important;letter-spacing:.34em!important}
     .bda-pro-champion h2{
       max-width:900px!important;
       margin:8px 0 18px!important;
       font:900 78px/.88 "Barlow Condensed",Impact,sans-serif!important;
       letter-spacing:-.02em;
-      text-wrap:balance;
     }
     .bda-pro-champion>div{
       padding:10px 22px!important;
@@ -263,43 +259,19 @@
     .bda-pro-champion>div b{font:900 26px/1 "Barlow Condensed",sans-serif!important}
     .bda-pro-champion p{margin-top:12px!important;color:var(--broadcast-muted)!important;letter-spacing:.12em;text-transform:uppercase}
 
-    .bda-art-standings-clone{
-      padding:0!important;
-      border:0!important;
-      background:transparent!important;
-      box-shadow:none!important;
-    }
-    .bda-art-standings-clone table{
-      overflow:hidden;
-      border-collapse:separate!important;
-      border-spacing:0 5px!important;
-      font-size:12px!important;
-    }
-    .bda-art-standings-clone th{
-      padding:8px 10px!important;
-      border:0!important;
-      color:var(--broadcast-muted)!important;
-      background:transparent!important;
-      font-size:9px!important;
-      letter-spacing:.1em!important;
-      text-transform:uppercase;
-    }
-    .bda-art-standings-clone td{
-      padding:10px!important;
-      border:0!important;
-      background:rgba(255,255,255,.038)!important;
-      color:#f6f9f7!important;
-      font-weight:750!important;
-    }
+    .bda-art-standings-clone{padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important}
+    .bda-art-standings-clone table{overflow:hidden;border-collapse:separate!important;border-spacing:0 5px!important;font-size:12px!important}
+    .bda-art-standings-clone th{padding:8px 10px!important;border:0!important;color:var(--broadcast-muted)!important;background:transparent!important;font-size:9px!important;letter-spacing:.1em!important;text-transform:uppercase}
+    .bda-art-standings-clone td{padding:10px!important;border:0!important;background:rgba(255,255,255,.038)!important;color:#f6f9f7!important;font-weight:750!important}
     .bda-art-standings-clone tr td:first-child{border-radius:10px 0 0 10px!important;border-left:4px solid var(--broadcast-accent)!important}
     .bda-art-standings-clone tr td:last-child{border-radius:0 10px 10px 0!important}
 
-    .bda-pro-theme-super{--broadcast-accent:#9d7cff;--broadcast-accent-2:#5bdcff}
-    .bda-pro-theme-francos{--broadcast-accent:#58c9ff;--broadcast-accent-2:#53f2ff}
-    .bda-pro-theme-grifo{--broadcast-accent:#e1bd58;--broadcast-accent-2:#69d99b}
-    .bda-pro-theme-ligaa{--broadcast-accent:#e7c15e;--broadcast-accent-2:#fff0a5}
-    .bda-pro-theme-ligab{--broadcast-accent:#c8d0d8;--broadcast-accent-2:#eef2f5}
-    .bda-pro-theme-livre{--broadcast-accent:#e1bb52;--broadcast-accent-2:#55dc91}
+    .bda-pro-theme-super{--broadcast-accent:#9d7cff;--broadcast-accent-2:#5bdcff;--broadcast-glow:rgba(157,124,255,.25);--broadcast-edge:rgba(157,124,255,.46);--broadcast-soft:rgba(157,124,255,.11)}
+    .bda-pro-theme-francos{--broadcast-accent:#58c9ff;--broadcast-accent-2:#53f2ff;--broadcast-glow:rgba(88,201,255,.23);--broadcast-edge:rgba(88,201,255,.44);--broadcast-soft:rgba(88,201,255,.10)}
+    .bda-pro-theme-grifo{--broadcast-accent:#e1bd58;--broadcast-accent-2:#69d99b;--broadcast-glow:rgba(225,189,88,.23);--broadcast-edge:rgba(225,189,88,.44);--broadcast-soft:rgba(225,189,88,.10)}
+    .bda-pro-theme-ligaa{--broadcast-accent:#e7c15e;--broadcast-accent-2:#fff0a5;--broadcast-glow:rgba(231,193,94,.23);--broadcast-edge:rgba(231,193,94,.44);--broadcast-soft:rgba(231,193,94,.10)}
+    .bda-pro-theme-ligab{--broadcast-accent:#c8d0d8;--broadcast-accent-2:#eef2f5;--broadcast-glow:rgba(200,208,216,.20);--broadcast-edge:rgba(200,208,216,.40);--broadcast-soft:rgba(200,208,216,.09)}
+    .bda-pro-theme-livre{--broadcast-accent:#e1bb52;--broadcast-accent-2:#55dc91;--broadcast-glow:rgba(225,187,82,.23);--broadcast-edge:rgba(225,187,82,.44);--broadcast-soft:rgba(225,187,82,.10)}
 
     .bda-art-story{padding:70px 62px 60px!important}
     .bda-art-story .bda-art-result{grid-template-columns:1fr!important;gap:12px!important}
@@ -324,5 +296,9 @@
     .forEach(name => window.addEventListener(name, () => setTimeout(relabel, 80)));
   [0,300,1000,2200].forEach(delay => setTimeout(relabel, delay));
 
-  window.ArenaBDAArtBroadcast = Object.freeze({ version: VERSION, refresh: relabel });
+  window.ArenaBDAArtBroadcast = Object.freeze({
+    version:VERSION,
+    refresh:relabel,
+    html2canvasCompatible:true
+  });
 })();
