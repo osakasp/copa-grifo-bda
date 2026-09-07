@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDATeamCloudSync?.version >= 10) return;
+  if (window.ArenaBDATeamCloudSync?.version >= 11) return;
 
   const MATCH_KEY = 'bda-v3-confrontos';
   const COPA_BDA_LIVRE_GUARD_SRC = './arena-copa-bda-livre-guard.js?v=20260903-3';
@@ -9,7 +9,7 @@
   const PHASE_BATCH_CAPTURE_SRC = './arena-capture-phase-batch.js?v=20260903-1';
   const ART_STUDIO_SRC = './arena-art-studio.js?v=20260906-2';
   const ART_STUDIO_PRO_SRC = './arena-art-studio-pro.js?v=20260906-2';
-  const ART_BROADCAST_SRC = './arena-art-studio-broadcast.js?v=20260906-2';
+  const ART_BROADCAST_SRC = './arena-art-studio-broadcast.js?v=20260906-3';
   const ART_V32_SRC = './arena-art-studio-v32.js?v=20260906-1';
   let timer = 0;
 
@@ -71,7 +71,7 @@
   }
 
   function ensureArtBroadcast() {
-    ensureScript({ globalName:'ArenaBDAArtBroadcast', minVersion:2, selector:'script[data-arena-art-broadcast]', src:ART_BROADCAST_SRC, label:'o visual broadcast da Central de Artes BDA', datasetName:'arenaArtBroadcast' });
+    ensureScript({ globalName:'ArenaBDAArtBroadcast', minVersion:3, selector:'script[data-arena-art-broadcast]', src:ART_BROADCAST_SRC, label:'o visual broadcast da Central de Artes BDA', datasetName:'arenaArtBroadcast' });
   }
 
   function ensureArtV32() {
@@ -128,7 +128,7 @@
   window.addEventListener('arena:bundle-loaded', ensureRuntimeFixes);
 
   window.ArenaBDATeamCloudSync = Object.freeze({
-    version:10,
+    version:11,
     sync:syncAllMatchStores,
     refreshTeamsPage,
     copaBDALivreGuardSource:COPA_BDA_LIVRE_GUARD_SRC,
