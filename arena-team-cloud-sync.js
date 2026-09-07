@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDATeamCloudSync?.version >= 11) return;
+  if (window.ArenaBDATeamCloudSync?.version >= 12) return;
 
   const MATCH_KEY = 'bda-v3-confrontos';
   const COPA_BDA_LIVRE_GUARD_SRC = './arena-copa-bda-livre-guard.js?v=20260903-3';
@@ -11,6 +11,7 @@
   const ART_STUDIO_PRO_SRC = './arena-art-studio-pro.js?v=20260906-2';
   const ART_BROADCAST_SRC = './arena-art-studio-broadcast.js?v=20260906-3';
   const ART_V32_SRC = './arena-art-studio-v32.js?v=20260906-1';
+  const ART_BADGE_SAFE_SRC = './arena-art-badge-safe.js?v=20260906-1';
   let timer = 0;
 
   function readMatches() {
@@ -78,6 +79,10 @@
     ensureScript({ globalName:'ArenaBDAArtV32', minVersion:1, selector:'script[data-arena-art-v32]', src:ART_V32_SRC, label:'o refinamento V3.2 da Central de Artes BDA', datasetName:'arenaArtV32' });
   }
 
+  function ensureArtBadgeSafe() {
+    ensureScript({ globalName:'ArenaBDAArtBadgeSafe', minVersion:1, selector:'script[data-arena-art-badge-safe]', src:ART_BADGE_SAFE_SRC, label:'a normalização dos escudos nas artes BDA', datasetName:'arenaArtBadgeSafe' });
+  }
+
   function ensureRuntimeFixes() {
     ensureCopaBDALivreGuard();
     ensureCopaBDALivreLegs();
@@ -86,6 +91,7 @@
     ensureArtStudioPro();
     ensureArtBroadcast();
     ensureArtV32();
+    ensureArtBadgeSafe();
   }
 
   async function syncAllMatchStores() {
@@ -128,7 +134,7 @@
   window.addEventListener('arena:bundle-loaded', ensureRuntimeFixes);
 
   window.ArenaBDATeamCloudSync = Object.freeze({
-    version:11,
+    version:12,
     sync:syncAllMatchStores,
     refreshTeamsPage,
     copaBDALivreGuardSource:COPA_BDA_LIVRE_GUARD_SRC,
@@ -137,7 +143,8 @@
     artStudioSource:ART_STUDIO_SRC,
     artStudioProSource:ART_STUDIO_PRO_SRC,
     artBroadcastSource:ART_BROADCAST_SRC,
-    artV32Source:ART_V32_SRC
+    artV32Source:ART_V32_SRC,
+    artBadgeSafeSource:ART_BADGE_SAFE_SRC
   });
 
   ensureRuntimeFixes();
