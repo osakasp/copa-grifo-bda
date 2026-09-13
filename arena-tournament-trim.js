@@ -1,15 +1,16 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDATournamentTrim?.version >= 8) return;
+  if (window.ArenaBDATournamentTrim?.version >= 9) return;
 
-  const REV = '20260913-1';
+  const REV = '20260913-2';
   const DESIGN_POLISH_SRC = `./arena-design-polish-v2.js?v=${REV}`;
   const MATCH_DETAILS_SRC = `./arena-match-details.js?v=${REV}`;
   const MATCH_MEDIA_SRC = `./arena-match-media.js?v=${REV}`;
   const SCORER_PHOTOS_SRC = `./arena-scorer-photos.js?v=${REV}`;
   const RESULT_FIX_SRC = `./arena-copa-bda-livre-result-fix.js?v=${REV}`;
   const ART_SAVE_FIX_SRC = `./arena-art-save-fix.js?v=${REV}`;
+  const CHAMPION_SAVE_FIX_SRC = `./arena-art-champion-save-fix.js?v=${REV}`;
   const LABELS = new Set([
     'previa do proximo jogo',
     'central ao vivo',
@@ -86,6 +87,10 @@
     ensureModule({ globalName:'ArenaBDAArtSaveFix', selector:'script[data-arena-art-save-fix]', src:ART_SAVE_FIX_SRC, datasetName:'arenaArtSaveFix', label:'o salvamento de banners', minVersion:1 });
   }
 
+  function ensureChampionSaveFix() {
+    ensureModule({ globalName:'ArenaBDAChampionSaveFix', selector:'script[data-arena-art-champion-save-fix]', src:CHAMPION_SAVE_FIX_SRC, datasetName:'arenaArtChampionSaveFix', label:'o salvamento da arte do campeão', minVersion:1 });
+  }
+
   function matchingLabel(value) {
     const text = normalize(value);
     return LABELS.has(text) ? text : '';
@@ -149,6 +154,7 @@
     ensureScorerPhotos();
     ensureResultFix();
     ensureArtSaveFix();
+    ensureChampionSaveFix();
     const page = document.querySelector('[data-page="tournament"]');
     if (!page) return 0;
     ensureMatchDetails();
@@ -189,7 +195,7 @@
   observer.observe(document.documentElement, { childList:true, subtree:true });
 
   window.ArenaBDATournamentTrim = Object.freeze({
-    version:8,
+    version:9,
     revision:REV,
     trim,
     trimMatchActions,
@@ -199,6 +205,7 @@
     scorerPhotosSource:SCORER_PHOTOS_SRC,
     resultFixSource:RESULT_FIX_SRC,
     artSaveFixSource:ART_SAVE_FIX_SRC,
+    championSaveFixSource:CHAMPION_SAVE_FIX_SRC,
     labels:Object.freeze([...LABELS]),
     matchActionLabels:Object.freeze([...MATCH_ACTION_LABELS]),
     fixedSelectors:Object.freeze([...FIXED_SELECTORS])
