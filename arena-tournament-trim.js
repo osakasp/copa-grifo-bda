@@ -1,12 +1,15 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDATournamentTrim?.version >= 7) return;
+  if (window.ArenaBDATournamentTrim?.version >= 8) return;
 
-  const REV = '20260822-6';
+  const REV = '20260913-1';
   const DESIGN_POLISH_SRC = `./arena-design-polish-v2.js?v=${REV}`;
   const MATCH_DETAILS_SRC = `./arena-match-details.js?v=${REV}`;
   const MATCH_MEDIA_SRC = `./arena-match-media.js?v=${REV}`;
+  const SCORER_PHOTOS_SRC = `./arena-scorer-photos.js?v=${REV}`;
+  const RESULT_FIX_SRC = `./arena-copa-bda-livre-result-fix.js?v=${REV}`;
+  const ART_SAVE_FIX_SRC = `./arena-art-save-fix.js?v=${REV}`;
   const LABELS = new Set([
     'previa do proximo jogo',
     'central ao vivo',
@@ -71,6 +74,18 @@
     ensureModule({ globalName:'ArenaBDAMatchMedia', selector:'script[data-arena-match-media-module]', src:MATCH_MEDIA_SRC, datasetName:'arenaMatchMediaModule', label:'o print das partidas', minVersion:1 });
   }
 
+  function ensureScorerPhotos() {
+    ensureModule({ globalName:'ArenaBDAScorerPhotos', selector:'script[data-arena-scorer-photos]', src:SCORER_PHOTOS_SRC, datasetName:'arenaScorerPhotos', label:'as fotos dos artilheiros', minVersion:1 });
+  }
+
+  function ensureResultFix() {
+    ensureModule({ globalName:'ArenaBDACopaBDALivreResultFix', selector:'script[data-arena-copa-bda-livre-result-fix]', src:RESULT_FIX_SRC, datasetName:'arenaCopaBdaLivreResultFix', label:'a publicação dos resultados da Copa BDA LIVRE', minVersion:1 });
+  }
+
+  function ensureArtSaveFix() {
+    ensureModule({ globalName:'ArenaBDAArtSaveFix', selector:'script[data-arena-art-save-fix]', src:ART_SAVE_FIX_SRC, datasetName:'arenaArtSaveFix', label:'o salvamento de banners', minVersion:1 });
+  }
+
   function matchingLabel(value) {
     const text = normalize(value);
     return LABELS.has(text) ? text : '';
@@ -131,6 +146,9 @@
 
   function trim() {
     ensureDesignPolish();
+    ensureScorerPhotos();
+    ensureResultFix();
+    ensureArtSaveFix();
     const page = document.querySelector('[data-page="tournament"]');
     if (!page) return 0;
     ensureMatchDetails();
@@ -171,13 +189,16 @@
   observer.observe(document.documentElement, { childList:true, subtree:true });
 
   window.ArenaBDATournamentTrim = Object.freeze({
-    version:7,
+    version:8,
     revision:REV,
     trim,
     trimMatchActions,
     designPolishSource:DESIGN_POLISH_SRC,
     matchDetailsSource:MATCH_DETAILS_SRC,
     matchMediaSource:MATCH_MEDIA_SRC,
+    scorerPhotosSource:SCORER_PHOTOS_SRC,
+    resultFixSource:RESULT_FIX_SRC,
+    artSaveFixSource:ART_SAVE_FIX_SRC,
     labels:Object.freeze([...LABELS]),
     matchActionLabels:Object.freeze([...MATCH_ACTION_LABELS]),
     fixedSelectors:Object.freeze([...FIXED_SELECTORS])
