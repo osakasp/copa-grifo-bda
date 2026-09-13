@@ -161,6 +161,7 @@
 
   renderChampions = function renderChampionsWithBanners() {
     const grid = document.getElementById('championGrid');
+    if (!grid) return;
 
     grid.innerHTML = champions.length
       ? champions.map((champion, index) => (
@@ -199,10 +200,11 @@
 
   function enhanceChampionForm() {
     const originalForm = document.getElementById('championForm');
-    if (!originalForm) return;
+    if (!originalForm || originalForm.dataset.championBannersEnhanced === 'true') return false;
 
     const form = originalForm.cloneNode(true);
     originalForm.replaceWith(form);
+    form.dataset.championBannersEnhanced = 'true';
 
     const submitButton = form.querySelector('button.primary');
     if (submitButton) submitButton.type = 'submit';
@@ -211,6 +213,8 @@
     if (modalTitle) modalTitle.id = 'championModalTitle';
 
     const formGrid = form.querySelector('.form-grid');
+    if (!formGrid) return false;
+
     const bannerField = document.createElement('label');
     bannerField.className = 'champion-banner-field';
     bannerField.innerHTML = `
@@ -284,6 +288,7 @@
     });
 
     document.getElementById('addChampionBtn')?.addEventListener('click', openChampionCreator);
+    return true;
   }
 
   function configureChampionModal(title, submitLabel) {
@@ -378,5 +383,14 @@
   });
 
   enhanceChampionForm();
+
+  const championFormObserver = new MutationObserver(() => {
+    if (document.getElementById('championForm') && !document.getElementById('championForm')?.dataset.championBannersEnhanced) {
+      enhanceChampionForm();
+    }
+  });
+  championFormObserver.observe(document.documentElement, { childList: true, subtree: true });
+  [0, 100, 400, 1000, 2200].forEach(delay => window.setTimeout(enhanceChampionForm, delay));
+
   renderChampions();
 })();

@@ -1,5 +1,5 @@
-const VERSION = 'v127-site-health-no-auto-reload';
-const REV = '20260825-2';
+const VERSION = 'v128-champion-banner-refresh';
+const REV = '20260913-1';
 const AUTH_REV = '20260825-5';
 const AUTH_CONSUMERS_REV = '20260825-4';
 const SITE_HEALTH_REV = '20260825-6';
