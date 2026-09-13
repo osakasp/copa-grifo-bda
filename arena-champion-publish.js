@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = 1;
+  const VERSION = 2;
   const MAX_RETRIES = 20;
   let publishTimer = 0;
   let publishing = false;
@@ -54,7 +54,7 @@
     publishing = true;
     try {
       await sync.uploadDataset('champions');
-      if (typeof toast === 'function') toast('Campeão publicado no site ✓');
+      if (typeof toast === 'function') toast('Quadro dos campeões publicado no site ✓');
     } catch (error) {
       console.error('[Arena BDA] Falha ao publicar campeões', error);
       if (typeof toast === 'function') toast('Campeão salvo, mas não foi possível publicar no site');
@@ -63,9 +63,17 @@
     }
   }
 
-  document.addEventListener('submit', event => {
-    if (!isChampionForm(event.target)) return;
+  function schedulePublish() {
     window.setTimeout(() => publishChampions(), 0);
+  }
+
+  document.addEventListener('submit', event => {
+    if (isChampionForm(event.target)) schedulePublish();
+  }, true);
+
+  document.addEventListener('click', event => {
+    if (!(event.target instanceof Element)) return;
+    if (event.target.closest('[data-change-champion-banner],[data-remove-champion-banner]')) schedulePublish();
   }, true);
 
   const observer = new MutationObserver(() => {
