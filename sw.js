@@ -112,7 +112,7 @@ self.addEventListener('message', event => {
   if (event.data?.type === 'PURGE_OLD_ARENA_CACHES') {
     event.waitUntil(caches.keys().then(keys => Promise.all(keys
       .filter(key => !ACTIVE_CACHES.has(key) && (/^arena-bda-/.test(key) || /^copa-grifo-/.test(key)))
-      .map(key => caches.delete(key))));
+      .map(key => caches.delete(key)))));
   }
 });
 
