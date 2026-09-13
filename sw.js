@@ -1,5 +1,5 @@
-const VERSION = 'v128-champion-banner-refresh';
-const REV = '20260913-1';
+const VERSION = 'v129-champion-publish';
+const REV = '20260913-2';
 const AUTH_REV = '20260825-5';
 const AUTH_CONSUMERS_REV = '20260825-4';
 const SITE_HEALTH_REV = '20260825-6';
@@ -32,6 +32,7 @@ const FLASH_CUPS_SRC = `./copas-flash.js?v=${REV}`;
 const AUTH_SRC = `./firebase-auth.js?v=${AUTH_REV}`;
 const AUTH_CONSUMERS_SRC = `./arena-auth-consumers.js?v=${AUTH_CONSUMERS_REV}`;
 const SITE_HEALTH_SRC = `./site-health.js?v=${SITE_HEALTH_REV}`;
+const CHAMPION_PUBLISH_SRC = `./arena-champion-publish.js?v=${REV}`;
 
 const SHELL = [
   './',
@@ -66,6 +67,7 @@ const SHELL = [
   FLASH_DRAW_ENGINE_SRC,
   FLASH_KNOCKOUT_ENGINE_SRC,
   FLASH_CUPS_SRC,
+  CHAMPION_PUBLISH_SRC,
   './arena-pro-motion.js?v=20260818-1',
   `./super-league-runtime-fix.js?v=${REV}`,
   './bda-logo.js?v=20260819-1'
@@ -112,7 +114,7 @@ self.addEventListener('message', event => {
   if (event.data?.type === 'PURGE_OLD_ARENA_CACHES') {
     event.waitUntil(caches.keys().then(keys => Promise.all(keys
       .filter(key => !ACTIVE_CACHES.has(key) && (/^arena-bda-/.test(key) || /^copa-grifo-/.test(key)))
-      .map(key => caches.delete(key)))));
+      .map(key => caches.delete(key))));
   }
 });
 
@@ -141,8 +143,8 @@ async function networkFirst(request) {
 
 function forceCurrentCleanup(html) {
   const stripped = html.replace(/<script[^>]+src=["'][^"']*arena-v3-cleanup\.js[^"']*["'][^>]*>\s*<\/script>/gi, '');
-  const script = `<script src="${CLEANUP_SRC}" data-arena-forced-cleanup="${VERSION}"></script>`;
-  return /<\/body>/i.test(stripped) ? stripped.replace(/<\/body>/i, `${script}</body>`) : `${stripped}${script}`;
+  const scripts = `<script src="${CLEANUP_SRC}" data-arena-forced-cleanup="${VERSION}"></script><script src="${CHAMPION_PUBLISH_SRC}" data-arena-champion-publish="${VERSION}"></script>`;
+  return /<\/body>/i.test(stripped) ? stripped.replace(/<\/body>/i, `${scripts}</body>`) : `${stripped}${scripts}`;
 }
 
 function normalizeIndexHtml(html) {
@@ -247,7 +249,7 @@ self.addEventListener('fetch', event => {
 
   const isDocument = request.mode === 'navigate' || request.destination === 'document' || url.pathname.endsWith('.html');
   const isCriticalArenaScript = request.destination === 'script'
-    && /\/(firebase-auth|firestore-sync|arena-auth-consumers|site-health|classificacao-automatica|arena-v3-cleanup|arena-super-league-sync-gate|arena-redesign-v1|arena-design-polish-v2|arena-mobile-polish|arena-mobile-bracket-v4|arena-provisional-knockout|arena-team-editor|arena-team-cloud-sync|arena-tournament-trim|arena-match-details|arena-match-media|arena-scorer-photos|flash-cup-draw-engine|flash-cup-knockout-engine|copas-flash|super-league-rule|super-league-guard|super-league-runtime-fix|bda-logo|arena-home-active|arena-bda|arena-lazy-features|arena-interface\.bundle|arena-runtime\.bundle|confrontos-validos)\.js$/.test(url.pathname);
+    && /\/(firebase-auth|firestore-sync|arena-auth-consumers|site-health|classificacao-automatica|arena-v3-cleanup|arena-super-league-sync-gate|arena-redesign-v1|arena-design-polish-v2|arena-mobile-polish|arena-mobile-bracket-v4|arena-provisional-knockout|arena-team-editor|arena-team-cloud-sync|arena-tournament-trim|arena-match-details|arena-match-media|arena-scorer-photos|flash-cup-draw-engine|flash-cup-knockout-engine|copas-flash|super-league-rule|super-league-guard|super-league-runtime-fix|bda-logo|arena-home-active|arena-bda|arena-lazy-features|arena-interface\.bundle|arena-runtime\.bundle|confrontos-validos|arena-champion-publish)\.js$/.test(url.pathname);
 
   if (isDocument || isCriticalArenaScript) return event.respondWith(networkFirst(request));
   if (request.destination === 'image') return event.respondWith(imageCacheFirst(request));
