@@ -8,7 +8,8 @@
     ],
     champions: [
       './champion-banners.js?v=20260808-2',
-      './ranking-campeoes.js?v=20260815-1'
+      './ranking-campeoes.js?v=20260815-1',
+      './arena-champion-publish.js?v=20260913-1'
     ],
     registrations: [
       './central-inscricoes.js'
