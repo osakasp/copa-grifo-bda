@@ -72,9 +72,15 @@
       if (index < 0) return;
 
       const current = tournaments[index];
+      const alreadyConfigured = current.format === 'Pontos corridos • Turno e returno'
+        && Number(current.matchSettings?.leagueTurns) === 2
+        && current.matchSettings?.autoAdvance === false
+        && current.groupGenerator?.mode === 'league'
+        && Number(current.groupGenerator?.legs) === 2;
       if (
         sameList(current.participants, config.participants)
         && Number(current.maxTeams) === config.maxTeams
+        && alreadyConfigured
       ) return;
 
       tournaments[index] = {
