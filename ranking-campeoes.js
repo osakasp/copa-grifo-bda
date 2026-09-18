@@ -126,9 +126,34 @@
 
   rankingEntries = loadRanking();
 
-  function persistRanking(previousValue) {
+  async function publishRankingToSite() {
+    const sync = window.ArenaBDACloudSync;
+    if (!isAdmin || !sync?.uploadDataset) return false;
+
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      if (sync.isReady?.()) break;
+      await new Promise(resolve => window.setTimeout(resolve, 250));
+    }
+
+    if (!sync.isReady?.()) {
+      toast('Alterações salvas neste aparelho. A nuvem ainda não está pronta.');
+      return false;
+    }
+
+    try {
+      await sync.uploadDataset('championRanking');
+      return true;
+    } catch (error) {
+      console.error('[Arena BDA] Falha ao publicar ranking de campeões', error);
+      toast('Alterações salvas, mas não foram publicadas no site');
+      return false;
+    }
+  }
+
+  async function persistRanking(previousValue) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(rankingEntries));
+      await publishRankingToSite();
       return true;
     } catch {
       rankingEntries = previousValue;
@@ -412,7 +437,7 @@
     if (current) rankingEntries[editingEntryIndex] = entry;
     else rankingEntries.push(entry);
     rankingEntries = sortRanking(rankingEntries);
-    if (!persistRanking(previousValue)) return;
+    if (!await persistRanking(previousValue)) return;
 
     render();
     showEditorList();
@@ -425,7 +450,7 @@
     if (!entry || !confirm(`Excluir ${entry.club} da lista de campeões?`)) return;
     const previousValue = clone(rankingEntries);
     rankingEntries.splice(editingEntryIndex, 1);
-    if (!persistRanking(previousValue)) return;
+    if (!await persistRanking(previousValue)) return;
     render();
     showEditorList();
     toast('Clube removido dos campeões');
