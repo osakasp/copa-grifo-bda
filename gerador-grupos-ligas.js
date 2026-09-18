@@ -76,7 +76,7 @@
       mode: old.mode === 'league' ? 'league' : 'groups',
       groupCount: Math.max(2, Number(old.groupCount) || 4),
       qualifiers: Math.max(1, Number(old.qualifiers) || 2),
-      legs: Number(old.legs) === 2 ? 2 : 1,
+      legs: Number(old.legs) === 2 || (!Object.prototype.hasOwnProperty.call(old, 'legs') && ['liga-a', 'liga-b'].includes(String(tournamentId || '').toLowerCase())) ? 2 : 1,
       distribution: old.distribution === 'serpentine' ? 'serpentine' : 'random'
     };
   }
@@ -327,7 +327,11 @@
       localStorage.setItem(MATCH_KEY, JSON.stringify(store));
       saveTournamentConfig(data);
       await cloudSave(games);
-      notify(`${generated.length} jogos gerados sem confrontos repetidos`);
+      window.dispatchEvent(new CustomEvent('arena:matches-updated', { detail: { tournamentId, count: generated.length, source: 'league-generator' } }));
+      window.dispatchEvent(new CustomEvent('arena:tournaments-updated', { detail: { tournamentId, source: 'league-generator' } }));
+      notify(data.config.mode === 'league'
+        ? `${generated.length} jogos de pontos corridos publicados${data.config.legs === 2 ? ' em ida e volta' : ''}`
+        : `${generated.length} jogos gerados sem confrontos repetidos`);
       active = false;
       $('#giManager [data-tab="games"]')?.click();
       setTimeout(() => location.reload(), 650);
@@ -617,7 +621,7 @@
           <label>Turnos<select id="leagueLegs"><option value="1" ${old.legs === 1 ? 'selected' : ''}>Turno único</option><option value="2" ${old.legs === 2 ? 'selected' : ''}>Turno e returno</option></select></label>
           <label>Distribuição<select id="leagueDistribution"><option value="random" ${old.distribution === 'random' ? 'selected' : ''}>Sorteio aleatório</option><option value="serpentine" ${old.distribution === 'serpentine' ? 'selected' : ''}>Serpentina equilibrada</option></select></label>
         </div>
-        <div class="league-config-actions"><button class="ghost" data-preview-groups>🎲 Sortear novamente</button><button class="primary" data-generate-schedule>Gerar grupos e rodadas</button></div>
+        <div class="league-config-actions"><button class="ghost" data-preview-groups>🎲 Sortear novamente</button><button class="primary" data-generate-schedule>${data.config.mode === 'league' ? (data.config.legs === 2 ? 'Publicar jogos ida e volta' : 'Publicar jogos do turno') : 'Gerar grupos e rodadas'}</button></div>
       </section>
 
       <div class="league-preview-head"><div><span class="eyebrow">Prévia da distribuição</span><h3>${data.config.mode === 'league' ? 'Liga completa' : `${data.groups.length} grupos`}</h3></div><span>${gamesCount(data)} partidas • ${data.config.legs === 2 ? 'turno e returno' : 'turno único'}</span></div>

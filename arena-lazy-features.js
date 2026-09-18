@@ -60,9 +60,9 @@
       './regulamento-interativo.js?v=20260814-1'
     ],
     tournamentAdmin: [
-      './sorteio-campeonatos.js?v=20260730-1',
+      './sorteio-campeonatos.js?v=20260918-1',
       './arena-editor-pro.js',
-      './gerador-grupos-ligas.js?v=20260816-2',
+      './gerador-grupos-ligas.js?v=20260918-1',
       './confronto-editor-v2.js?v=20260816-2'
     ]
   });

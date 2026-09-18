@@ -72,15 +72,35 @@
       if (index < 0) return;
 
       const current = tournaments[index];
+      const alreadyConfigured = current.format === 'Pontos corridos • Turno e returno'
+        && Number(current.matchSettings?.leagueTurns) === 2
+        && current.matchSettings?.autoAdvance === false
+        && current.groupGenerator?.mode === 'league'
+        && Number(current.groupGenerator?.legs) === 2;
       if (
         sameList(current.participants, config.participants)
         && Number(current.maxTeams) === config.maxTeams
+        && alreadyConfigured
       ) return;
 
       tournaments[index] = {
         ...current,
         participants: [...config.participants],
-        maxTeams: config.maxTeams
+        maxTeams: config.maxTeams,
+        format: 'Pontos corridos • Turno e returno',
+        matchSettings: {
+          ...(current.matchSettings || {}),
+          leagueTurns: 2,
+          autoAdvance: false
+        },
+        groupGenerator: {
+          ...(current.groupGenerator || {}),
+          mode: 'league',
+          groupCount: 1,
+          qualifiers: 0,
+          legs: 2,
+          distribution: 'random'
+        }
       };
       changed = true;
     });

@@ -597,7 +597,11 @@
           updatedBy: String(currentUser.email || '').toLowerCase()
         });
       }
-      notify('Sorteio publicado e chaveamento criado');
+      window.dispatchEvent(new CustomEvent('arena:matches-updated', { detail: { tournamentId: tournament.id, source: 'draw-publish', type: preview.options.type } }));
+      window.dispatchEvent(new CustomEvent('arena:tournaments-updated', { detail: { tournamentId: tournament.id, source: 'draw-publish' } }));
+      notify(preview.options.type === 'league'
+        ? `Tabela de pontos corridos publicada com ${preview.options.turns === 2 ? 'ida e volta' : 'turno único'}`
+        : 'Sorteio publicado e chaveamento criado');
       closeModal();
       window.setTimeout(() => location.reload(), 550);
     } catch (error) {
@@ -651,7 +655,8 @@
     $('#drawPhase').value = phaseForSize(Math.max(2, tournament.participants?.length || 2));
     $('#drawLegs').value = String(Number(tournament.matchSettings?.knockoutLegs) === 2 ? 2 : 1);
     $('#drawFinalLegs').value = String(Number(tournament.matchSettings?.finalLegs) || 0);
-    $('#drawTurns').value = String(Number(tournament.matchSettings?.leagueTurns) === 2 ? 2 : 1);
+    const leagueDefaultTurns = ['liga-a', 'liga-b'].includes(String(tournament.id || '').toLowerCase()) ? 2 : 1;
+    $('#drawTurns').value = String(Number(tournament.matchSettings?.leagueTurns) === 2 ? 2 : leagueDefaultTurns);
     $('#drawProtectSeeds').checked = true;
 
     renderTeamList();
