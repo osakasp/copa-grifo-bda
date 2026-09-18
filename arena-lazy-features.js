@@ -41,7 +41,8 @@
       './noticias-bda.js?v=20260816-4'
     ],
     tournament: [
-      './cores-automaticas-campeonatos.js?v=20260802-2'
+      './cores-automaticas-campeonatos.js?v=20260802-2',
+      './liga-participantes-bda.js?v=20260918-1'
     ],
     tournamentDetail: [
       './confrontos-copa-grifo.js',
