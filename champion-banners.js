@@ -28,6 +28,7 @@
     .champion-banner-preview-media{aspect-ratio:1/1;display:grid;place-items:center;overflow:hidden;color:var(--muted);font-size:12px;background:#07100c}
     .champion-banner-preview-media img{width:100%;height:100%;display:block;object-fit:cover;object-position:center}
     .champion-banner-preview-copy{display:block;padding:9px 11px;color:var(--muted);font-size:10px;line-height:1.45;text-transform:none;letter-spacing:0}
+    .champion-publish-status{display:block;margin-top:8px;color:var(--muted);font-size:10px}
     @media(min-width:760px){.champion-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
   `;
   document.head.appendChild(styles);
@@ -42,9 +43,35 @@
     return clone(champions);
   }
 
-  function persistChampions(previousValue) {
+  async function publishChampionsToSite() {
+    const sync = window.ArenaBDACloudSync;
+    if (!isAdmin || !sync?.uploadDataset) return false;
+
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      if (sync.isReady?.()) break;
+      await new Promise(resolve => window.setTimeout(resolve, 250));
+    }
+
+    if (!sync.isReady?.()) {
+      toast('Campeão salvo neste aparelho. A nuvem ainda não está pronta.');
+      return false;
+    }
+
+    try {
+      await sync.uploadDataset('champions');
+      toast('Campeão publicado no site');
+      return true;
+    } catch (error) {
+      console.error('[Arena BDA] Falha ao publicar campeão', error);
+      toast('Campeão salvo, mas não foi publicado na nuvem');
+      return false;
+    }
+  }
+
+  async function persistChampions(previousValue) {
     try {
       save(STORAGE.champions, champions);
+      await publishChampionsToSite();
       return true;
     } catch (error) {
       champions = previousValue;
@@ -248,7 +275,7 @@
       }
     });
 
-    form.addEventListener('submit', event => {
+    form.addEventListener('submit', async event => {
       event.preventDefault();
 
       const champion = {
@@ -269,7 +296,8 @@
 
       if (isEditing) champions[editingChampionIndex] = champion;
       else champions.unshift(champion);
-      if (!persistChampions(previousValue)) return;
+
+      if (!await persistChampions(previousValue)) return;
 
       form.reset();
       pendingChampionBanner = '';
@@ -277,7 +305,7 @@
       updateBannerPreview();
       closeModal('championModal');
       renderChampions();
-      toast(isEditing ? 'Dados do campeão atualizados' : 'Campeão adicionado à galeria');
+      toast(isEditing ? 'Dados do campeão atualizados' : 'Campeão publicado no site');
     });
 
     form.addEventListener('reset', () => {
@@ -305,7 +333,7 @@
     editingChampionIndex = null;
     pendingChampionBanner = '';
     form.reset();
-    configureChampionModal('Adicionar campeão', 'Salvar campeão');
+    configureChampionModal('Adicionar campeão', 'Publicar campeão');
     updateBannerPreview();
     openModal('championModal');
     document.getElementById('championEdition')?.focus();
@@ -324,7 +352,7 @@
     document.getElementById('championMaster').value = champion.master || '';
     document.getElementById('championPlayer').value = champion.player || '';
     document.getElementById('championQuote').value = champion.quote || '';
-    configureChampionModal('Editar campeão', 'Salvar alterações');
+    configureChampionModal('Editar campeão', 'Publicar alterações');
     updateBannerPreview();
     openModal('championModal');
     document.getElementById('championEdition')?.focus();
@@ -344,9 +372,9 @@
         const banner = await prepareBanner(file);
         const previousValue = cloneChampions();
         champions[index].banner = banner;
-        if (!persistChampions(previousValue)) return;
+        if (!await persistChampions(previousValue)) return;
         renderChampions();
-        toast('Banner do campeão atualizado');
+        toast('Banner do campeão publicado no site');
       } catch (error) {
         toast(error.message || 'Não foi possível atualizar o banner');
       }
@@ -355,12 +383,12 @@
     input.click();
   }
 
-  function removeChampionBanner(index) {
+  async function removeChampionBanner(index) {
     const previousValue = cloneChampions();
     delete champions[index].banner;
-    if (!persistChampions(previousValue)) return;
+    if (!await persistChampions(previousValue)) return;
     renderChampions();
-    toast('Banner removido');
+    toast('Banner removido do site');
   }
 
   document.addEventListener('click', event => {
