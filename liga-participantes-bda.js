@@ -80,7 +80,21 @@
       tournaments[index] = {
         ...current,
         participants: [...config.participants],
-        maxTeams: config.maxTeams
+        maxTeams: config.maxTeams,
+        format: 'Pontos corridos • Turno e returno',
+        matchSettings: {
+          ...(current.matchSettings || {}),
+          leagueTurns: 2,
+          autoAdvance: false
+        },
+        groupGenerator: {
+          ...(current.groupGenerator || {}),
+          mode: 'league',
+          groupCount: 1,
+          qualifiers: 0,
+          legs: 2,
+          distribution: 'random'
+        }
       };
       changed = true;
     });
