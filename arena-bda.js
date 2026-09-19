@@ -58,7 +58,16 @@
         localStorage.setItem(KEY,JSON.stringify(fresh));
         return fresh;
       }
-      const cleaned=value.filter(item=>String(item?.id)!=='copa-aguia'&&!/copa\s+águia/i.test(String(item?.name||'')));
+      const baseCleaned=value.filter(item=>String(item?.id)!=='copa-aguia'&&!/copa\s+águia/i.test(String(item?.name||'')));
+
+      // Mantém somente a Liga A oficial. Duplicatas criadas com outro ID são descartadas.
+      const canonicalLigaA=baseCleaned.find(item=>String(item?.id)==='liga-a');
+      const cleaned=baseCleaned.filter(item=>{
+        const id=String(item?.id||'');
+        const name=String(item?.name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
+        if(id==='liga-a') return item===canonicalLigaA;
+        return name!=='liga a bda';
+      });
 
       // As ligas oficiais são estruturais: se uma delas for apagada, ela volta
       // com a mesma configuração da outra divisão, pronta para receber os clubes.
