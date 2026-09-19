@@ -234,7 +234,7 @@
     ].join('');
   }
 
-  function render(
+  function render() {
     injectStyles();
     const competition = document.getElementById('tournamentCompetition');
     const tournament = currentTournament();
@@ -271,7 +271,7 @@
       '<section class="bda-points">',
       leagueHero,
       '<div class="bda-points-head"><div><span class="eyebrow">Pontos corridos</span><h3>Classificação</h3><p>3 pontos por vitória, 1 por empate e 0 por derrota.</p></div>',
-      isAdmin() ? '<div class="bda-admin-actions"><button class="ghost" type="button" id="bdaGenerateCalendar">Gerar calendário</button><button class="ghost" type="button" id="bdaAddMatch">Lançar resultado</button></div>' : ''
+      isAdmin() ? '<div class="bda-admin-actions"><button class="ghost" type="button" id="bdaGenerateCalendar">Gerar calendário</button><button class="ghost" type="button" id="bdaAddMatch">Lançar resultado</button></div>' : '',
       '</div>',
       rows ? '<div class="bda-points-table-wrap"><table class="bda-points-table"><thead><tr><th>#</th><th>Clube</th><th>PTS</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th><th>FORMA</th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<div class="bda-empty">Nenhum clube participante cadastrado.</div>',
       '<div class="bda-calendar-summary"><div><b>' + stats.played + '</b><span>jogos realizados</span></div><div><b>' + scheduled.length + '</b><span>próximos jogos</span></div><div><b>' + stats.total + '</b><span>jogos do turno</span></div></div>' +
