@@ -156,7 +156,7 @@
       '.bda-fixture em{font-style:normal;color:var(--gold-soft);padding:0 5px}',
       '.bda-fixture-result{justify-self:start;min-height:30px;padding:0 9px;font-size:8px}',
       '.bda-round{margin-top:12px;padding:10px;border:1px solid var(--line);border-radius:15px;background:#ffffff03}',
-      '.bda-round h4{margin:0 0 8px;color:var(--gold-soft);font-size:14px;text-transform:uppercase}'
+      '.bda-round h4{margin:0 0 8px;color:var(--gold-soft);font-size:14px;text-transform:uppercase}',
       '@media(max-width:560px){.bda-admin-actions{width:100%;display:grid;grid-template-columns:1fr}.bda-admin-actions button{width:100%}.bda-calendar-summary{grid-template-columns:1fr 1fr}.bda-calendar-summary div:last-child{grid-column:1/-1}.bda-fixture-grid{grid-template-columns:1fr}}',
       '@media(max-width:560px){.bda-points-head{align-items:stretch;flex-direction:column}.bda-match-form{grid-template-columns:1fr}.bda-match-form .full{grid-column:auto}}'
     ].join('');
