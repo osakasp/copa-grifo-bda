@@ -1,5 +1,5 @@
-const VERSION = 'v137-fast-load';
-const REV = '20260919-7';
+const VERSION = 'v138-fast-shell';
+const REV = '20260919-8';
 const AUTH_REV = '20260825-5';
 const AUTH_CONSUMERS_REV = '20260825-4';
 const SITE_HEALTH_REV = '20260825-6';
