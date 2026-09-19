@@ -155,15 +155,5 @@
   document.getElementById('resetDemoBtn')?.addEventListener('click',()=>{tournaments=copy(seeds);selectedId=tournaments[0].id;localStorage.removeItem(KEY);renderAll()});
   document.getElementById('tournamentModal').addEventListener('click',event=>{if(event.target.id==='tournamentModal')closeModal('tournamentModal')});
 
-  window.addEventListener('arena:tournaments-updated', () => {
-    const next=load();
-    tournaments=dedupeOfficialLeagues(next);
-    if(JSON.stringify(next)!==JSON.stringify(tournaments)){
-      try{localStorage.setItem(KEY,JSON.stringify(tournaments))}catch{}
-    }
-    selectedId=tournaments.find(item=>item.id===selectedId)?.id||tournaments[0]?.id||'';
-    renderAll();
-  });
-
   renderAll();updateAdminUI();
 })();
