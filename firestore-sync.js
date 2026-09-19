@@ -335,6 +335,7 @@
       window.dispatchEvent(new CustomEvent(`arena:${name}-updated`, {
         detail: { source, key: config.key, version: VERSION }
       }));
+      if(name==='tournaments') window.dispatchEvent(new CustomEvent('arena:tournaments-updated', { detail:{source, key:config.key, version:VERSION} }));
     });
 
     try {
