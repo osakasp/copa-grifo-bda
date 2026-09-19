@@ -3,6 +3,7 @@
 
   const TOURNAMENT_KEY = 'bda-v3-tournaments';
   const TEAMS_KEY = 'bda-v2-teams';
+  const MATCHES_KEY = 'bda-v3-confrontos';
   let lastSignature = '';
 
   function readTournaments() {
@@ -154,25 +155,133 @@
       '.bda-fixture strong{font-size:11px;line-height:1.35}',
       '.bda-fixture em{font-style:normal;color:var(--gold-soft);padding:0 5px}',
       '.bda-fixture-result{justify-self:start;min-height:30px;padding:0 9px;font-size:8px}',
+      '.bda-round{margin-top:12px;padding:10px;border:1px solid var(--line);border-radius:15px;background:#ffffff03}',
+      '.bda-round h4{margin:0 0 8px;color:var(--gold-soft);font-size:14px;text-transform:uppercase}'
       '@media(max-width:560px){.bda-admin-actions{width:100%;display:grid;grid-template-columns:1fr}.bda-admin-actions button{width:100%}.bda-calendar-summary{grid-template-columns:1fr 1fr}.bda-calendar-summary div:last-child{grid-column:1/-1}.bda-fixture-grid{grid-template-columns:1fr}}',
       '@media(max-width:560px){.bda-points-head{align-items:stretch;flex-direction:column}.bda-match-form{grid-template-columns:1fr}.bda-match-form .full{grid-column:auto}}'
     ].join('');
     document.head.appendChild(style);
   }
 
+  function roundRobin(teams, doubleRound = true) {
+    const source = [...teams];
+    if (source.length < 2) return [];
+    if (source.length % 2) source.push(null);
+    const rounds = source.length - 1;
+    const half = source.length / 2;
+    let rotation = [...source];
+    const first = [];
+
+    for (let round = 1; round <= rounds; round += 1) {
+      for (let i = 0; i < half; i += 1) {
+        let home = rotation[i];
+        let away = rotation[rotation.length - 1 - i];
+        if (!home || !away) continue;
+        if ((round + i) % 2 === 0) [home, away] = [away, home];
+        first.push({ home, away, round });
+      }
+      rotation = [rotation[0], rotation[rotation.length - 1], ...rotation.slice(1, rotation.length - 1)];
+    }
+
+    if (!doubleRound) return first;
+    return first.concat(first.map(match => ({
+      home: match.away,
+      away: match.home,
+      round: match.round + rounds
+    })));
+  }
+
+  function leagueMatchStore(tournament) {
+    try {
+      const value = JSON.parse(localStorage.getItem(MATCHES_KEY));
+      const list = value && typeof value === 'object' && Array.isArray(value[tournament.id])
+        ? value[tournament.id]
+        : [];
+      return Array.isArray(list) ? list : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function ensureLeagueCalendar(tournament) {
+    if (!['liga-a', 'liga-b'].includes(String(tournament?.id || '').toLowerCase())) return leagueMatchStore(tournament);
+    const teams = [...new Set((tournament.participants || []).map(String).map(name => name.trim()).filter(Boolean))];
+    if (teams.length < 2) return leagueMatchStore(tournament);
+
+    const current = leagueMatchStore(tournament);
+    const schedule = roundRobin(teams, Number(tournament?.matchSettings?.leagueTurns) !== 1);
+    const existing = new Set(current.map(game => [
+      String(game?.ta || '').trim().toLowerCase(),
+      String(game?.tb || '').trim().toLowerCase(),
+      String(game?.phase || '').trim().toLowerCase(),
+      Number(game?.leg || 1)
+    ].join('|')));
+    const next = [...current];
+
+    schedule.forEach((fixture, index) => {
+      const phase = 'Rodada ' + fixture.round;
+      const leg = fixture.round > teams.length - 1 ? 2 : 1;
+      const key = [
+        fixture.home.toLowerCase(), fixture.away.toLowerCase(),
+        phase.toLowerCase(), leg
+      ].join('|');
+      if (existing.has(key)) return;
+      const id = 'liga-' + tournament.id + '-r' + fixture.round + '-j' + (index + 1) + '-' + leg;
+      next.push({
+        id,
+        tieId: id,
+        leg,
+        phase,
+        pos: index + 1,
+        status: 'Agendado',
+        ta: fixture.home,
+        tb: fixture.away,
+        a: '',
+        b: '',
+        pa: '',
+        pb: '',
+        wo: 'none',
+        date: '',
+        time: '',
+        place: '',
+        note: tournament.name + ' • ' + (leg === 2 ? 'Returno' : 'Turno'),
+        created: Date.now() + index,
+        updated: Date.now() + index
+      });
+      existing.add(key);
+    });
+
+    if (next.length !== current.length) {
+      try {
+        const store = JSON.parse(localStorage.getItem(MATCHES_KEY) || '{}');
+        store[tournament.id] = next;
+        localStorage.setItem(MATCHES_KEY, JSON.stringify(store));
+      } catch {}
+    }
+    return next;
+  }
+
   function allMatches(tournament) {
+    const modern = ensureLeagueCalendar(tournament);
+    if (modern.length) return modern;
     return Array.isArray(tournament.matches) ? tournament.matches : [];
   }
 
   function completedMatches(tournament) {
-    return allMatches(tournament).filter(m =>
-      m && m.status !== 'cancelled' && m.status !== 'scheduled' &&
-      Number.isFinite(Number(m.homeScore)) && Number.isFinite(Number(m.awayScore))
-    );
+    return allMatches(tournament).filter(m => {
+      if (!m || ['cancelled', 'Cancelado'].includes(m.status)) return false;
+      const home = m.homeScore ?? m.a;
+      const away = m.awayScore ?? m.b;
+      return m.status !== 'scheduled' && m.status !== 'Agendado'
+        && Number.isFinite(Number(home)) && Number.isFinite(Number(away));
+    });
   }
 
   function scheduledMatches(tournament) {
-    return allMatches(tournament).filter(m => m && m.status === 'scheduled');
+    return allMatches(tournament).filter(m =>
+      m && !['cancelled', 'Cancelado'].includes(m.status)
+      && (m.status === 'scheduled' || m.status === 'Agendado')
+    );
   }
 
   function pairKey(a, b) {
@@ -295,11 +404,24 @@
     ].join('');
 
     if (scheduled.length) {
-      html += '<div class="bda-fixtures"><div class="bda-section-title"><div><span class="eyebrow">Calendário</span><h3>Próximas partidas</h3></div></div><div class="bda-fixture-grid">';
-      scheduled.slice(0, 12).forEach((match, index) => {
-        html += '<article class="bda-fixture"><span>' + esc(match.round || 'Rodada') + '</span><strong>' + esc(match.home) + ' <em>x</em> ' + esc(match.away) + '</strong>' + (isAdmin() ? '<button class="ghost bda-fixture-result" type="button" data-fixture-index="' + index + '">Lançar placar</button>' : '') + '</article>';
+      const byRound = new Map();
+      scheduled.forEach(match => {
+        const round = String(match.round || match.phase || 'Rodada').replace(/^Rodada\s*/i, 'Rodada ');
+        if (!byRound.has(round)) byRound.set(round, []);
+        byRound.get(round).push(match);
       });
-      html += '</div></div>';
+
+      html += '<div class="bda-fixtures"><div class="bda-section-title"><div><span class="eyebrow">Calendário completo</span><h3>Tabela de jogos</h3><p>' + scheduled.length + ' partidas programadas</p></div></div>';
+      for (const [round, roundMatches] of byRound) {
+        html += '<section class="bda-round"><h4>' + esc(round) + '</h4><div class="bda-fixture-grid">';
+        roundMatches.forEach(match => {
+          html += '<article class="bda-fixture"><span>' + esc(round) + '</span><strong>' + esc(match.ta || match.home) + ' <em>x</em> ' + esc(match.tb || match.away) + '</strong>' +
+            (isAdmin() ? '<button class="ghost bda-fixture-result" type="button" data-fixture-id="' + esc(match.id || '') + '">Lançar placar</button>' : '') +
+            '</article>';
+        });
+        html += '</div></section>';
+      }
+      html += '</div>';
     }
 
     const finished = completedMatches(tournament).slice().reverse().slice(0, 8);
@@ -356,8 +478,10 @@
         if (!panel) return;
         panel.hidden = false;
         const fixture = document.getElementById('bdaFixture');
+        const list = scheduledMatches(tournament);
+        const index = list.findIndex(match => String(match.id || '') === String(button.dataset.fixtureId || ''));
         if (fixture) {
-          fixture.value = button.dataset.fixtureIndex || '';
+          fixture.value = index >= 0 ? String(index) : '';
           fixture.dispatchEvent(new Event('change'));
         }
       });
