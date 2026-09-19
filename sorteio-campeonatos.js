@@ -55,9 +55,22 @@
   }
 
   function isAdmin() {
+    const authCore = window.ArenaBDAAuth;
+    if (authCore?.isAdmin) return Boolean(authCore.isAdmin());
     return Boolean(
-      currentUser && String(currentUser.email || '').toLowerCase() === ADMIN_EMAIL
+      currentUser && (
+        String(currentUser.email || '').toLowerCase() === ADMIN_EMAIL ||
+        (Array.isArray(window.ARENA_ADMIN_EMAILS) && window.ARENA_ADMIN_EMAILS.includes(String(currentUser.email || '').toLowerCase()))
+      )
     );
+  }
+
+  function adminEmail() {
+    return String(
+      window.ArenaBDAAuth?.currentEmail?.() ||
+      currentUser?.email ||
+      ''
+    ).trim().toLowerCase();
   }
 
   function notify(message) {
@@ -534,7 +547,15 @@
   }
 
   async function publishDraw() {
-    if (!preview || !isAdmin()) return;
+    if (!preview) {
+      notify('Faça o sorteio antes de publicar.');
+      return;
+    }
+    if (!isAdmin()) {
+      notify('Sua sessão administrativa não foi reconhecida. Feche e entre novamente como administrador.');
+      return;
+    }
+
     const tournament = tournamentById();
     if (!tournament) return;
 
@@ -553,7 +574,7 @@
       seed: preview.seed,
       type: preview.options.type,
       createdAt: preview.createdAt,
-      createdBy: String(currentUser.email || '').toLowerCase(),
+      createdBy: adminEmail(),
       teams: preview.options.teams,
       byes: preview.result.byes,
       summary: preview.result.summary
@@ -594,7 +615,7 @@
           dataset: 'confrontos', tournamentId: tournament.id,
           games: preview.result.games, draw: drawData,
           updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-          updatedBy: String(currentUser.email || '').toLowerCase()
+          updatedBy: adminEmail()
         });
       }
       window.dispatchEvent(new CustomEvent('arena:matches-updated', { detail: { tournamentId: tournament.id, source: 'draw-publish', type: preview.options.type } }));
@@ -812,10 +833,51 @@
   buildModal();
   bindEvents();
 
-  if (window.firebase && typeof firebase.auth === 'function') {
-    if (typeof firebase.firestore === 'function') db = firebase.firestore();
-    firebase.auth().onAuthStateChanged(user => { currentUser = user; scheduleButtons(); });
+  function bindAuth() {
+    const authCore = window.ArenaBDAAuth;
+    if (authCore?.subscribe) {
+      authCore.subscribe(state => {
+        currentUser = state?.user || null;
+        scheduleButtons();
+      }, true);
+      if (!db && window.firebase && typeof firebase.firestore === 'function') {
+        try { db = firebase.firestore(); } catch {}
+      }
+      return true;
+    }
+
+    if (window.firebase && typeof firebase.auth === 'function') {
+      if (typeof firebase.firestore === 'function') {
+        try { db = firebase.firestore(); } catch {}
+      }
+      firebase.auth().onAuthStateChanged(user => {
+        currentUser = user;
+        scheduleButtons();
+      });
+      return true;
+    }
+
+    return false;
   }
+
+  if (!bindAuth()) {
+    const authRetry = window.setInterval(() => {
+      if (bindAuth()) window.clearInterval(authRetry);
+    }, 500);
+    window.setTimeout(() => window.clearInterval(authRetry), 30000);
+  }
+
+  window.addEventListener('arena:auth-changed', event => {
+    currentUser = event.detail?.user || window.ArenaBDAAuth?.currentUser?.() || null;
+    scheduleButtons();
+  });
+
+  window.addEventListener('arena:cloud-ready', () => {
+    if (!db && window.firebase && typeof firebase.firestore === 'function') {
+      try { db = firebase.firestore(); } catch {}
+    }
+    scheduleButtons();
+  });
 
   window.ArenaDOMEvents.subscribe(scheduleButtons, { selector: '#giManager,.gi-head,[data-page="tournament"]' });
   scheduleButtons();
