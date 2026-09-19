@@ -70,10 +70,10 @@
         `./confrontos-validos.js?v=${REV}`,
         `./super-league-guard.js?v=${REV}`,
         `./arena-bda.js?v=${REV}`,
-        './pontos-corridos.js?v=20260919-3',
+        `./arena-interface.bundle.js?v=${REV}`,
         `./arena-home-active.js?v=${REV}`,
         `./arena-lazy-features.js?v=${REV}`,
-        `./arena-interface.bundle.js?v=${REV}`,
+        './pontos-corridos.js?v=20260919-3',
         `./arena-v3-cleanup.js?v=${REV}`
       ];
       const cloudScripts = [
@@ -391,11 +391,10 @@
         const coreFailures = [];
         const startedAt = performance.now();
 
-        // A tela inicial não depende de todos os módulos. Liberamos o shell
-        // imediatamente e terminamos os recursos em pequenos lotes para não travar
-        // o thread principal em celulares.
-        const firstScripts = coreScripts.slice(0, 2);
-        const remainingScripts = coreScripts.slice(2);
+        // Apenas o núcleo de navegação é carregado antes da primeira interação.
+        // Recursos de campeonatos/classificação ficam para depois, evitando picos de CPU.
+        const firstScripts = coreScripts.slice(0, 6);
+        const backgroundScripts = coreScripts.slice(6);
 
         await loadOrderedBatch(firstScripts, coreFailures, 12000);
         if (generation !== loadGeneration) return;
@@ -404,23 +403,33 @@
         await settleAndReveal(generation, 0);
 
         const backgroundFailures = [];
-        for (let i = 0; i < remainingScripts.length; i += 2) {
+        const finishBackground = async () => {
           if (generation !== loadGeneration) return;
-          await loadOrderedBatch(remainingScripts.slice(i, i + 2), backgroundFailures, 12000);
-          await new Promise(resolve => setTimeout(resolve, 0));
+          for (let i = 0; i < backgroundScripts.length; i += 2) {
+            if (generation !== loadGeneration) return;
+            await loadOrderedBatch(backgroundScripts.slice(i, i + 2), backgroundFailures, 12000);
+            await new Promise(resolve => setTimeout(resolve, 16));
+          }
+
+          if (generation !== loadGeneration) return;
+          const allFailures = [...coreFailures, ...backgroundFailures];
+          document.documentElement.dataset.arenaEnhanced = allFailures.length ? 'partial' : 'true';
+          document.documentElement.dataset.arenaLoadMs = String(Math.round(performance.now() - startedAt));
+          window.dispatchEvent(new CustomEvent('arena:enhanced', {
+            detail:{ failures:allFailures.map(item => item.src), loadMs:Number(document.documentElement.dataset.arenaLoadMs) }
+          }));
+          document.documentElement.dataset.arenaEnhancements = 'ready';
+          window.dispatchEvent(new CustomEvent('arena:enhancements-ready', {
+            detail:{ failures:backgroundFailures.map(item => item.src) }
+          }));
+        };
+
+        if ('requestIdleCallback' in window) {
+          window.requestIdleCallback(() => finishBackground().catch(() => {}), { timeout: 1800 });
+        } else {
+          window.setTimeout(() => finishBackground().catch(() => {}), 900);
         }
 
-        if (generation !== loadGeneration) return;
-        const allFailures = [...coreFailures, ...backgroundFailures];
-        document.documentElement.dataset.arenaEnhanced = allFailures.length ? 'partial' : 'true';
-        document.documentElement.dataset.arenaLoadMs = String(Math.round(performance.now() - startedAt));
-        window.dispatchEvent(new CustomEvent('arena:enhanced', {
-          detail:{ failures:allFailures.map(item => item.src), loadMs:Number(document.documentElement.dataset.arenaLoadMs) }
-        }));
-        document.documentElement.dataset.arenaEnhancements = 'ready';
-        window.dispatchEvent(new CustomEvent('arena:enhancements-ready', {
-          detail:{ failures:backgroundFailures.map(item => item.src) }
-        }));
         scheduleCloudWhenQuiet();
       }
 
