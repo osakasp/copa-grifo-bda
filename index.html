@@ -174,8 +174,7 @@
       async function settleAndReveal(generation, minimumDelay = 0) {
         if (generation !== loadGeneration) return;
         if (minimumDelay > 0) await new Promise(resolve => window.setTimeout(resolve, minimumDelay));
-        await yieldFrame();
-        await yieldFrame();
+        await new Promise(resolve => requestAnimationFrame(resolve));
         if (generation !== loadGeneration) return;
         clearTimeout(bootTimeoutId);
         clearTimeout(transitionTimer);
@@ -235,7 +234,7 @@
             failures.push({ src, error });
             console.error(`[Arena BDA] Falha no módulo ${src}`, error);
           });
-          if (index < scripts.length - 1 && index % 3 === 2) await yieldFrame();
+          // A ordem dos módulos garante as dependências. Não inserimos pausas artificiais entre scripts.
         }
       }
 
