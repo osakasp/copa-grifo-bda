@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = 3;
+  const VERSION = 4;
   const MAX_RETRIES = 40;
   let publishTimer = 0;
   let publishing = false;
@@ -21,6 +21,19 @@
     if (!button) return;
     const title = document.getElementById('championModalTitle')?.textContent?.trim().toLowerCase() || '';
     button.textContent = title.includes('editar') ? 'Publicar alterações' : 'Publicar no site';
+    button.dataset.championPublishSubmit = 'true';
+  }
+
+  function ensureCardPublishButton() {
+    document.querySelectorAll('.champion-banner-actions').forEach(actions => {
+      if (actions.querySelector('[data-publish-champions]')) return;
+      const button = document.createElement('button');
+      button.className = 'secondary';
+      button.type = 'button';
+      button.dataset.publishChampions = 'true';
+      button.textContent = 'Publicar no site';
+      actions.appendChild(button);
+    });
   }
 
   function retry(attempt, delay = 500) {
@@ -49,10 +62,6 @@
     }
 
     const before = sync.meta?.()?.revisions?.champions || '';
-    if (before && before === lastPublishRevision) {
-      retry(attempt, 500);
-      return;
-    }
 
     publishing = true;
     try {
@@ -89,12 +98,29 @@
 
   document.addEventListener('click', event => {
     if (!(event.target instanceof Element)) return;
+
+    const publishButton = event.target.closest('[data-publish-champions]');
+    if (publishButton) {
+      event.preventDefault();
+      publishButton.disabled = true;
+      publishButton.textContent = 'Publicando...';
+      publishChampions().finally(() => {
+        publishButton.disabled = false;
+        publishButton.textContent = 'Publicar no site';
+      });
+      return;
+    }
+
     if (event.target.closest('[data-change-champion-banner],[data-remove-champion-banner]')) {
       schedulePublish(100);
     }
   }, true);
 
-  window.addEventListener('arena:champions-updated', () => schedulePublish(100));
+  window.addEventListener('arena:champions-updated', () => {
+    ensureCardPublishButton();
+    schedulePublish(100);
+  });
+
   window.addEventListener('arena:cloud-status', event => {
     if (event.detail?.state === 'ok') schedulePublish(50);
   });
@@ -102,12 +128,14 @@
   const observer = new MutationObserver(() => {
     const form = document.getElementById('championForm');
     if (form) setPublishLabel(form);
+    ensureCardPublishButton();
   });
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
   [0, 250, 700, 1500, 3000].forEach(delay => window.setTimeout(() => {
     const form = document.getElementById('championForm');
     if (form) setPublishLabel(form);
+    ensureCardPublishButton();
   }, delay));
 
   window.ArenaBDAChampionPublish = Object.freeze({
