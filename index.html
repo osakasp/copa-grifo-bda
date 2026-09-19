@@ -53,7 +53,7 @@
     (() => {
       'use strict';
 
-      const REV = '20260919-4';
+      const REV = '20260919-5';
       const previewSource = `./preview-v2.html?v=${REV}`;
       const boot = document.getElementById('arenaBoot');
       const title = document.getElementById('loadingTitle');
@@ -96,6 +96,24 @@
       let cloudReady = false;
       let lastInteractionAt = performance.now();
       let cloudIdleTimer = 0;
+
+      // A interface principal usa scripts com dependências, mas os downloads não precisam
+      // acontecer em cascata. Precarregamos os módulos para transformar a fila de rede em
+      // downloads paralelos e mantemos a execução na ordem segura.
+      function preloadScripts(scripts) {
+        scripts.forEach(src => {
+          if (document.head.querySelector('link[data-arena-preload="true"][href="' + src + '"]')) return;
+          const link = document.createElement('link');
+          link.rel = 'preload';
+          link.as = 'script';
+          link.href = src;
+          link.fetchPriority = 'high';
+          link.dataset.arenaPreload = 'true';
+          document.head.appendChild(link);
+        });
+      }
+
+      preloadScripts(coreScripts);
 
       if ('serviceWorker' in navigator && location.protocol !== 'file:') {
         window.addEventListener('load', () => {
@@ -217,7 +235,7 @@
             failures.push({ src, error });
             console.error(`[Arena BDA] Falha no módulo ${src}`, error);
           });
-          if (index < scripts.length - 1) await yieldFrame();
+          if (index < scripts.length - 1 && index % 3 === 2) await yieldFrame();
         }
       }
 
@@ -349,7 +367,7 @@
 
       async function mountArena(generation) {
         setLoadingState();
-        const response = await fetch(previewSource, { cache:'no-cache' });
+        const response = await fetch(previewSource, { cache:'default' });
         if (!response.ok) throw new Error(`Falha HTTP ${response.status} ao carregar a Arena`);
         const previewHtml = await response.text();
         if (generation !== loadGeneration) return;
