@@ -1,5 +1,5 @@
-const VERSION = 'v130-round-robin-draw';
-const REV = '20260918-1';
+const VERSION = 'v131-liga-fixtures';
+const REV = '20260919-1';
 const AUTH_REV = '20260825-5';
 const AUTH_CONSUMERS_REV = '20260825-4';
 const SITE_HEALTH_REV = '20260825-6';
