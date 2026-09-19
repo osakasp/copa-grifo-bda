@@ -203,7 +203,35 @@
     }
   }
 
+  const LEAGUE_A_FALLBACK = [
+    'Inter FC BDA','Cajueiro FC BDA','São Paulo FC BDA','Flamestre FC BDA',
+    'Imortais FC BDA','Santos FC BDA','Independente FC BDA','Jester Warriors FC BDA',
+    'Vasco BDA','HellYear BDA','CR Flamengo BDA','CV Cruz BDA'
+  ];
+
+  function normalizeLeagueParticipants(tournament) {
+    if (String(tournament?.id || '').toLowerCase() !== 'liga-a') return tournament;
+    const current = Array.isArray(tournament.participants) ? tournament.participants.filter(Boolean).map(String) : [];
+    if (current.length >= 2) return tournament;
+    const fallback = [...LEAGUE_A_FALLBACK];
+    if (fallback.length < 2) return tournament;
+    tournament.participants = fallback;
+    try {
+      const list = readTournaments();
+      const item = list.find(entry => String(entry?.id || '') === 'liga-a');
+      if (item) {
+        item.participants = [...fallback];
+        item.maxTeams = 12;
+        item.format = 'Pontos corridos • Turno e returno';
+        item.matchSettings = { ...(item.matchSettings || {}), leagueTurns: 2, autoAdvance: false };
+        localStorage.setItem(TOURNAMENT_KEY, JSON.stringify(list));
+      }
+    } catch {}
+    return tournament;
+  }
+
   function ensureLeagueCalendar(tournament) {
+    tournament = normalizeLeagueParticipants(tournament);
     if (!['liga-a', 'liga-b'].includes(String(tournament?.id || '').toLowerCase())) return leagueMatchStore(tournament);
     const teams = [...new Set((tournament.participants || []).map(String).map(name => name.trim()).filter(Boolean))];
     if (teams.length < 2) return leagueMatchStore(tournament);
