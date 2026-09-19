@@ -1,5 +1,5 @@
-const VERSION = 'v141-smooth-scroll';
-const REV = '20260919-11';
+const VERSION = 'v142-leagues-fixed';
+const REV = '20260919-12';
 const AUTH_REV = '20260825-5';
 const AUTH_CONSUMERS_REV = '20260825-4';
 const SITE_HEALTH_REV = '20260825-6';
