@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = 4;
+  const VERSION = 5;
   const MAX_RETRIES = 40;
   const LEAGUE_RE = /\bliga\s*(?:a|b)(?:\s*bda)?\b/i;
   let publishTimer = 0;
@@ -22,41 +22,6 @@
 
   function currentFormIsLeague() {
     return isLeagueEdition(document.getElementById('championEdition')?.value || '');
-  }
-
-  function championIsLeague(index) {
-    return isLeagueEdition(window.champions?.[index]?.edition || '');
-  }
-
-  function updateFormPublishState(form) {
-    if (!form) return;
-    const button = form.querySelector('button.primary');
-    if (!button) return;
-    const league = currentFormIsLeague();
-    const title = document.getElementById('championModalTitle')?.textContent?.trim().toLowerCase() || '';
-    button.textContent = league
-      ? (title.includes('editar') ? 'Publicar alterações' : 'Publicar no site')
-      : (title.includes('editar') ? 'Salvar alterações' : 'Salvar campeão');
-    button.dataset.championPublishSubmit = league ? 'true' : 'false';
-  }
-
-  function setPublishLabel(form) {
-    if (!form) return;
-    updateFormPublishState(form);
-  }
-
-  function ensureCardPublishButton() {
-    document.querySelectorAll('.champion-banner-actions').forEach(actions => {
-      const index = Number(actions.querySelector('[data-edit-champion]')?.dataset.editChampion ?? -1);
-      if (!championIsLeague(index)) return;
-      if (actions.querySelector('[data-publish-champions]')) return;
-      const button = document.createElement('button');
-      button.className = 'secondary';
-      button.type = 'button';
-      button.dataset.publishChampions = 'true';
-      button.textContent = 'Publicar no site';
-      actions.appendChild(button);
-    });
   }
 
   function retry(attempt, delay = 500) {
@@ -117,25 +82,12 @@
 
   document.addEventListener('submit', event => {
     if (isChampionForm(event.target)) {
-      if (currentFormIsLeague()) schedulePublish(50);
-      else if (typeof toast === 'function') toast('A publicação no site é exclusiva das Ligas A e B');
+      if (currentFormIsLeague()) schedulePublish(250);
     }
   }, true);
 
   document.addEventListener('click', event => {
     if (!(event.target instanceof Element)) return;
-
-    const publishButton = event.target.closest('[data-publish-champions]');
-    if (publishButton) {
-      event.preventDefault();
-      publishButton.disabled = true;
-      publishButton.textContent = 'Publicando...';
-      publishChampions().finally(() => {
-        publishButton.disabled = false;
-        publishButton.textContent = 'Publicar no site';
-      });
-      return;
-    }
 
     if (event.target.closest('[data-change-champion-banner],[data-remove-champion-banner]')) {
       schedulePublish(100);
@@ -143,7 +95,6 @@
   }, true);
 
   window.addEventListener('arena:champions-updated', () => {
-    ensureCardPublishButton();
     const form = document.getElementById('championForm');
     if (form) updateFormPublishState(form);
   });
@@ -158,7 +109,6 @@
   [0, 250, 700, 1500, 3000].forEach(delay => window.setTimeout(() => {
     const form = document.getElementById('championForm');
     if (form) updateFormPublishState(form);
-    ensureCardPublishButton();
   }, delay));
 
   document.addEventListener('input', event => {
