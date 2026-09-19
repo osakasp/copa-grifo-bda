@@ -64,9 +64,13 @@
       // com a mesma configuração da outra divisão, pronta para receber os clubes.
       const requiredLeagues = ['liga-a','liga-b'];
       requiredLeagues.forEach(id => {
-        if (!cleaned.some(item => String(item?.id) === id)) {
-          const seed = seeds.find(item => item.id === id);
+        const current = cleaned.find(item => String(item?.id) === id);
+        const seed = seeds.find(item => item.id === id);
+        if (!current) {
           if (seed) cleaned.push(copy(seed));
+        } else if (id === 'liga-a' && seed && (!Array.isArray(current.participants) || current.participants.length < 2)) {
+          current.participants = copy(seed.participants);
+          current.matchSettings = copy(seed.matchSettings);
         }
       });
 
