@@ -212,6 +212,11 @@
     const list = Array.isArray(value) ? value : [];
     const item = tournaments().find(entry => String(entry?.id) === String(id)) || null;
     const ensured = ensureLeagueGames(id, item, list);
+    // Ligas de pontos corridos usam calendário próprio. Não deixe o filtro
+    // de grupos/chaveamento esconder partidas válidas da liga.
+    const isPointsLeague = ['liga-a', 'liga-b'].includes(String(id || '').toLowerCase())
+      || String(item?.format || '').toLowerCase().includes('pontos corridos');
+    if (isPointsLeague) return ensured;
     return window.ArenaBDAValidMatches?.forTournament(item, ensured) || ensured;
   }
 
