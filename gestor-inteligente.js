@@ -925,8 +925,9 @@
     listen();
   }
 
-  if (authCore?.subscribe) {
-    authCore.subscribe(state => {
+  const auth = authService();
+  if (typeof auth?.subscribe === 'function') {
+    auth.subscribe(state => {
       currentUser = state.user;
       if (!state.isAdmin) openEditorId = '';
       render();
