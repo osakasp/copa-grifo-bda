@@ -140,6 +140,21 @@
       '.bda-match-form{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}',
       '.bda-match-form label{display:grid;gap:5px}',
       '.bda-match-form .full{grid-column:1/-1}',
+      '.bda-admin-actions{display:flex;flex-wrap:wrap;gap:7px}',
+      '.bda-calendar-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px}',
+      '.bda-calendar-summary div{padding:10px;border:1px solid var(--line);border-radius:12px;background:#ffffff06}',
+      '.bda-calendar-summary b{display:block;color:var(--gold-soft);font-size:17px}',
+      '.bda-calendar-summary span{display:block;color:var(--muted);font-size:8px;text-transform:uppercase}',
+      '.bda-fixtures{margin-top:14px}',
+      '.bda-section-title{display:flex;justify-content:space-between;align-items:end;margin-bottom:8px}',
+      '.bda-section-title h3{margin:2px 0 0;font-size:20px;text-transform:uppercase}',
+      '.bda-fixture-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}',
+      '.bda-fixture{display:grid;gap:6px;padding:11px;border:1px solid var(--line);border-radius:13px;background:linear-gradient(145deg,var(--surface-2),var(--surface))}',
+      '.bda-fixture>span{color:var(--muted);font-size:8px;text-transform:uppercase}',
+      '.bda-fixture strong{font-size:11px;line-height:1.35}',
+      '.bda-fixture em{font-style:normal;color:var(--gold-soft);padding:0 5px}',
+      '.bda-fixture-result{justify-self:start;min-height:30px;padding:0 9px;font-size:8px}',
+      '@media(max-width:560px){.bda-admin-actions{width:100%;display:grid;grid-template-columns:1fr}.bda-admin-actions button{width:100%}.bda-calendar-summary{grid-template-columns:1fr 1fr}.bda-calendar-summary div:last-child{grid-column:1/-1}.bda-fixture-grid{grid-template-columns:1fr}}',
       '@media(max-width:560px){.bda-points-head{align-items:stretch;flex-direction:column}.bda-match-form{grid-template-columns:1fr}.bda-match-form .full{grid-column:auto}}'
     ].join('');
     document.head.appendChild(style);
