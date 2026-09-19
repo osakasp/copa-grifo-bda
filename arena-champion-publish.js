@@ -47,7 +47,7 @@
 
   function ensureCardPublishButton() {
     document.querySelectorAll('.champion-banner-actions').forEach(actions => {
-      const index = Number(actions.closest('[data-champion-index]')?.dataset.championIndex ?? -1);
+      const index = Number(actions.querySelector('[data-edit-champion]')?.dataset.editChampion ?? -1);
       if (!championIsLeague(index)) return;
       if (actions.querySelector('[data-publish-champions]')) return;
       const button = document.createElement('button');
