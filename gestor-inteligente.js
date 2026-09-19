@@ -4,10 +4,8 @@
   const TOURNAMENT_KEY = 'bda-v3-tournaments';
   const MATCH_KEY = 'bda-v3-confrontos';
   const PHASES = ['Preliminar', 'Fase de grupos', 'Oitavas de final', 'Quartas de final', 'Semifinal', 'Final'];
-  const authCore = window.ArenaBDAAuth;
-
   let tournamentId = 'copa-grifo';
-  let currentUser = authCore?.currentUser?.() || null;
+  let currentUser = window.ArenaBDAAuth?.currentUser?.() || null;
   let db = null;
   let cloudUnsubscribe = null;
   let activeTab = 'games';
@@ -63,15 +61,23 @@
   };
   const stableStringify = value => JSON.stringify(stable(value));
 
+  function authService() {
+    return window.ArenaBDAAuth || null;
+  }
+
   function adminActive() {
-    if (authCore?.isAdmin) return authCore.isAdmin();
-    const email = String(currentUser?.email || '').toLowerCase();
-    return Boolean(currentUser && (window.ARENA_ADMIN_EMAILS || []).includes(email));
+    const auth = authService();
+    if (typeof auth?.isAdmin === 'function') return Boolean(auth.isAdmin());
+    const user = auth?.currentUser?.() || currentUser;
+    const email = String(user?.email || '').toLowerCase();
+    return Boolean(user && (window.ARENA_ADMIN_EMAILS || []).includes(email));
   }
 
   function currentEmail() {
-    if (authCore?.currentEmail) return authCore.currentEmail();
-    return String(currentUser?.email || '').toLowerCase();
+    const auth = authService();
+    if (typeof auth?.currentEmail === 'function') return String(auth.currentEmail() || '').toLowerCase();
+    const user = auth?.currentUser?.() || currentUser;
+    return String(user?.email || '').toLowerCase();
   }
 
   function load(key, fallback) {
@@ -89,7 +95,19 @@
   }
 
   function tournament() {
-    return tournaments().find(item => item.id === tournamentId) || null;
+    return tournaments().find(item => String(item?.id) === String(tournamentId)) || null;
+  }
+
+  function leagueTeams(item) {
+    const candidates = [
+      ...(Array.isArray(item?.participants) ? item.participants : []),
+      ...(Array.isArray(item?.teams) ? item.teams : [])
+    ];
+    const fromDom = [...document.querySelectorAll('#arenaDetail .arena-clubs .arena-club')]
+      .map(node => node.textContent.replace(/^\s*\d+\s*/, '').trim());
+    return [...new Set([...candidates, ...fromDom]
+      .map(name => String(name || '').trim())
+      .filter(Boolean))];
   }
 
   function matchStore() {
@@ -133,7 +151,7 @@
 
   function ensureLeagueGames(id, item, list) {
     if (!['liga-a', 'liga-b'].includes(String(id).toLowerCase())) return list;
-    const teams = [...new Set((item?.participants || []).map(String).map(name => name.trim()).filter(Boolean))];
+    const teams = leagueTeams(item);
     if (teams.length < 2) return list;
 
     const turns = Number(item?.matchSettings?.leagueTurns) === 1 ? 1 : 2;
@@ -391,14 +409,37 @@
   }
 
   function inferTournament() {
-    const heading = $('#arenaDetail .arena-hero-copy h2')?.textContent?.trim();
-    const found = tournaments().find(item => normalize(item.name) === normalize(heading));
-    if (found && found.id !== tournamentId) {
+    const detail = $('#arenaDetail');
+    const candidates = [
+      detail?.querySelector('#tournamentOverview h2')?.textContent?.trim(),
+      detail?.querySelector('.arena-hero-copy h2')?.textContent?.trim(),
+      detail?.querySelector('.arena-detail-nav > span')?.textContent?.replace(/^\s*[^\p{L}\p{N}]*/u, '').trim()
+    ].filter(Boolean);
+
+    const all = tournaments();
+    const found = candidates
+      .map(name => all.find(item => normalize(item.name) === normalize(name)))
+      .find(Boolean);
+
+    if (found && String(found.id) !== String(tournamentId)) {
       tournamentId = found.id;
       activeTab = 'games';
       openEditorId = '';
       listen();
     }
+
+    if (!found && detail) {
+      const fallbackId = detail.querySelector('[data-edit-tournament]')?.dataset.editTournament
+        || detail.querySelector('[data-delete-tournament]')?.dataset.deleteTournament
+        || '';
+      if (fallbackId && all.some(item => String(item.id) === String(fallbackId))) {
+        tournamentId = fallbackId;
+        activeTab = 'games';
+        openEditorId = '';
+        listen();
+      }
+    }
+
     return tournamentId;
   }
 
@@ -899,6 +940,27 @@
   }
 
   window.addEventListener('arena:permissions-updated', render);
+  window.addEventListener('arena:cloud-ready', () => {
+    setTimeout(() => {
+      inferTournament();
+      listen();
+      render();
+    }, 80);
+  });
+  window.addEventListener('arena:matches-updated', event => {
+    if (String(event.detail?.tournamentId || '') === String(tournamentId)) {
+      setTimeout(render, 0);
+    }
+  });
+  window.addEventListener('arena:points-updated', () => {
+    setTimeout(render, 0);
+  });
+  window.addEventListener('arena:enhancements-ready', () => {
+    setTimeout(() => {
+      inferTournament();
+      render();
+    }, 80);
+  });
   window.ArenaBDAMatchManager = Object.freeze({
     render,
     open: id => {
