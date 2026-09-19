@@ -390,41 +390,26 @@
         installCloudTriggers();
 
         const coreFailures = [];
-        const enhancementFailures = [];
         const startedAt = performance.now();
 
-        // Primeiro entregamos a tela principal. Os módulos de navegação e extras continuam
-        // carregando em segundo plano, sem manter o usuário atrás do splash.
-        const criticalScripts = coreScripts.slice(0, 6);
-        const enhancementScripts = coreScripts.slice(6);
-
-        await loadOrderedBatch(criticalScripts, coreFailures, 15000);
+        // Mantemos a execução dos módulos em ordem para evitar tela vazia.
+        // As pausas artificiais já foram removidas, então os scripts continuam rápidos.
+        await loadOrderedBatch(coreScripts, coreFailures, 15000);
         if (generation !== loadGeneration) return;
 
-        document.documentElement.dataset.arenaCriticalReady = coreFailures.length ? 'partial' : 'true';
-        window.dispatchEvent(new CustomEvent('arena:critical-ready', {
-          detail:{ failures:coreFailures.map(item => item.src) }
-        }));
-
-        scheduleCloudWhenQuiet();
-        await settleAndReveal(generation, 0);
-
-        // A interface já está visível. Agora terminamos os módulos menos críticos sem
-        // bloquear pintura, toque ou navegação básica.
-        await loadOrderedBatch(enhancementScripts, enhancementFailures, 15000);
-        if (generation !== loadGeneration) return;
-
-        const allFailures = [...coreFailures, ...enhancementFailures];
-        document.documentElement.dataset.arenaEnhanced = allFailures.length ? 'partial' : 'true';
+        document.documentElement.dataset.arenaEnhanced = coreFailures.length ? 'partial' : 'true';
         document.documentElement.dataset.arenaLoadMs = String(Math.round(performance.now() - startedAt));
         window.dispatchEvent(new CustomEvent('arena:enhanced', {
-          detail:{ failures:allFailures.map(item => item.src), loadMs:Number(document.documentElement.dataset.arenaLoadMs) }
+          detail:{ failures:coreFailures.map(item => item.src), loadMs:Number(document.documentElement.dataset.arenaLoadMs) }
         }));
         document.documentElement.dataset.arenaEnhancements = 'ready';
         window.dispatchEvent(new CustomEvent('arena:enhancements-ready', {
-          detail:{ failures:enhancementFailures.map(item => item.src) }
+          detail:{ failures:coreFailures.map(item => item.src) }
         }));
-        if (allFailures.length && typeof window.toast === 'function') window.toast('A Arena abriu, mas alguns recursos não carregaram');
+        if (coreFailures.length && typeof window.toast === 'function') window.toast('A Arena abriu, mas alguns recursos não carregaram');
+
+        scheduleCloudWhenQuiet();
+        await settleAndReveal(generation, 0);
       }
 
       async function startLoad() {
