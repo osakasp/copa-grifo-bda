@@ -43,7 +43,7 @@
     tournament: [
       './cores-automaticas-campeonatos.js?v=20260802-2',
       './liga-participantes-bda.js?v=20260919-2',
-      './pontos-corridos.js?v=20260919-3',
+      './pontos-corridos.js?v=20260919-4',
       './arena-liga-fixtures.js?v=20260919-1'
     ],
     tournamentDetail: [
