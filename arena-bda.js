@@ -50,7 +50,23 @@
   document.head.appendChild(style);
 
   function copy(value){return JSON.parse(JSON.stringify(value))}
-  function load(){try{const value=JSON.parse(localStorage.getItem(KEY));if(!Array.isArray(value)||!value.length)return copy(seeds);const cleaned=value.filter(item=>String(item?.id)!=='copa-aguia'&&!/copa\s+águia/i.test(String(item?.name||'')));if(JSON.stringify(cleaned)!==JSON.stringify(value))localStorage.setItem(KEY,JSON.stringify(cleaned));return cleaned}catch{return copy(seeds)}}
+  function load(){
+    try{
+      const value=JSON.parse(localStorage.getItem(KEY));
+      if(!Array.isArray(value)||!value.length){
+        const fresh=copy(seeds);
+        localStorage.setItem(KEY,JSON.stringify(fresh));
+        return fresh;
+      }
+      const cleaned=value.filter(item=>String(item?.id)!=='copa-aguia'&&!/copa\s+águia/i.test(String(item?.name||'')));
+      if(JSON.stringify(cleaned)!==JSON.stringify(value))localStorage.setItem(KEY,JSON.stringify(cleaned));
+      return cleaned;
+    }catch{
+      const fresh=copy(seeds);
+      try{localStorage.setItem(KEY,JSON.stringify(fresh))}catch{}
+      return fresh;
+    }
+  }
   function persist(previous){try{localStorage.setItem(KEY,JSON.stringify(tournaments));return true}catch{if(previous)tournaments=previous;toast('Não foi possível salvar os campeonatos');return false}}
   function safe(value){return String(value||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;')}
   function slug(value){return String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||`campeonato-${Date.now()}`}
