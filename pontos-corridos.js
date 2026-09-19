@@ -574,6 +574,13 @@
     });
 
     observer.observe(target, { childList: true, subtree: true });
+
+    // O detalhe do campeonato pode já existir quando este módulo é carregado.
+    // Nesse caso não haverá uma mutação para disparar o observer, então renderizamos
+    // imediatamente para que Liga A/B exibam classificação e calendário ao abrir.
+    lastSignature = '';
+    render();
+
     window.addEventListener('arena:points-updated', () => {
       lastSignature = '';
       render();
