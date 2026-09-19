@@ -1,5 +1,5 @@
-const VERSION = 'v143-league-games';
-const REV = '20260919-13';
+const VERSION = 'v144-liga-a-dedupe';
+const REV = '20260919-14';
 const AUTH_REV = '20260825-5';
 const AUTH_CONSUMERS_REV = '20260825-4';
 const SITE_HEALTH_REV = '20260825-6';
