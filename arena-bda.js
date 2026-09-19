@@ -5,8 +5,8 @@
   const seeds = [
     {id:'copa-grifo',name:'Copa Grifo BDA',edition:'8ª edição',format:'Mata-mata',status:'Finalizado',phase:'Campeão definido',maxTeams:19,badge:'🦅',participants:['Zombie FC BDA','JOGOBUGADO BDA','Inter Brasil BDA','Vasco da Gama BDA'],description:'Competição tradicional do Clã BDA em formato eliminatório e jogo único.',legacy:true,locked:true},
     {id:'copa-francos',name:'Copa Francos',edition:'Próxima edição',format:'Mata-mata',status:'Planejado',phase:'Preparação',maxTeams:16,badge:'🕊️',participants:[],description:'Competição especial em homenagem à história do Francos FC BDA.'},
-    {id:'liga-a',name:'Liga A BDA',edition:'Temporada encerrada',format:'Pontos corridos',status:'Finalizado',phase:'Campeão: Inter Brasil BDA',maxTeams:20,badge:'🥇',participants:['Inter Brasil BDA'],description:'A divisão de elite do Clã BDA.'},
-    {id:'liga-b',name:'Liga B BDA',edition:'Temporada encerrada',format:'Pontos corridos',status:'Finalizado',phase:'Campeão: Vasco da Gama BDA',maxTeams:20,badge:'🛡️',participants:['Vasco da Gama BDA'],description:'A divisão de acesso para a Liga A BDA.'}
+    {id:'liga-a',name:'Liga A BDA',edition:'Temporada atual',format:'Pontos corridos',status:'Inscrições abertas',phase:'Fase de classificação',maxTeams:12,badge:'🥇',participants:[],matchSettings:{leagueTurns:2,pointsWin:3,pointsDraw:1,pointsLoss:0},description:'Divisão principal do Clã BDA. 12 clubes, turno e returno, 22 rodadas e 132 jogos.'},
+    {id:'liga-b',name:'Liga B BDA',edition:'Temporada atual',format:'Pontos corridos',status:'Inscrições abertas',phase:'Fase de classificação',maxTeams:12,badge:'🛡️',participants:[],matchSettings:{leagueTurns:2,pointsWin:3,pointsDraw:1,pointsLoss:0},description:'Divisão de acesso do Clã BDA. 12 clubes, turno e returno, 22 rodadas e 132 jogos.'}
   ];
 
   const page = document.querySelector('[data-page="tournament"]');
