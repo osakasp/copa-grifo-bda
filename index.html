@@ -98,18 +98,17 @@
       // acontecer em cascata. Precarregamos os módulos para transformar a fila de rede em
       // downloads paralelos e mantemos a execução na ordem segura.
       function preloadScripts(scripts) {
-        scripts.forEach((src, index) => {
+        scripts.slice(0, 2).forEach(src => {
           if (document.head.querySelector('link[data-arena-preload="true"][href="' + src + '"]')) return;
           const link = document.createElement('link');
           link.rel = 'preload';
           link.as = 'script';
           link.href = src;
-          link.fetchPriority = index < 6 ? 'high' : 'auto';
+          link.fetchPriority = 'high';
           link.dataset.arenaPreload = 'true';
           document.head.appendChild(link);
         });
       }
-
       preloadScripts(coreScripts);
 
       if ('serviceWorker' in navigator && location.protocol !== 'file:') {
@@ -392,24 +391,37 @@
         const coreFailures = [];
         const startedAt = performance.now();
 
-        // Mantemos a execução dos módulos em ordem para evitar tela vazia.
-        // As pausas artificiais já foram removidas, então os scripts continuam rápidos.
-        await loadOrderedBatch(coreScripts, coreFailures, 15000);
+        // A tela inicial não depende de todos os módulos. Liberamos o shell
+        // imediatamente e terminamos os recursos em pequenos lotes para não travar
+        // o thread principal em celulares.
+        const firstScripts = coreScripts.slice(0, 2);
+        const remainingScripts = coreScripts.slice(2);
+
+        await loadOrderedBatch(firstScripts, coreFailures, 12000);
         if (generation !== loadGeneration) return;
 
-        document.documentElement.dataset.arenaEnhanced = coreFailures.length ? 'partial' : 'true';
+        document.documentElement.dataset.arenaCriticalReady = coreFailures.length ? 'partial' : 'true';
+        await settleAndReveal(generation, 0);
+
+        const backgroundFailures = [];
+        for (let i = 0; i < remainingScripts.length; i += 2) {
+          if (generation !== loadGeneration) return;
+          await loadOrderedBatch(remainingScripts.slice(i, i + 2), backgroundFailures, 12000);
+          await new Promise(resolve => setTimeout(resolve, 0));
+        }
+
+        if (generation !== loadGeneration) return;
+        const allFailures = [...coreFailures, ...backgroundFailures];
+        document.documentElement.dataset.arenaEnhanced = allFailures.length ? 'partial' : 'true';
         document.documentElement.dataset.arenaLoadMs = String(Math.round(performance.now() - startedAt));
         window.dispatchEvent(new CustomEvent('arena:enhanced', {
-          detail:{ failures:coreFailures.map(item => item.src), loadMs:Number(document.documentElement.dataset.arenaLoadMs) }
+          detail:{ failures:allFailures.map(item => item.src), loadMs:Number(document.documentElement.dataset.arenaLoadMs) }
         }));
         document.documentElement.dataset.arenaEnhancements = 'ready';
         window.dispatchEvent(new CustomEvent('arena:enhancements-ready', {
-          detail:{ failures:coreFailures.map(item => item.src) }
+          detail:{ failures:backgroundFailures.map(item => item.src) }
         }));
-        if (coreFailures.length && typeof window.toast === 'function') window.toast('A Arena abriu, mas alguns recursos não carregaram');
-
         scheduleCloudWhenQuiet();
-        await settleAndReveal(generation, 0);
       }
 
       async function startLoad() {
