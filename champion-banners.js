@@ -71,7 +71,6 @@
   async function persistChampions(previousValue) {
     try {
       save(STORAGE.champions, champions);
-      await publishChampionsToSite();
       return true;
     } catch (error) {
       champions = previousValue;
