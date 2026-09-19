@@ -97,11 +97,104 @@
     return value && typeof value === 'object' ? value : {};
   }
 
+  function leagueSchedule(teams, turns = 2) {
+    const source = [...teams];
+    if (source.length < 2) return [];
+    const rotation = source.length % 2 ? [...source, null] : [...source];
+    const rounds = rotation.length - 1;
+    const half = rotation.length / 2;
+    const firstTurn = [];
+    let current = [...rotation];
+
+    for (let round = 1; round <= rounds; round += 1) {
+      const pairs = [];
+      for (let index = 0; index < half; index += 1) {
+        let home = current[index];
+        let away = current[current.length - 1 - index];
+        if (!home || !away) continue;
+        if ((round + index) % 2 === 0) [home, away] = [away, home];
+        pairs.push({ home, away, round, turn: 1 });
+      }
+      firstTurn.push(...pairs);
+      current = [current[0], current[current.length - 1], ...current.slice(1, current.length - 1)];
+    }
+
+    const schedule = [...firstTurn];
+    if (Number(turns) === 2) {
+      firstTurn.forEach(match => schedule.push({
+        home: match.away,
+        away: match.home,
+        round: match.round + rounds,
+        turn: 2
+      }));
+    }
+    return schedule;
+  }
+
+  function ensureLeagueGames(id, item, list) {
+    if (!['liga-a', 'liga-b'].includes(String(id).toLowerCase())) return list;
+    const teams = [...new Set((item?.participants || []).map(String).map(name => name.trim()).filter(Boolean))];
+    if (teams.length < 2) return list;
+
+    const turns = Number(item?.matchSettings?.leagueTurns) === 1 ? 1 : 2;
+    const schedule = leagueSchedule(teams, turns);
+    const next = Array.isArray(list) ? [...list] : [];
+    const keyOf = game => [
+      normalize(game?.ta), normalize(game?.tb),
+      String(game?.phase || '').trim().toLowerCase(),
+      Number(game?.leg || 1)
+    ].join('|');
+
+    const existing = new Set(next.map(keyOf));
+    let added = 0;
+
+    schedule.forEach((fixture, index) => {
+      const phase = 'Rodada ' + fixture.round;
+      const key = [
+        normalize(fixture.home), normalize(fixture.away),
+        phase.toLowerCase(), fixture.turn
+      ].join('|');
+      if (existing.has(key)) return;
+
+      const created = Date.now() + index;
+      next.push({
+        id: 'liga-' + id + '-r' + fixture.round + '-j' + ((index % Math.max(1, Math.floor((teams.length + 1) / 2))) + 1) + '-' + fixture.turn,
+        tieId: 'liga-' + id + '-r' + fixture.round + '-j' + ((index % Math.max(1, Math.floor((teams.length + 1) / 2))) + 1),
+        leg: fixture.turn,
+        phase,
+        status: 'Agendado',
+        ta: fixture.home,
+        tb: fixture.away,
+        a: '', b: '', pa: '', pb: '', wo: 'none',
+        pos: (index % Math.max(1, Math.floor(teams.length / 2))) + 1,
+        date: '', time: '', place: '',
+        note: item.name + ' • ' + (fixture.turn === 2 ? 'Returno' : 'Turno'),
+        created, updated: created
+      });
+      existing.add(key);
+      added += 1;
+    });
+
+    if (added) {
+      const store = matchStore();
+      store[id] = next;
+      try { localStorage.setItem(MATCH_KEY, JSON.stringify(store)); }
+      catch (error) { console.warn('[Arena BDA] Não foi possível salvar o calendário da liga', error); }
+      if (adminActive()) window.setTimeout(() => cloudSave(next), 0);
+      window.dispatchEvent(new CustomEvent('arena:matches-updated', {
+        detail: { tournamentId: id, count: next.length, added, source: 'gestor-liga-fallback' }
+      }));
+    }
+
+    return next;
+  }
+
   function rawGames(id = tournamentId) {
     const value = matchStore()[id];
     const list = Array.isArray(value) ? value : [];
     const item = tournaments().find(entry => String(entry?.id) === String(id)) || null;
-    return window.ArenaBDAValidMatches?.forTournament(item, list) || list;
+    const ensured = ensureLeagueGames(id, item, list);
+    return window.ArenaBDAValidMatches?.forTournament(item, ensured) || ensured;
   }
 
   function shape(game, index = 0) {
