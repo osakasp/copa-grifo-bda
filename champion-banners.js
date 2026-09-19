@@ -123,7 +123,31 @@
     context.clearRect(0, 0, width, height);
     context.drawImage(image, 0, 0, width, height);
 
-    return canvas.toDataURL('image/webp', 0.86);
+    const MAX_PUBLISH_BYTES = 600 * 1024;
+    let quality = 0.82;
+    let output = canvas.toDataURL('image/webp', quality);
+
+    while (output.length * 0.75 > MAX_PUBLISH_BYTES && quality > 0.5) {
+      quality -= 0.08;
+      output = canvas.toDataURL('image/webp', quality);
+    }
+
+    if (output.length * 0.75 > MAX_PUBLISH_BYTES) {
+      const reducedCanvas = document.createElement('canvas');
+      const reducedScale = 0.75;
+      reducedCanvas.width = Math.max(1, Math.round(width * reducedScale));
+      reducedCanvas.height = Math.max(1, Math.round(height * reducedScale));
+      const reducedContext = reducedCanvas.getContext('2d');
+      if (!reducedContext) throw new Error('O navegador não conseguiu compactar o banner');
+      reducedContext.drawImage(canvas, 0, 0, reducedCanvas.width, reducedCanvas.height);
+      output = reducedCanvas.toDataURL('image/webp', 0.68);
+    }
+
+    if (output.length * 0.75 > MAX_PUBLISH_BYTES) {
+      throw new Error('A imagem ainda ficou grande demais para publicar');
+    }
+
+    return output;
   }
 
   function renderAdminActions(champion, index) {

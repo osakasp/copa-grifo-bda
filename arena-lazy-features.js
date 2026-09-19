@@ -7,9 +7,9 @@
       './home-campeonato-atual-v2.js?v=20260816-4'
     ],
     champions: [
-      './champion-banners.js?v=20260919-1',
+      './champion-banners.js?v=20260919-2',
       './ranking-campeoes.js?v=20260815-1',
-      './arena-champion-publish.js?v=20260913-1'
+      './arena-champion-publish.js?v=20260919-2'
     ],
     registrations: [
       './central-inscricoes.js'

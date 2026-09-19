@@ -48,17 +48,17 @@
   }
 
   async function publishChampions(attempt = 0) {
-    if (publishing || !window.ArenaBDAAuth?.isAdmin?.()) return;
+    if (publishing || !window.ArenaBDAAuth?.isAdmin?.()) return false;
 
     const sync = cloud();
     if (!sync?.isReady?.()) {
       retry(attempt);
-      return;
+      return false;
     }
 
     if (sync.isBusy?.()) {
       retry(attempt, 700);
-      return;
+      return false;
     }
 
     const before = sync.meta?.()?.revisions?.champions || '';
@@ -70,11 +70,12 @@
 
       if (!after || after === before) {
         retry(attempt, 600);
-        return;
+        return false;
       }
 
       lastPublishRevision = after;
       if (typeof toast === 'function') toast('Quadro dos campeões publicado no site ✓');
+      return true;
     } catch (error) {
       console.error('[Arena BDA] Falha ao publicar campeões', error);
       if (attempt < MAX_RETRIES) {
@@ -82,6 +83,7 @@
       } else if (typeof toast === 'function') {
         toast('Campeão salvo, mas não foi possível publicar no site');
       }
+      return false;
     } finally {
       publishing = false;
     }
