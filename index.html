@@ -17,9 +17,6 @@
   <link rel="shortcut icon" href="./favicon.svg">
   <link rel="apple-touch-icon" href="./favicon.svg">
   <link rel="manifest" href="./site.webmanifest">
-  <link rel="preload" href="./arena-runtime.bundle.js?v=20260814-4" as="script">
-  <link rel="preload" href="./arena-bda.js?v=20260825-2" as="script">
-  <link rel="preload" href="./arena-interface.bundle.js?v=20260825-2" as="script">
   <title>Arena BDA | Campeonatos do Clã</title>
   <style id="arenaBootStyles">
     :root{--boot-bg:#07100c;--boot-surface:#0d1812;--boot-text:#f2f6f3;--boot-muted:#9eafa3;--boot-green:#35c979;color-scheme:dark}
@@ -101,13 +98,13 @@
       // acontecer em cascata. Precarregamos os módulos para transformar a fila de rede em
       // downloads paralelos e mantemos a execução na ordem segura.
       function preloadScripts(scripts) {
-        scripts.forEach(src => {
+        scripts.forEach((src, index) => {
           if (document.head.querySelector('link[data-arena-preload="true"][href="' + src + '"]')) return;
           const link = document.createElement('link');
           link.rel = 'preload';
           link.as = 'script';
           link.href = src;
-          link.fetchPriority = 'high';
+          link.fetchPriority = index < 6 ? 'high' : 'auto';
           link.dataset.arenaPreload = 'true';
           document.head.appendChild(link);
         });
