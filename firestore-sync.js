@@ -90,7 +90,7 @@
           format: 'Pontos corridos',
           maxTeams: 12,
           matchSettings: { leagueTurns: 2, pointsWin: 3, pointsDraw: 1, pointsLoss: 0 },
-          participants: Array.isArray(next[index].participants) ? next[index].participants : []
+          participants: Array.isArray(next[index].participants) && next[index].participants.length ? next[index].participants : clone(seed.participants)
         };
       }
     });
