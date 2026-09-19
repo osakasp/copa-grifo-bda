@@ -42,7 +42,8 @@
     ],
     tournament: [
       './cores-automaticas-campeonatos.js?v=20260802-2',
-      './liga-participantes-bda.js?v=20260918-1'
+      './liga-participantes-bda.js?v=20260918-1',
+      './arena-liga-fixtures.js?v=20260919-1'
     ],
     tournamentDetail: [
       './confrontos-copa-grifo.js',
