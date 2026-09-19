@@ -148,10 +148,6 @@
     if (form) updateFormPublishState(form);
   });
 
-  window.addEventListener('arena:cloud-status', event => {
-    if (event.detail?.state === 'ok') schedulePublish(50);
-  });
-
   const observer = new MutationObserver(() => {
     const form = document.getElementById('championForm');
     if (form) updateFormPublishState(form);
