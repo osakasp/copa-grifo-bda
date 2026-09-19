@@ -1,12 +1,11 @@
 (() => {
   'use strict';
 
-  const VERSION = 4;
+  const VERSION = 6;
   const MAX_RETRIES = 40;
   const LEAGUE_RE = /\bliga\s*(?:a|b)(?:\s*bda)?\b/i;
   let publishTimer = 0;
   let publishing = false;
-  let lastPublishRevision = '';
 
   function cloud() {
     return window.ArenaBDACloudSync;
@@ -24,39 +23,17 @@
     return isLeagueEdition(document.getElementById('championEdition')?.value || '');
   }
 
-  function championIsLeague(index) {
-    return isLeagueEdition(window.champions?.[index]?.edition || '');
-  }
-
   function updateFormPublishState(form) {
     if (!form) return;
     const button = form.querySelector('button.primary');
     if (!button) return;
+
     const league = currentFormIsLeague();
     const title = document.getElementById('championModalTitle')?.textContent?.trim().toLowerCase() || '';
     button.textContent = league
       ? (title.includes('editar') ? 'Publicar alterações' : 'Publicar no site')
       : (title.includes('editar') ? 'Salvar alterações' : 'Salvar campeão');
     button.dataset.championPublishSubmit = league ? 'true' : 'false';
-  }
-
-  function setPublishLabel(form) {
-    if (!form) return;
-    updateFormPublishState(form);
-  }
-
-  function ensureCardPublishButton() {
-    document.querySelectorAll('.champion-banner-actions').forEach(actions => {
-      const index = Number(actions.querySelector('[data-edit-champion]')?.dataset.editChampion ?? -1);
-      if (!championIsLeague(index)) return;
-      if (actions.querySelector('[data-publish-champions]')) return;
-      const button = document.createElement('button');
-      button.className = 'secondary';
-      button.type = 'button';
-      button.dataset.publishChampions = 'true';
-      button.textContent = 'Publicar no site';
-      actions.appendChild(button);
-    });
   }
 
   function retry(attempt, delay = 500) {
@@ -85,8 +62,8 @@
     }
 
     const before = sync.meta?.()?.revisions?.champions || '';
-
     publishing = true;
+
     try {
       await sync.uploadDataset('champions');
       const after = sync.meta?.()?.revisions?.champions || '';
@@ -96,10 +73,11 @@
         return;
       }
 
-      lastPublishRevision = after;
-      if (typeof toast === 'function') toast('Quadro dos campeões publicado no site ✓');
+      if (typeof toast === 'function') {
+        toast('Campeão publicado no site ✓');
+      }
     } catch (error) {
-      console.error('[Arena BDA] Falha ao publicar campeões', error);
+      console.error('[Arena BDA] Falha ao publicar campeão', error);
       if (attempt < MAX_RETRIES) {
         retry(attempt, 800);
       } else if (typeof toast === 'function') {
@@ -110,40 +88,27 @@
     }
   }
 
-  function schedulePublish(delay = 0) {
+  function schedulePublish(delay = 250) {
     window.clearTimeout(publishTimer);
     publishTimer = window.setTimeout(() => publishChampions(), delay);
   }
 
   document.addEventListener('submit', event => {
-    if (isChampionForm(event.target)) {
-      if (currentFormIsLeague()) schedulePublish(50);
-      else if (typeof toast === 'function') toast('A publicação no site é exclusiva das Ligas A e B');
+    if (isChampionForm(event.target) && currentFormIsLeague()) {
+      schedulePublish(250);
     }
   }, true);
 
   document.addEventListener('click', event => {
     if (!(event.target instanceof Element)) return;
 
-    const publishButton = event.target.closest('[data-publish-champions]');
-    if (publishButton) {
-      event.preventDefault();
-      publishButton.disabled = true;
-      publishButton.textContent = 'Publicando...';
-      publishChampions().finally(() => {
-        publishButton.disabled = false;
-        publishButton.textContent = 'Publicar no site';
-      });
-      return;
-    }
-
     if (event.target.closest('[data-change-champion-banner],[data-remove-champion-banner]')) {
-      schedulePublish(100);
+      const form = document.getElementById('championForm');
+      if (form && currentFormIsLeague()) schedulePublish(100);
     }
   }, true);
 
   window.addEventListener('arena:champions-updated', () => {
-    ensureCardPublishButton();
     const form = document.getElementById('championForm');
     if (form) updateFormPublishState(form);
   });
@@ -151,14 +116,12 @@
   const observer = new MutationObserver(() => {
     const form = document.getElementById('championForm');
     if (form) updateFormPublishState(form);
-    ensureCardPublishButton();
   });
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
   [0, 250, 700, 1500, 3000].forEach(delay => window.setTimeout(() => {
     const form = document.getElementById('championForm');
     if (form) updateFormPublishState(form);
-    ensureCardPublishButton();
   }, delay));
 
   document.addEventListener('input', event => {
