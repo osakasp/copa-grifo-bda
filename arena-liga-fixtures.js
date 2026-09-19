@@ -188,9 +188,16 @@
 
   [0, 600, 1600, 3500, 7000].forEach(delay => window.setTimeout(publish, delay));
 
+  // A lista de participantes pode chegar depois da abertura da página.
+  // Reprocessamos somente quando os dados da liga mudarem, sem polling contínuo.
   window.addEventListener('arena:auth-changed', publish);
   window.addEventListener('arena:cloud-status', event => {
     if (event.detail?.state === 'ok') publish();
+  });
+  window.addEventListener('arena:tournaments-updated', publish);
+  window.addEventListener('arena:cloud-data-applied', publish);
+  window.addEventListener('storage', event => {
+    if (event.key === TOURNAMENT_KEY || event.key === MATCH_KEY) publish();
   });
 
   window.ArenaBDALigaFixtures = Object.freeze({
