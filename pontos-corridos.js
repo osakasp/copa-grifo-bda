@@ -80,6 +80,34 @@
       );
   }
 
+  function leagueType(tournament) {
+    const id = String(tournament?.id || '').toLowerCase();
+    const name = String(tournament?.name || '').toLowerCase();
+    if (id === 'liga-a' || name.includes('liga a')) return 'A';
+    if (id === 'liga-b' || name.includes('liga b')) return 'B';
+    return '';
+  }
+
+  function zoneFor(type, index, total) {
+    if (!type || total < 4) return { className:'', label:'' };
+    if (index === 0) return { className:'bda-zone-champion', label:'Campeão', labelClass:'champion' };
+    if (type === 'B' && index < Math.min(4, total)) return { className:'bda-zone-promo', label:'Promoção', labelClass:'promo' };
+    if (type === 'A' && index >= Math.max(0, total - 4)) return { className:'bda-zone-relegation', label:'Rebaixamento', labelClass:'relegation' };
+    return { className:'', label:'', labelClass:'' };
+  }
+
+  function recentForm(tournament, team) {
+    const matches = Array.isArray(tournament.matches) ? tournament.matches : [];
+    return matches.filter(m => m && m.status !== 'cancelled' && m.status !== 'scheduled' && (m.home === team || m.away === team) &&
+      Number.isFinite(Number(m.homeScore)) && Number.isFinite(Number(m.awayScore)))
+      .slice(-5).map(m => {
+        const home = Number(m.homeScore), away = Number(m.awayScore);
+        const isHome = m.home === team;
+        const a = isHome ? home : away, b = isHome ? away : home;
+        return a > b ? 'V' : a === b ? 'E' : 'D';
+      });
+  }
+
   function esc(value) {
     return String(value ?? '').replace(/[&<>"']/g, char => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -103,7 +131,7 @@
       '.bda-points-table th:nth-child(2),.bda-points-table td:nth-child(2){text-align:left}',
       '.bda-points-table .rank,.bda-points-table .pts{color:var(--gold-soft);font-weight:900}',
       '.bda-points-table .team{font-weight:800;white-space:nowrap}',
-      '.bda-points-note{margin:8px 0 0;color:var(--muted);font-size:9px;line-height:1.45}',
+      '.bda-points-note{margin:8px 0 0;color:var(--muted);font-size:9px;line-height:1.45}','.bda-league-hero{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-bottom:12px;padding:15px;border:1px solid var(--line-strong);border-radius:17px;background:linear-gradient(135deg,rgba(216,178,72,.11),rgba(79,223,143,.04))}','.bda-league-hero h3{margin:2px 0 3px;font-size:28px;text-transform:uppercase}','.bda-league-hero p{margin:0;color:var(--muted);font-size:10px;line-height:1.45}','.bda-league-badge{display:grid;place-items:center;width:54px;height:54px;border-radius:16px;font-size:27px;background:linear-gradient(145deg,var(--gold-soft),var(--gold));color:#171107}','.bda-zone-promo{background:rgba(79,223,143,.06)}.bda-zone-relegation{background:rgba(255,105,120,.06)}.bda-zone-champion{box-shadow:inset 3px 0 0 var(--gold)}','.bda-zone-label{display:inline-block;margin-left:6px;padding:3px 6px;border-radius:999px;font-size:7px;font-weight:900;letter-spacing:.05em;text-transform:uppercase}','.bda-zone-label.promo{color:var(--green);border:1px solid rgba(79,223,143,.25);background:rgba(79,223,143,.08)}.bda-zone-label.relegation{color:#ff9aa4;border:1px solid rgba(255,105,120,.25);background:rgba(255,105,120,.08)}.bda-zone-label.champion{color:var(--gold-soft);border:1px solid var(--line-strong);background:rgba(216,178,72,.08)}','.bda-form{display:flex;gap:3px;justify-content:center}.bda-form i{font-style:normal;width:17px;height:17px;display:grid;place-items:center;border-radius:5px;font-size:7px;font-weight:900}.bda-form .v{color:var(--green);background:rgba(79,223,143,.1)}.bda-form .e{color:var(--gold-soft);background:rgba(216,178,72,.1)}.bda-form .d{color:#ff9aa4;background:rgba(255,105,120,.1)}','.bda-legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;color:var(--muted);font-size:8px}.bda-legend span{padding:4px 7px;border:1px solid var(--line);border-radius:999px}',
       '.bda-points-admin{margin-top:12px;padding:12px;border:1px solid var(--line-strong);border-radius:15px;background:rgba(216,178,72,.06)}',
       '.bda-match-list{display:grid;gap:7px;margin-top:9px}',
       '.bda-match{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;border:1px solid var(--line);border-radius:11px;font-size:9px;color:var(--muted)}',
@@ -142,28 +170,39 @@
     if (!competition || !tournament) return;
 
     const matches = Array.isArray(tournament.matches) ? tournament.matches : [];
-    const rows = standings(tournament).map((row, index) => [
-      '<tr>',
-      '<td class="rank">' + (index + 1) + '</td>',
-      '<td class="team">' + esc(row.team) + '</td>',
-      '<td class="pts">' + row.pts + '</td>',
-      '<td>' + row.played + '</td>',
-      '<td>' + row.wins + '</td>',
-      '<td>' + row.draws + '</td>',
-      '<td>' + row.losses + '</td>',
-      '<td>' + row.gf + '</td>',
-      '<td>' + row.ga + '</td>',
-      '<td>' + (row.gd > 0 ? '+' : '') + row.gd + '</td>',
-      '</tr>'
-    ].join('')).join('');
+    const type = leagueType(tournament);
+    const rows = standings(tournament).map((row, index, table) => {
+      const zone = zoneFor(type, index, table.length);
+      const form = recentForm(tournament, row.team);
+      const formHtml = form.length ? '<span class="bda-form">' + form.map(x => '<i class="' + (x === 'V' ? 'v' : x === 'E' ? 'e' : 'd') + '">' + x + '</i>').join('') + '</span>' : '<span class="bda-points-note">—</span>';
+      const label = zone.label ? '<span class="bda-zone-label ' + zone.labelClass + '">' + zone.label + '</span>' : '';
+      return [
+        '<tr class="' + zone.className + '">',
+        '<td class="rank">' + (index + 1) + '</td>',
+        '<td class="team">' + esc(row.team) + label + '</td>',
+        '<td class="pts">' + row.pts + '</td>',
+        '<td>' + row.played + '</td>',
+        '<td>' + row.wins + '</td>',
+        '<td>' + row.draws + '</td>',
+        '<td>' + row.losses + '</td>',
+        '<td>' + row.gf + '</td>',
+        '<td>' + row.ga + '</td>',
+        '<td>' + (row.gd > 0 ? '+' : '') + row.gd + '</td>',
+        '<td>' + formHtml + '</td>',
+        '</tr>'
+      ].join('');
+    }).join('');
 
+    const leagueHero = type ? '<div class="bda-league-hero"><div><span class="eyebrow">Liga BDA · Temporada</span><h3>' + (type === 'A' ? 'Liga A BDA' : 'Liga B BDA') + '</h3><p>' + (type === 'A' ? 'Divisão principal · 4 últimas posições entram na zona de rebaixamento.' : 'Divisão de acesso · 4 primeiras posições entram na zona de promoção.') + '</p></div><div class="bda-league-badge">' + (type === 'A' ? '🥇' : '🛡️') + '</div></div>' : '';
     let html = [
       '<section class="bda-points">',
+      leagueHero,
       '<div class="bda-points-head"><div><span class="eyebrow">Pontos corridos</span><h3>Classificação</h3><p>3 pontos por vitória, 1 por empate e 0 por derrota.</p></div>',
       isAdmin() ? '<button class="ghost" type="button" id="bdaAddMatch">Lançar resultado</button>' : '',
       '</div>',
-      rows ? '<div class="bda-points-table-wrap"><table class="bda-points-table"><thead><tr><th>#</th><th>Clube</th><th>PTS</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<div class="bda-empty">Nenhum clube participante cadastrado.</div>',
-      '<p class="bda-points-note">Desempate: pontos, vitórias, saldo de gols, gols pró e ordem alfabética.</p>'
+      rows ? '<div class="bda-points-table-wrap"><table class="bda-points-table"><thead><tr><th>#</th><th>Clube</th><th>PTS</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th><th>FORMA</th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<div class="bda-empty">Nenhum clube participante cadastrado.</div>',
+      '<p class="bda-points-note">Desempate: pontos, vitórias, saldo de gols, gols pró e ordem alfabética.</p>' +
+      (type ? '<div class="bda-legend"><span>🥇 Campeão</span>' + (type === 'B' ? '<span>🟢 Promoção: 1º–4º</span>' : '<span>🔴 Rebaixamento: últimas 4</span>') + '<span>Forma: V vitória · E empate · D derrota</span></div>' : '')
     ].join('');
 
     if (isAdmin()) {
