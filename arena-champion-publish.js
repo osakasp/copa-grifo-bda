@@ -3,6 +3,7 @@
 
   const VERSION = 4;
   const MAX_RETRIES = 40;
+  const LEAGUE_RE = /\bliga\s*(?:a|b)(?:\s*bda)?\b/i;
   let publishTimer = 0;
   let publishing = false;
   let lastPublishRevision = '';
@@ -15,17 +16,39 @@
     return target instanceof Element && target.id === 'championForm';
   }
 
-  function setPublishLabel(form) {
+  function isLeagueEdition(value) {
+    return LEAGUE_RE.test(String(value || ''));
+  }
+
+  function currentFormIsLeague() {
+    return isLeagueEdition(document.getElementById('championEdition')?.value || '');
+  }
+
+  function championIsLeague(index) {
+    return isLeagueEdition(window.champions?.[index]?.edition || '');
+  }
+
+  function updateFormPublishState(form) {
     if (!form) return;
     const button = form.querySelector('button.primary');
     if (!button) return;
+    const league = currentFormIsLeague();
     const title = document.getElementById('championModalTitle')?.textContent?.trim().toLowerCase() || '';
-    button.textContent = title.includes('editar') ? 'Publicar alterações' : 'Publicar no site';
-    button.dataset.championPublishSubmit = 'true';
+    button.textContent = league
+      ? (title.includes('editar') ? 'Publicar alterações' : 'Publicar no site')
+      : (title.includes('editar') ? 'Salvar alterações' : 'Salvar campeão');
+    button.dataset.championPublishSubmit = league ? 'true' : 'false';
+  }
+
+  function setPublishLabel(form) {
+    if (!form) return;
+    updateFormPublishState(form);
   }
 
   function ensureCardPublishButton() {
     document.querySelectorAll('.champion-banner-actions').forEach(actions => {
+      const index = Number(actions.closest('[data-champion-index]')?.dataset.championIndex ?? -1);
+      if (!championIsLeague(index)) return;
       if (actions.querySelector('[data-publish-champions]')) return;
       const button = document.createElement('button');
       button.className = 'secondary';
@@ -93,7 +116,10 @@
   }
 
   document.addEventListener('submit', event => {
-    if (isChampionForm(event.target)) schedulePublish(50);
+    if (isChampionForm(event.target)) {
+      if (currentFormIsLeague()) schedulePublish(50);
+      else if (typeof toast === 'function') toast('A publicação no site é exclusiva das Ligas A e B');
+    }
   }, true);
 
   document.addEventListener('click', event => {
@@ -118,7 +144,8 @@
 
   window.addEventListener('arena:champions-updated', () => {
     ensureCardPublishButton();
-    schedulePublish(100);
+    const form = document.getElementById('championForm');
+    if (form) updateFormPublishState(form);
   });
 
   window.addEventListener('arena:cloud-status', event => {
@@ -127,16 +154,21 @@
 
   const observer = new MutationObserver(() => {
     const form = document.getElementById('championForm');
-    if (form) setPublishLabel(form);
+    if (form) updateFormPublishState(form);
     ensureCardPublishButton();
   });
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
   [0, 250, 700, 1500, 3000].forEach(delay => window.setTimeout(() => {
     const form = document.getElementById('championForm');
-    if (form) setPublishLabel(form);
+    if (form) updateFormPublishState(form);
     ensureCardPublishButton();
   }, delay));
+
+  document.addEventListener('input', event => {
+    if (!(event.target instanceof Element) || event.target.id !== 'championEdition') return;
+    updateFormPublishState(event.target.closest('#championForm'));
+  });
 
   window.ArenaBDAChampionPublish = Object.freeze({
     version: VERSION,
