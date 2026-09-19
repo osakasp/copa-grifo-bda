@@ -75,7 +75,17 @@
 
   function normalizeTournaments(values, { markRemoteMigration = false } = {}) {
     const raw = Array.isArray(values) ? clone(values) : [];
-    const next = raw.filter(item => !isSupercopa(item));
+    const withoutSupercopa = raw.filter(item => !isSupercopa(item));
+
+    // Existe uma única Liga A oficial. Duplicatas com outro ID/nome são removidas
+    // antes da sincronização, sem alterar a Liga B.
+    const canonicalLigaA = withoutSupercopa.find(item => String(item?.id || '') === 'liga-a');
+    const next = withoutSupercopa.filter(item => {
+      const id = String(item?.id || '');
+      const name = String(item?.name || '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
+      if (id === 'liga-a') return item === canonicalLigaA;
+      return name !== 'liga a bda';
+    });
 
     // Liga A e Liga B são competições estruturais da Arena.
     // A sincronização mantém as duas divisões independentes.
