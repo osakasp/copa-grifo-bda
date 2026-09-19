@@ -145,32 +145,105 @@
     document.head.appendChild(style);
   }
 
+  function allMatches(tournament) {
+    return Array.isArray(tournament.matches) ? tournament.matches : [];
+  }
+
+  function completedMatches(tournament) {
+    return allMatches(tournament).filter(m =>
+      m && m.status !== 'cancelled' && m.status !== 'scheduled' &&
+      Number.isFinite(Number(m.homeScore)) && Number.isFinite(Number(m.awayScore))
+    );
+  }
+
+  function scheduledMatches(tournament) {
+    return allMatches(tournament).filter(m => m && m.status === 'scheduled');
+  }
+
+  function pairKey(a, b) {
+    return [String(a), String(b)].sort((x, y) => x.localeCompare(y, 'pt-BR')).join('::');
+  }
+
+  function generateCalendar(teams, doubleRound = false) {
+    const list = [...teams];
+    if (list.length < 2) return [];
+    if (list.length % 2) list.push(null);
+
+    const rounds = list.length - 1;
+    const half = list.length / 2;
+    const rotation = [...list];
+    const fixtures = [];
+
+    for (let round = 1; round <= rounds; round++) {
+      for (let i = 0; i < half; i++) {
+        const a = rotation[i];
+        const b = rotation[rotation.length - 1 - i];
+        if (a && b) {
+          const home = (round + i) % 2 === 0 ? a : b;
+          const away = home === a ? b : a;
+          fixtures.push({
+            home, away, round: round + 'ª rodada', status: 'scheduled'
+          });
+        }
+      }
+      rotation.splice(1, 0, rotation.pop());
+    }
+
+    if (doubleRound) {
+      const secondLeg = fixtures.map((m, index) => ({
+        home: m.away,
+        away: m.home,
+        round: (rounds + Number(m.round.match(/\d+/)?.[0] || 1)) + 'ª rodada',
+        status: 'scheduled',
+        _order: index
+      }));
+      return fixtures.concat(secondLeg);
+    }
+    return fixtures;
+  }
+
+  function calendarStats(tournament) {
+    const totalTeams = Array.isArray(tournament.participants) ? tournament.participants.length : 0;
+    const totalRounds = totalTeams > 1 ? totalTeams - 1 : 0;
+    const scheduled = scheduledMatches(tournament).length;
+    const played = completedMatches(tournament).length;
+    const total = totalTeams > 1 ? (totalTeams * (totalTeams - 1)) / 2 : 0;
+    const doubleTotal = total * 2;
+    return { totalTeams, totalRounds, scheduled, played, total, doubleTotal };
+  }
+
   function formHtml(tournament) {
     const teams = Array.isArray(tournament.participants) ? tournament.participants : [];
     if (teams.length < 2) {
-      return '<div class="bda-empty">Cadastre pelo menos 2 clubes participantes para lançar resultados.</div>';
+      return '<div class="bda-empty">Cadastre pelo menos 2 clubes participantes para gerar a tabela.</div>';
     }
     const options = teams.map(team => '<option value="' + esc(team) + '">' + esc(team) + '</option>').join('');
     return [
       '<form id="bdaMatchForm" class="bda-match-form">',
+      '<label>Partida<select id="bdaFixture">',
+      '<option value="">Lançamento manual</option>',
+      scheduledMatches(tournament).map((m, i) => '<option value="' + i + '">' + esc(m.round || 'Rodada') + ' · ' + esc(m.home) + ' x ' + esc(m.away) + '</option>').join(''),
+      '</select></label>',
       '<label>Mandante<select id="bdaHome" required>' + options + '</select></label>',
       '<label>Visitante<select id="bdaAway" required>' + options + '</select></label>',
       '<label>Gols mandante<input id="bdaHomeScore" type="number" min="0" max="99" value="0" required></label>',
       '<label>Gols visitante<input id="bdaAwayScore" type="number" min="0" max="99" value="0" required></label>',
-      '<label class="full">Rodada<input id="bdaRound" maxlength="20" placeholder="1ª rodada"></label>',
+      '<label>Rodada<input id="bdaRound" maxlength="20" placeholder="1ª rodada"></label>',
       '<div class="form-actions full"><button class="secondary" type="button" id="bdaCancelMatch">Cancelar</button><button class="primary" type="submit">Salvar resultado</button></div>',
       '</form>'
     ].join('');
   }
 
-  function render() {
+  function render(
     injectStyles();
     const competition = document.getElementById('tournamentCompetition');
     const tournament = currentTournament();
     if (!competition || !tournament) return;
 
-    const matches = Array.isArray(tournament.matches) ? tournament.matches : [];
+    const matches = allMatches(tournament);
     const type = leagueType(tournament);
+    const stats = calendarStats(tournament);
+    const scheduled = scheduledMatches(tournament);
     const rows = standings(tournament).map((row, index, table) => {
       const zone = zoneFor(type, index, table.length);
       const form = recentForm(tournament, row.team);
@@ -198,33 +271,93 @@
       '<section class="bda-points">',
       leagueHero,
       '<div class="bda-points-head"><div><span class="eyebrow">Pontos corridos</span><h3>Classificação</h3><p>3 pontos por vitória, 1 por empate e 0 por derrota.</p></div>',
-      isAdmin() ? '<button class="ghost" type="button" id="bdaAddMatch">Lançar resultado</button>' : '',
+      isAdmin() ? '<div class="bda-admin-actions"><button class="ghost" type="button" id="bdaGenerateCalendar">Gerar calendário</button><button class="ghost" type="button" id="bdaAddMatch">Lançar resultado</button></div>' : ''
       '</div>',
       rows ? '<div class="bda-points-table-wrap"><table class="bda-points-table"><thead><tr><th>#</th><th>Clube</th><th>PTS</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th><th>FORMA</th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<div class="bda-empty">Nenhum clube participante cadastrado.</div>',
+      '<div class="bda-calendar-summary"><div><b>' + stats.played + '</b><span>jogos realizados</span></div><div><b>' + scheduled.length + '</b><span>próximos jogos</span></div><div><b>' + stats.total + '</b><span>jogos do turno</span></div></div>' +
       '<p class="bda-points-note">Desempate: pontos, vitórias, saldo de gols, gols pró e ordem alfabética.</p>' +
       (type ? '<div class="bda-legend"><span>🥇 Campeão</span>' + (type === 'B' ? '<span>🟢 Promoção: 1º–4º</span>' : '<span>🔴 Rebaixamento: últimas 4</span>') + '<span>Forma: V vitória · E empate · D derrota</span></div>' : '')
     ].join('');
 
+    if (scheduled.length) {
+      html += '<div class="bda-fixtures"><div class="bda-section-title"><div><span class="eyebrow">Calendário</span><h3>Próximas partidas</h3></div></div><div class="bda-fixture-grid">';
+      scheduled.slice(0, 12).forEach((match, index) => {
+        html += '<article class="bda-fixture"><span>' + esc(match.round || 'Rodada') + '</span><strong>' + esc(match.home) + ' <em>x</em> ' + esc(match.away) + '</strong>' + (isAdmin() ? '<button class="ghost bda-fixture-result" type="button" data-fixture-index="' + index + '">Lançar placar</button>' : '') + '</article>';
+      });
+      html += '</div></div>';
+    }
+
+    const finished = completedMatches(tournament).slice().reverse().slice(0, 8);
+    if (finished.length) {
+      html += '<div class="bda-fixtures"><div class="bda-section-title"><div><span class="eyebrow">Histórico</span><h3>Últimos resultados</h3></div></div><div class="bda-fixture-grid">';
+      finished.forEach(match => {
+        html += '<article class="bda-fixture"><span>' + esc(match.round || 'Rodada') + '</span><strong>' + esc(match.home) + ' <em>' + Number(match.homeScore) + ' x ' + Number(match.awayScore) + '</em> ' + esc(match.away) + '</strong></article>';
+      });
+      html += '</div></div>';
+    }
+
     if (isAdmin()) {
-      html += '<div class="bda-points-admin" id="bdaPointsAdmin" hidden><strong>Resultados lançados</strong>';
-      if (matches.length) {
-        html += '<div class="bda-match-list">';
-        matches.forEach((match, index) => {
-          html += '<div class="bda-match"><span><strong>' + esc(match.home) + '</strong> ' + Number(match.homeScore) + ' x ' + Number(match.awayScore) + ' <strong>' + esc(match.away) + '</strong> · ' + esc(match.round || 'Rodada') + '</span><button class="danger" type="button" data-bda-delete-match="' + index + '">Excluir</button></div>';
-        });
-        html += '</div>';
-      } else {
-        html += '<div class="bda-empty" style="margin-top:8px">Nenhum resultado lançado.</div>';
-      }
+      html += '<div class="bda-points-admin" id="bdaPointsAdmin" hidden><strong>Gestão da liga</strong><p class="bda-points-note">Gere o calendário uma vez. Depois, lance os placares diretamente nas partidas programadas.</p>';
       html += formHtml(tournament);
-      html += '</div>';
+      html += '<div class="bda-match-list">';
+      matches.forEach((match, index) => {
+        html += '<div class="bda-match"><span><strong>' + esc(match.home) + '</strong> ' + (match.status === 'scheduled' ? 'vs' : Number(match.homeScore) + ' x ' + Number(match.awayScore)) + ' <strong>' + esc(match.away) + '</strong> · ' + esc(match.round || 'Rodada') + '</span>' + (match.status === 'scheduled' ? '<button class="danger" type="button" data-bda-delete-match="' + index + '">Excluir</button>' : '<button class="danger" type="button" data-bda-delete-match="' + index + '">Excluir</button>') + '</div>';
+      });
+      html += '</div></div>';
     }
 
     competition.innerHTML = html;
 
+    document.getElementById('bdaGenerateCalendar')?.addEventListener('click', () => {
+      const teams = Array.isArray(tournament.participants) ? tournament.participants.filter(Boolean) : [];
+      if (teams.length < 2) {
+        window.toast?.('Cadastre pelo menos 2 clubes antes de gerar o calendário');
+        return;
+      }
+      const tournaments = readTournaments();
+      const current = tournaments.find(item => item.id === tournament.id);
+      if (!current) return;
+      current.matches = Array.isArray(current.matches) ? current.matches : [];
+      const existingPairs = new Set(current.matches.map(m => pairKey(m.home, m.away)));
+      const calendar = generateCalendar(teams, false).filter(m => !existingPairs.has(pairKey(m.home, m.away)));
+      if (!calendar.length) {
+        window.toast?.('O calendário do turno já está completo');
+        return;
+      }
+      current.matches.push(...calendar);
+      saveTournaments(tournaments);
+      window.toast?.(calendar.length + ' partidas adicionadas ao calendário');
+      render();
+    });
+
     document.getElementById('bdaAddMatch')?.addEventListener('click', () => {
       const panel = document.getElementById('bdaPointsAdmin');
       if (panel) panel.hidden = false;
+    });
+
+    document.querySelectorAll('.bda-fixture-result').forEach(button => {
+      button.addEventListener('click', () => {
+        const panel = document.getElementById('bdaPointsAdmin');
+        if (!panel) return;
+        panel.hidden = false;
+        const fixture = document.getElementById('bdaFixture');
+        if (fixture) {
+          fixture.value = button.dataset.fixtureIndex || '';
+          fixture.dispatchEvent(new Event('change'));
+        }
+      });
+    });
+
+    document.getElementById('bdaFixture')?.addEventListener('change', event => {
+      const index = Number(event.target.value);
+      const fixture = scheduledMatches(tournament)[index];
+      if (!fixture) return;
+      document.getElementById('bdaHome').value = fixture.home;
+      document.getElementById('bdaAway').value = fixture.away;
+      document.getElementById('bdaRound').value = fixture.round || '';
+      document.getElementById('bdaHome').disabled = true;
+      document.getElementById('bdaAway').disabled = true;
+      document.getElementById('bdaRound').disabled = true;
     });
 
     document.getElementById('bdaCancelMatch')?.addEventListener('click', () => {
@@ -244,16 +377,26 @@
       const tournaments = readTournaments();
       const current = tournaments.find(item => item.id === tournament.id);
       if (!current) return;
-
       current.matches = Array.isArray(current.matches) ? current.matches : [];
-      current.matches.push({
-        home,
-        away,
-        homeScore: Number(document.getElementById('bdaHomeScore').value),
-        awayScore: Number(document.getElementById('bdaAwayScore').value),
-        round: document.getElementById('bdaRound').value.trim() || String(current.matches.length + 1) + 'ª rodada',
-        status: 'final'
-      });
+
+      const fixtureSelect = document.getElementById('bdaFixture');
+      const scheduledList = current.matches.filter(m => m && m.status === 'scheduled');
+      const fixtureIndex = fixtureSelect?.value === '' ? -1 : Number(fixtureSelect.value);
+      const fixture = fixtureIndex >= 0 ? scheduledList[fixtureIndex] : null;
+      if (fixture) {
+        fixture.homeScore = Number(document.getElementById('bdaHomeScore').value);
+        fixture.awayScore = Number(document.getElementById('bdaAwayScore').value);
+        fixture.status = 'final';
+      } else {
+        current.matches.push({
+          home,
+          away,
+          homeScore: Number(document.getElementById('bdaHomeScore').value),
+          awayScore: Number(document.getElementById('bdaAwayScore').value),
+          round: document.getElementById('bdaRound').value.trim() || (current.matches.length + 1) + 'ª rodada',
+          status: 'final'
+        });
+      }
 
       saveTournaments(tournaments);
       window.toast?.('Resultado salvo e classificação atualizada');
@@ -267,7 +410,7 @@
         if (!current || !Array.isArray(current.matches)) return;
         current.matches.splice(Number(button.dataset.bdaDeleteMatch), 1);
         saveTournaments(tournaments);
-        window.toast?.('Resultado excluído');
+        window.toast?.('Partida removida do calendário');
         render();
       });
     });
