@@ -1,5 +1,5 @@
-const VERSION = 'v132-liga-schedule';
-const REV = '20260919-2';
+const VERSION = 'v133-liga-schedule-fix';
+const REV = '20260919-3';
 const AUTH_REV = '20260825-5';
 const AUTH_CONSUMERS_REV = '20260825-4';
 const SITE_HEALTH_REV = '20260825-6';
