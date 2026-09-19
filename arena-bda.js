@@ -59,6 +59,17 @@
         return fresh;
       }
       const cleaned=value.filter(item=>String(item?.id)!=='copa-aguia'&&!/copa\s+águia/i.test(String(item?.name||'')));
+
+      // As ligas oficiais são estruturais: se uma delas for apagada, ela volta
+      // com a mesma configuração da outra divisão, pronta para receber os clubes.
+      const requiredLeagues = ['liga-a','liga-b'];
+      requiredLeagues.forEach(id => {
+        if (!cleaned.some(item => String(item?.id) === id)) {
+          const seed = seeds.find(item => item.id === id);
+          if (seed) cleaned.push(copy(seed));
+        }
+      });
+
       if(JSON.stringify(cleaned)!==JSON.stringify(value))localStorage.setItem(KEY,JSON.stringify(cleaned));
       return cleaned;
     }catch{
