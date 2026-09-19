@@ -1,5 +1,5 @@
-const VERSION = 'v134-ligas-reset';
-const REV = '20260919-4';
+const VERSION = 'v135-liga-a-recreate';
+const REV = '20260919-5';
 const AUTH_REV = '20260825-5';
 const AUTH_CONSUMERS_REV = '20260825-4';
 const SITE_HEALTH_REV = '20260825-6';
