@@ -50,6 +50,20 @@
   document.head.appendChild(style);
 
   function copy(value){return JSON.parse(JSON.stringify(value))}
+  function dedupeOfficialLeagues(values){
+    if(!Array.isArray(values)) return [];
+    const seenLigaA=false;
+    let keptLigaA=false;
+    return values.filter(item=>{
+      const id=String(item?.id||'');
+      const name=String(item?.name||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').trim().toLowerCase();
+      if(id==='liga-a' || name==='liga a bda'){
+        if(keptLigaA) return false;
+        keptLigaA=true;
+      }
+      return true;
+    });
+  }
   function load(){
     try{
       const value=JSON.parse(localStorage.getItem(KEY));
@@ -103,7 +117,14 @@
   function renderCards(){const grid=document.getElementById('arenaGrid');if(!grid)return;const items=list();grid.innerHTML=items.length?items.map(card).join(''):'<div class="empty" style="grid-column:1/-1">Nenhum campeonato neste filtro.</div>'}
   function renderFilters(){const counts={Todos:tournaments.length,Abertos:tournaments.filter(t=>['Inscrições abertas','Em andamento'].includes(t.status)).length,Planejado:tournaments.filter(t=>t.status==='Planejado').length,Finalizado:tournaments.filter(t=>t.status==='Finalizado').length};document.querySelectorAll('[data-arena-filter]').forEach(btn=>{const active=btn.dataset.arenaFilter===filter;btn.classList.toggle('active',active);btn.setAttribute('aria-pressed',active?'true':'false');btn.dataset.count=String(counts[btn.dataset.arenaFilter]||0)})}
   function renderDetail(){const root=document.getElementById('arenaDetail');if(!root)return;const t=tournaments.find(item=>item.id===selectedId)||tournaments[0];if(!t){root.innerHTML='<div class="empty">Nenhum campeonato publicado.</div>';return}selectedId=t.id;const clubs=Array.isArray(t.participants)?t.participants:[];const emptyClubs=isAdmin?'Nenhum clube selecionado. Edite o campeonato para escolher os participantes.':'Os participantes desta edição ainda não foram publicados.';const clubSummary=clubs.length===0?'Nenhum time confirmado nesta edição':clubs.length===1?'1 time confirmado nesta edição':`${clubs.length} times confirmados nesta edição`;root.innerHTML=`<div class="arena-detail-nav"><span>${escapeHtml(t.badge||'🏆')} ${escapeHtml(t.name)}</span><nav><button type="button" data-tournament-jump="overview">Visão geral</button><button type="button" data-tournament-jump="competition">Competição</button><button type="button" data-tournament-jump="clubs">Clubes</button></nav></div><div class="arena-hero" id="tournamentOverview">${t.banner?`<img src="${safe(t.banner)}" alt="Banner de ${escapeHtml(t.name)}">`:''}<div class="arena-hero-copy"><div class="arena-hero-labels"><span>${escapeHtml(t.status)}</span><span>${escapeHtml(t.edition||'Nova edição')}</span></div><span class="arena-hero-symbol">${escapeHtml(t.badge||'🏆')}</span><h2>${escapeHtml(t.name)}</h2><p>${escapeHtml(t.description||'Campeonato oficial do Clã BDA.')}</p>${isAdmin?`<div class="arena-actions"><button class="secondary" type="button" data-edit-tournament="${escapeHtml(t.id)}">Editar campeonato</button>${t.locked?'':`<button class="danger" type="button" data-delete-tournament="${escapeHtml(t.id)}">Excluir campeonato</button>`}</div>`:''}</div></div><div class="arena-stats"><div class="arena-stat"><span>Formato</span><b>${escapeHtml(t.format||'A definir')}</b></div><div class="arena-stat"><span>Fase atual</span><b>${escapeHtml(t.phase||'Preparação')}</b></div><div class="arena-stat"><span>Participantes</span><b>${clubs.length}<small> / ${Number(t.maxTeams)||'∞'}</small></b></div><div class="arena-stat"><span>Situação</span><b>${escapeHtml(t.status||'Planejado')}</b></div></div><section id="tournamentCompetition" aria-label="Jogos e classificação">${t.legacy?`<div class="arena-legacy">${oldBracket}</div>`:'<span class="arena-competition-anchor" aria-hidden="true"></span>'}</section><section class="arena-club-section" id="tournamentClubs"><div class="section-head"><div><span class="eyebrow">Elenco da competição</span><h2>Clubes participantes</h2><p>${clubSummary}</p></div></div>${clubs.length?`<div class="arena-clubs">${clubs.map((name,index)=>`<span class="arena-club"><i>${index+1}</i>${escapeHtml(name)}</span>`).join('')}</div>`:`<div class="arena-placeholder">${emptyClubs}</div>`}</section>`}
-  function renderAll(){renderFilters();renderCards();renderDetail();renderHome();updateStats()}
+  function renderAll(){
+    const cleaned=dedupeOfficialLeagues(tournaments);
+    if(cleaned.length!==tournaments.length){
+      tournaments=cleaned;
+      try{localStorage.setItem(KEY,JSON.stringify(tournaments))}catch{}
+    }
+    renderFilters();renderCards();renderDetail();renderHome();updateStats()
+  }
 
   function buildPage(){page.innerHTML=`<section class="arena-page-hero"><div><span class="eyebrow">Central oficial de competições</span><h1>Campeonatos BDA</h1><p>Copas, ligas, resultados e classificações em uma única arena.</p></div><aside><b>${tournaments.length}</b><span>competições registradas</span><button class="primary" id="createTournamentBtn" type="button" hidden>+ Criar campeonato</button></aside></section><div class="arena-catalog-head"><div><span class="eyebrow">Escolha uma competição</span><h2>Temporadas da Arena</h2></div><div class="arena-toolbar" aria-label="Filtrar campeonatos"><button class="arena-filter active" type="button" data-arena-filter="Todos">Todos</button><button class="arena-filter" type="button" data-arena-filter="Abertos">Abertos</button><button class="arena-filter" type="button" data-arena-filter="Planejado">Planejados</button><button class="arena-filter" type="button" data-arena-filter="Finalizado">Finalizados</button></div></div><div class="arena-grid" id="arenaGrid"></div><div class="arena-detail" id="arenaDetail"></div>`}
   function buildModal(){const modal=document.createElement('div');modal.className='modal-backdrop';modal.id='tournamentModal';modal.innerHTML=`<div class="modal"><h2 id="tournamentModalTitle">Criar campeonato</h2><p>Monte uma copa ou liga para o Clã BDA.</p><form id="tournamentForm"><div class="form-grid two"><label>Nome<input id="tName" required maxlength="55" placeholder="Copa dos Campeões BDA"></label><label>Edição<input id="tEdition" maxlength="35" placeholder="1ª edição"></label><label>Formato<select id="tFormat"><option>Mata-mata</option><option>Pontos corridos</option><option>Grupos + mata-mata</option><option>Turno e returno</option></select></label><label>Limite de times<input id="tMax" type="number" min="2" max="64" value="16"></label><label>Status<select id="tStatus"><option>Planejado</option><option>Inscrições abertas</option><option>Em andamento</option><option>Finalizado</option></select></label><label>Fase atual<input id="tPhase" maxlength="45" placeholder="Inscrições"></label><label>Símbolo<input id="tBadge" maxlength="4" placeholder="🏆"></label><label>Prazo<input id="tDeadline" maxlength="45" placeholder="24h por fase"></label><label style="grid-column:1/-1">Descrição<textarea id="tDescription" maxlength="260"></textarea></label><label style="grid-column:1/-1">Banner<input id="tBanner" type="file" accept="image/png,image/jpeg,image/webp"><div class="arena-banner-preview" id="tBannerPreview"></div></label><div style="grid-column:1/-1"><label>Clubes participantes</label><div class="arena-team-options" id="tTeams"></div></div></div><div class="form-actions"><button type="button" class="secondary" data-close="tournamentModal">Cancelar</button><button class="primary" type="submit">Salvar</button></div></form></div>`;document.body.appendChild(modal)}
@@ -133,6 +154,16 @@
   document.addEventListener('click',event=>{const jump=event.target.closest('[data-tournament-jump]');if(!jump)return;const targets={overview:'tournamentOverview',competition:'tournamentCompetition',clubs:'tournamentClubs'};document.getElementById(targets[jump.dataset.tournamentJump])?.scrollIntoView({behavior:'smooth',block:'start'})});
   document.getElementById('resetDemoBtn')?.addEventListener('click',()=>{tournaments=copy(seeds);selectedId=tournaments[0].id;localStorage.removeItem(KEY);renderAll()});
   document.getElementById('tournamentModal').addEventListener('click',event=>{if(event.target.id==='tournamentModal')closeModal('tournamentModal')});
+
+  window.addEventListener('arena:tournaments-updated', () => {
+    const next=load();
+    tournaments=dedupeOfficialLeagues(next);
+    if(JSON.stringify(next)!==JSON.stringify(tournaments)){
+      try{localStorage.setItem(KEY,JSON.stringify(tournaments))}catch{}
+    }
+    selectedId=tournaments.find(item=>item.id===selectedId)?.id||tournaments[0]?.id||'';
+    renderAll();
+  });
 
   renderAll();updateAdminUI();
 })();
