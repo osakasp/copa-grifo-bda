@@ -1,5 +1,5 @@
-const VERSION = 'v138-fast-shell';
-const REV = '20260919-8';
+const VERSION = 'v139-stable-fast';
+const REV = '20260919-9';
 const AUTH_REV = '20260825-5';
 const AUTH_CONSUMERS_REV = '20260825-4';
 const SITE_HEALTH_REV = '20260825-6';
@@ -44,6 +44,7 @@ const SHELL = [
   `./confrontos-validos.js?v=${REV}`,
   `./super-league-guard.js?v=${REV}`,
   `./arena-bda.js?v=${REV}`,
+  `./pontos-corridos.js?v=20260919-3`,
   `./arena-home-active.js?v=${REV}`,
   `./arena-lazy-features.js?v=${REV}`,
   `./arena-interface.bundle.js?v=${REV}`,
@@ -249,7 +250,7 @@ self.addEventListener('fetch', event => {
 
   const isDocument = request.mode === 'navigate' || request.destination === 'document' || url.pathname.endsWith('.html');
   const isCriticalArenaScript = request.destination === 'script'
-    && /\/(firebase-auth|firestore-sync|arena-auth-consumers|site-health|classificacao-automatica|arena-v3-cleanup|arena-super-league-sync-gate|arena-redesign-v1|arena-design-polish-v2|arena-mobile-polish|arena-mobile-bracket-v4|arena-provisional-knockout|arena-team-editor|arena-team-cloud-sync|arena-tournament-trim|arena-match-details|arena-match-media|arena-scorer-photos|flash-cup-draw-engine|flash-cup-knockout-engine|copas-flash|super-league-rule|super-league-guard|super-league-runtime-fix|bda-logo|arena-home-active|arena-bda|arena-lazy-features|arena-interface\.bundle|arena-runtime\.bundle|confrontos-validos|arena-champion-publish)\.js$/.test(url.pathname);
+    && /\/(firebase-auth|firestore-sync|arena-auth-consumers|site-health|classificacao-automatica|arena-v3-cleanup|arena-super-league-sync-gate|arena-redesign-v1|arena-design-polish-v2|arena-mobile-polish|arena-mobile-bracket-v4|arena-provisional-knockout|arena-team-editor|arena-team-cloud-sync|arena-tournament-trim|arena-match-details|arena-match-media|arena-scorer-photos|flash-cup-draw-engine|flash-cup-knockout-engine|copas-flash|super-league-rule|super-league-guard|super-league-runtime-fix|bda-logo|arena-home-active|arena-bda|arena-lazy-features|arena-interface\.bundle|arena-runtime\.bundle|confrontos-validos|pontos-corridos|arena-champion-publish)\.js$/.test(url.pathname);
 
   if (isDocument || isCriticalArenaScript) return event.respondWith(networkFirst(request));
   if (request.destination === 'image') return event.respondWith(imageCacheFirst(request));
