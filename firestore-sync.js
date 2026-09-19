@@ -10,7 +10,8 @@
   const DEFAULT_TOURNAMENTS = [
     {id:'copa-grifo',name:'Copa Grifo BDA',edition:'8ª edição',format:'Mata-mata',status:'Finalizado',phase:'Campeão definido',maxTeams:19,badge:'🦅',participants:['Zombie FC BDA','JOGOBUGADO BDA','Inter Brasil BDA','Vasco da Gama BDA'],description:'Competição tradicional do Clã BDA em formato eliminatório e jogo único.',legacy:true,locked:true},
     {id:'copa-francos',name:'Copa Francos',edition:'Próxima edição',format:'Mata-mata',status:'Planejado',phase:'Preparação',maxTeams:16,badge:'🕊️',participants:[],description:'Competição especial em homenagem à história do Francos FC BDA.'},
-    {id:'liga-a',name:'Liga A BDA',edition:'Temporada atual',format:'Pontos corridos',status:'Em andamento',phase:'Fase de classificação',maxTeams:12,badge:'🥇',participants:['Zombie FC BDA','JOGOBUGADO BDA','Inter Brasil BDA','Vasco da Gama BDA','São Paulo BDA','Mozamigos BDA'],matchSettings:{leagueTurns:2,pointsWin:3,pointsDraw:1,pointsLoss:0},description:'Divisão principal do Clã BDA. 12 clubes, turno e returno, 22 rodadas e 132 jogos.'}
+    {id:'liga-a',name:'Liga A BDA',edition:'Temporada atual',format:'Pontos corridos',status:'Inscrições abertas',phase:'Fase de classificação',maxTeams:12,badge:'🥇',participants:[],matchSettings:{leagueTurns:2,pointsWin:3,pointsDraw:1,pointsLoss:0},description:'Divisão principal do Clã BDA. 12 clubes, turno e returno, 22 rodadas e 132 jogos.'},
+    {id:'liga-b',name:'Liga B BDA',edition:'Temporada atual',format:'Pontos corridos',status:'Inscrições abertas',phase:'Fase de classificação',maxTeams:12,badge:'🛡️',participants:[],matchSettings:{leagueTurns:2,pointsWin:3,pointsDraw:1,pointsLoss:0},description:'Divisão de acesso do Clã BDA. 12 clubes, turno e returno, 22 rodadas e 132 jogos.'}
   ];
 
   const DATASETS = {
@@ -74,11 +75,11 @@
 
   function normalizeTournaments(values, { markRemoteMigration = false } = {}) {
     const raw = Array.isArray(values) ? clone(values) : [];
-    const next = raw.filter(item => !isSupercopa(item) && String(item?.id || '') !== 'liga-b');
+    const next = raw.filter(item => !isSupercopa(item));
 
-    // A temporada atual usa uma única liga de pontos corridos.
-    // A Liga B antiga é removida para evitar duas estruturas concorrentes.
-    ['liga-a'].forEach(id => {
+    // Liga A e Liga B são competições estruturais da Arena.
+    // A sincronização mantém as duas divisões independentes.
+    ['liga-a','liga-b'].forEach(id => {
       const index = next.findIndex(item => String(item?.id || '') === id);
       const seed = DEFAULT_TOURNAMENTS.find(item => item.id === id);
       if (index < 0) {
