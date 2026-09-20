@@ -1,5 +1,5 @@
-const VERSION = 'v165-dark-portal';
-const REV = '20260920-17';
+const VERSION = 'v166-portal-network-first';
+const REV = '20260920-18';
 const AUTH_REV = '20260825-5';
 const AUTH_CONSUMERS_REV = '20260825-4';
 const SITE_HEALTH_REV = '20260825-6';
@@ -159,11 +159,9 @@ async function indexCurrent(request) {
     if (canCache(request, response)) cache.put(request, response.clone()).catch(() => {});
     return response;
   }).catch(() => null);
-  if (cached) {
-    network.catch(() => {});
-    return rewrittenHtmlResponse(cached, normalizeIndexHtml);
-  }
   const response = await network;
+  if (response) return rewrittenHtmlResponse(response, normalizeIndexHtml);
+  if (cached) return rewrittenHtmlResponse(cached, normalizeIndexHtml);
   return response ? rewrittenHtmlResponse(response, normalizeIndexHtml) : Response.error();
 }
 
