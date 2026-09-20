@@ -12,7 +12,7 @@
   const MOBILE_BRACKET_SRC = `./arena-mobile-bracket-v4.js?v=${REV}`;
   const PROVISIONAL_KNOCKOUT_SRC = `./arena-provisional-knockout.js?v=${REV}`;
   const TEAM_EDITOR_SRC = `./arena-team-editor.js?v=${REV}`;
-  const TEAM_CLOUD_SYNC_SRC = './arena-team-cloud-sync.js?v=20260906-5';
+  const TEAM_CLOUD_SYNC_SRC = './arena-team-cloud-sync.js?v=20260920-1';
   const TOURNAMENT_TRIM_SRC = `./arena-tournament-trim.js?v=${REV}`;
   const MATCH_DETAILS_SRC = `./arena-match-details.js?v=${REV}`;
   const MATCH_MEDIA_SRC = `./arena-match-media.js?v=${REV}`;
@@ -105,7 +105,7 @@
     ensureScript({ globalName:'ArenaBDATeamEditor', selector:'script[data-arena-team-editor]', src:TEAM_EDITOR_SRC, datasetName:'arenaTeamEditor', label:'o editor administrativo de times' });
   }
   function ensureTeamCloudSyncModule() {
-    ensureScript({ globalName:'ArenaBDATeamCloudSync', selector:'script[data-arena-team-cloud-sync]', src:TEAM_CLOUD_SYNC_SRC, datasetName:'arenaTeamCloudSync', label:'a sincronização e os recursos atuais dos campeonatos', minVersion:12 });
+    ensureScript({ globalName:'ArenaBDATeamCloudSync', selector:'script[data-arena-team-cloud-sync]', src:TEAM_CLOUD_SYNC_SRC, datasetName:'arenaTeamCloudSync', label:'a sincronização e os recursos atuais dos campeonatos', minVersion:13 });
   }
   function ensureTournamentTrimModule() {
     ensureScript({ globalName:'ArenaBDATournamentTrim', selector:'script[data-arena-tournament-trim]', src:TOURNAMENT_TRIM_SRC, datasetName:'arenaTournamentTrim', label:'a limpeza dos atalhos da tela de campeonato', minVersion:7 });
@@ -139,11 +139,13 @@
     const page = document.querySelector('.page.active[data-page="tournament"]');
     if (!page) return;
 
-    // A sincronização e os editores não disputam CPU com a tela inicial.
-    ensureTeamCloudSyncModule();
-    if (adminActive()) ensureTeamEditorModule();
-
     const manager = page.querySelector('#giManager') || document.querySelector('#giManager');
+    const isAdmin = adminActive();
+
+    // Sincronização de renomeações e ferramentas de edição são administrativas.
+    // Para visitantes, a exceção é a regra específica da Copa BDA LIVRE.
+    if (isAdmin || manager?.dataset.tid === 'copa-bda-livre') ensureTeamCloudSyncModule();
+    if (isAdmin) ensureTeamEditorModule();
     if (!manager) return;
 
     ensureTournamentTrimModule();

@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDATeamCloudSync?.version >= 12) return;
+  if (window.ArenaBDATeamCloudSync?.version >= 13) return;
 
   const MATCH_KEY = 'bda-v3-confrontos';
   const COPA_BDA_LIVRE_GUARD_SRC = './arena-copa-bda-livre-guard.js?v=20260903-3';
@@ -84,8 +84,18 @@
   }
 
   function ensureRuntimeFixes() {
-    ensureCopaBDALivreGuard();
-    ensureCopaBDALivreLegs();
+    const page = document.querySelector('.page.active[data-page="tournament"]');
+    const manager = page?.querySelector('#giManager') || null;
+    if (!manager) return;
+
+    if (manager.dataset.tid === 'copa-bda-livre') {
+      ensureCopaBDALivreGuard();
+      ensureCopaBDALivreLegs();
+    }
+
+    // Captura e estúdios são ferramentas administrativas; visitantes não devem
+    // baixar nem executar esse pacote ao apenas consultar jogos e classificações.
+    if (!ready()) return;
     ensurePhaseBatchCapture();
     ensureArtStudio();
     ensureArtStudioPro();
@@ -134,7 +144,7 @@
   window.addEventListener('arena:bundle-loaded', ensureRuntimeFixes);
 
   window.ArenaBDATeamCloudSync = Object.freeze({
-    version:12,
+    version:13,
     sync:syncAllMatchStores,
     refreshTeamsPage,
     copaBDALivreGuardSource:COPA_BDA_LIVRE_GUARD_SRC,
