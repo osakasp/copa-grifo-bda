@@ -1,5 +1,5 @@
-const VERSION = 'v153-fast-shell';
-const REV = '20260920-5';
+const VERSION = 'v154-cache-first-shell';
+const REV = '20260920-6';
 const AUTH_REV = '20260825-5';
 const AUTH_CONSUMERS_REV = '20260825-4';
 const SITE_HEALTH_REV = '20260825-6';
@@ -164,26 +164,32 @@ function cleanupResponse(response) {
 
 async function indexCurrent(request) {
   const cache = await caches.open(CACHE.shell);
-  try {
-    const response = await fetch(request, { cache:'no-store' });
+  const cached = await cache.match(request) || await cache.match('./index.html');
+  const network = fetch(request, { cache:'no-store' }).then(response => {
     if (canCache(request, response)) cache.put(request, response.clone()).catch(() => {});
-    return await rewrittenHtmlResponse(response, normalizeIndexHtml);
-  } catch {
-    const cached = await cache.match(request) || await cache.match('./index.html');
-    return cached ? rewrittenHtmlResponse(cached, normalizeIndexHtml) : Response.error();
+    return response;
+  }).catch(() => null);
+  if (cached) {
+    network.catch(() => {});
+    return rewrittenHtmlResponse(cached, normalizeIndexHtml);
   }
+  const response = await network;
+  return response ? rewrittenHtmlResponse(response, normalizeIndexHtml) : Response.error();
 }
 
 async function previewCurrent(request) {
   const cache = await caches.open(CACHE.shell);
-  try {
-    const response = await fetch(request, { cache:'no-store' });
+  const cached = await cache.match(request) || await cache.match(`./preview-v2.html?v=${REV}`);
+  const network = fetch(request, { cache:'no-store' }).then(response => {
     if (canCache(request, response)) cache.put(request, response.clone()).catch(() => {});
-    return await cleanupResponse(response);
-  } catch {
-    const cached = await cache.match(request) || await cache.match(`./preview-v2.html?v=${REV}`);
-    return cached ? cleanupResponse(cached) : Response.error();
+    return response;
+  }).catch(() => null);
+  if (cached) {
+    network.catch(() => {});
+    return cleanupResponse(cached);
   }
+  const response = await network;
+  return response ? cleanupResponse(response) : Response.error();
 }
 
 async function staleWhileRevalidate(request) {
@@ -233,7 +239,8 @@ self.addEventListener('fetch', event => {
   const isCriticalArenaScript = request.destination === 'script'
     && /\/(firebase-auth|firestore-sync|arena-auth-consumers|site-health|classificacao-automatica|arena-v3-cleanup|arena-super-league-sync-gate|arena-redesign-v1|arena-design-polish-v2|arena-mobile-polish|arena-mobile-bracket-v4|arena-provisional-knockout|arena-team-editor|arena-team-cloud-sync|arena-tournament-trim|arena-match-details|arena-match-media|arena-scorer-photos|flash-cup-draw-engine|flash-cup-knockout-engine|copas-flash|super-league-rule|super-league-guard|super-league-runtime-fix|bda-logo|arena-home-active|arena-bda|arena-lazy-features|arena-interface\.bundle|arena-runtime\.bundle|confrontos-validos|pontos-corridos|arena-champion-publish)\.js$/.test(url.pathname);
 
-  if (isDocument || isCriticalArenaScript) return event.respondWith(networkFirst(request));
+  if (isDocument) return event.respondWith(networkFirst(request));
+  if (isCriticalArenaScript) return event.respondWith(staleWhileRevalidate(request));
   if (request.destination === 'image') return event.respondWith(imageCacheFirst(request));
   if (['script','style','font','manifest'].includes(request.destination)) event.respondWith(staleWhileRevalidate(request));
 });
