@@ -1,5 +1,5 @@
-const VERSION = 'v160-mobile-nav-fixed';
-const REV = '20260920-12';
+const VERSION = 'v161-touch-scroll-instant';
+const REV = '20260920-13';
 const AUTH_REV = '20260825-5';
 const AUTH_CONSUMERS_REV = '20260825-4';
 const SITE_HEALTH_REV = '20260825-6';
@@ -244,3 +244,4 @@ self.addEventListener('fetch', event => {
   if (request.destination === 'image') return event.respondWith(imageCacheFirst(request));
   if (['script','style','font','manifest'].includes(request.destination)) event.respondWith(staleWhileRevalidate(request));
 });
+
