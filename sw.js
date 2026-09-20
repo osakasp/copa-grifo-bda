@@ -1,5 +1,5 @@
-const VERSION = 'v161-touch-scroll-instant';
-const REV = '20260920-13';
+const VERSION = 'v162-championship-portal';
+const REV = '20260920-14';
 const AUTH_REV = '20260825-5';
 const AUTH_CONSUMERS_REV = '20260825-4';
 const SITE_HEALTH_REV = '20260825-6';
@@ -45,10 +45,7 @@ const SHELL = [
   `./super-league-guard.js?v=${REV}`,
   `./arena-bda.js?v=${REV}`,
   `./arena-interface.bundle.js?v=${REV}`,
-  `./arena-mobile-performance.js?v=${REV}`,
-  `./arena-home-active.js?v=${REV}`,
-  `./arena-lazy-features.js?v=${REV}`,
-  CLEANUP_SRC
+  `./arena-mobile-performance.js?v=${REV}`
 ];
 
 async function precacheFresh() {
