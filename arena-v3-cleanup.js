@@ -4,7 +4,7 @@
   if (window.ArenaBDAV3Cleanup?.version >= 33) return;
 
   const BUILD = 'v135';
-  const REV = '20260920-10';
+  const REV = '20260920-11';
   const SUPER_LEAGUE_RULE_SRC = `./super-league-rule.js?v=${REV}`;
   const SUPER_LEAGUE_SYNC_SRC = `./arena-super-league-sync-gate.js?v=${REV}`;
   const REDESIGN_SRC = `./arena-redesign-v1.js?v=${REV}`;
