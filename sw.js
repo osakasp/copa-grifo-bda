@@ -1,5 +1,5 @@
-const VERSION = 'v163-copa-facil-portal';
-const REV = '20260920-15';
+const VERSION = 'v164-lightweight-portal';
+const REV = '20260920-16';
 const AUTH_REV = '20260825-5';
 const AUTH_CONSUMERS_REV = '20260825-4';
 const SITE_HEALTH_REV = '20260825-6';
@@ -37,15 +37,8 @@ const CHAMPION_PUBLISH_SRC = `./arena-champion-publish.js?v=${REV}`;
 const SHELL = [
   './',
   './index.html',
-  `./preview-v2.html?v=${REV}`,
   './favicon.svg',
-  './site.webmanifest',
-  `./arena-runtime.bundle.js?v=${REV}`,
-  `./confrontos-validos.js?v=${REV}`,
-  `./super-league-guard.js?v=${REV}`,
-  `./arena-bda.js?v=${REV}`,
-  `./arena-interface.bundle.js?v=${REV}`,
-  `./arena-mobile-performance.js?v=${REV}`
+  './site.webmanifest'
 ];
 
 async function precacheFresh() {
