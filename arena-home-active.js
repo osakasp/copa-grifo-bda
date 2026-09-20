@@ -266,7 +266,10 @@
       button.click();
       requestAnimationFrame(() => {
         const detail = document.getElementById('arenaDetail');
-        if (detail) detail.scrollIntoView({ block:'start', behavior:'smooth' });
+        if (detail) {
+          const touch = window.matchMedia?.('(hover: none), (pointer: coarse)')?.matches;
+          detail.scrollIntoView({ block:'start', behavior: touch ? 'auto' : 'smooth' });
+        }
       });
       return true;
     };
@@ -330,3 +333,4 @@
 
   refresh();
 })();
+
