@@ -1,5 +1,5 @@
-const VERSION = 'v155-stop-redesign-loop';
-const REV = '20260920-7';
+const VERSION = 'v156-mobile-lite';
+const REV = '20260920-8';
 const AUTH_REV = '20260825-5';
 const AUTH_CONSUMERS_REV = '20260825-4';
 const SITE_HEALTH_REV = '20260825-6';

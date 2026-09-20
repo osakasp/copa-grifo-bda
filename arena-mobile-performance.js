@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAMobilePerformance?.version >= 2) return;
+  if (window.ArenaBDAMobilePerformance?.version >= 3) return;
 
   // Reduz o custo de composição no celular somente durante a rolagem.
   // A interface volta ao visual completo assim que o usuário para.
@@ -54,11 +54,39 @@
       html.arena-mobile-scrolling .fixture {
         box-shadow: none !important;
       }
+
+      /* Filters, fixed gradients and large shadows are disproportionately
+         expensive on mobile GPUs. Keep the cards readable without forcing a
+         full compositing layer for every visible element. */
+      html.arena-mobile-lite body {
+        background-attachment: scroll !important;
+      }
+      html.arena-mobile-lite :is(.topbar,.bottom-nav,.arena-mobile-nav,.modal-backdrop,.sheet,.nav-sheet) {
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important;
+      }
+      html.arena-mobile-lite :is(.card,.stat,.arena-card,.champion-card,.team-card,.live-card,.fixture,.form-card,.arena-stat,.hero,.arena-hero) {
+        box-shadow: none !important;
+        filter: none !important;
+        transform: none !important;
+      }
+      html.arena-mobile-lite :is(.card::before,.stat::before,.arena-card::before,.champion-card::before,.team-card::before,.live-card::before,.fixture::before,.form-card::before,.arena-stat::before) {
+        display: none !important;
+      }
+      html.arena-mobile-lite :is(button,a,.card,.stat,.arena-card,.team-card) {
+        transition: none !important;
+      }
     }
   `;
   document.head.appendChild(css);
 
+  const enableMobileLite = () => {
+    if (window.matchMedia?.('(max-width: 768px)')?.matches) root.classList.add('arena-mobile-lite');
+  };
+  enableMobileLite();
+  window.addEventListener('resize', enableMobileLite, { passive: true });
+
   window.addEventListener('scroll', enableLightScroll, { passive: true });
 
-  window.ArenaBDAMobilePerformance = Object.freeze({ version: 2 });
+  window.ArenaBDAMobilePerformance = Object.freeze({ version: 3 });
 })();
