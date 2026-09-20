@@ -326,9 +326,12 @@
   }
 
   function loadProMotion() {
+    // O módulo premium usa observador global e efeitos de ponteiro; em telas
+    // touch isso só aumenta o custo de composição sem melhorar a interação.
+    if (window.matchMedia?.('(hover: none) and (pointer: coarse)')?.matches) return;
     if (window.ArenaBDAProMotion || document.querySelector('script[data-arena-pro-motion]')) return;
     const script = document.createElement('script');
-    script.src = './arena-pro-motion.js?v=20260818-1';
+    script.src = './arena-pro-motion.js?v=20260920-10';
     script.async = true;
     script.dataset.arenaProMotion = 'true';
     script.addEventListener('error', () => console.warn('[Arena BDA] Não foi possível carregar o visual premium'), { once: true });
