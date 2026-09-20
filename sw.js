@@ -1,5 +1,5 @@
-const VERSION = 'v162-championship-portal';
-const REV = '20260920-14';
+const VERSION = 'v163-copa-facil-portal';
+const REV = '20260920-15';
 const AUTH_REV = '20260825-5';
 const AUTH_CONSUMERS_REV = '20260825-4';
 const SITE_HEALTH_REV = '20260825-6';
