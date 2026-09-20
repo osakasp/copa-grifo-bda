@@ -61,6 +61,9 @@
       html.arena-mobile-lite body {
         background-attachment: scroll !important;
       }
+      html.arena-mobile-lite {
+        scroll-behavior: auto !important;
+      }
       html.arena-mobile-lite :is(.topbar,.bottom-nav,.arena-mobile-nav,.modal-backdrop,.sheet,.nav-sheet) {
         -webkit-backdrop-filter: none !important;
         backdrop-filter: none !important;
@@ -90,3 +93,4 @@
 
   window.ArenaBDAMobilePerformance = Object.freeze({ version: 3 });
 })();
+
