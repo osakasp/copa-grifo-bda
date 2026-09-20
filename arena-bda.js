@@ -51,6 +51,11 @@
   document.head.appendChild(style);
 
   function copy(value){return JSON.parse(JSON.stringify(value))}
+  function scrollToArenaTarget(node, block='start'){
+    if(!node)return;
+    const touch=window.matchMedia?.('(hover: none), (pointer: coarse)')?.matches;
+    node.scrollIntoView({behavior:touch?'auto':'smooth',block});
+  }
   function dedupeOfficialLeagues(values){
     if(!Array.isArray(values)) return [];
     const seenLigaA=false;
@@ -151,10 +156,11 @@
   document.getElementById('tournamentForm').addEventListener('submit',submitTournament);
   document.getElementById('createTournamentBtn').addEventListener('click',()=>openEditor());
   document.getElementById('adminCreateTournamentBtn').addEventListener('click',()=>openEditor());
-  document.addEventListener('click',event=>{const f=event.target.closest('[data-arena-filter]');if(f){filter=f.dataset.arenaFilter;renderFilters();renderCards();return}const open=event.target.closest('[data-open-tournament]');if(open){selectedId=open.dataset.openTournament;renderCards();renderDetail();document.getElementById('arenaDetail')?.scrollIntoView({behavior:'smooth'});return}const home=event.target.closest('[data-home-tournament]');if(home){selectedId=home.dataset.homeTournament;navigate('tournament');renderAll();return}const edit=event.target.closest('[data-edit-tournament]');if(edit){openEditor(edit.dataset.editTournament);return}const del=event.target.closest('[data-delete-tournament]');if(del)removeTournament(del.dataset.deleteTournament)});
-  document.addEventListener('click',event=>{const jump=event.target.closest('[data-tournament-jump]');if(!jump)return;const targets={overview:'tournamentOverview',competition:'tournamentCompetition',clubs:'tournamentClubs'};document.getElementById(targets[jump.dataset.tournamentJump])?.scrollIntoView({behavior:'smooth',block:'start'})});
+  document.addEventListener('click',event=>{const f=event.target.closest('[data-arena-filter]');if(f){filter=f.dataset.arenaFilter;renderFilters();renderCards();return}const open=event.target.closest('[data-open-tournament]');if(open){selectedId=open.dataset.openTournament;renderCards();renderDetail();scrollToArenaTarget(document.getElementById('arenaDetail'));return}const home=event.target.closest('[data-home-tournament]');if(home){selectedId=home.dataset.homeTournament;navigate('tournament');renderAll();return}const edit=event.target.closest('[data-edit-tournament]');if(edit){openEditor(edit.dataset.editTournament);return}const del=event.target.closest('[data-delete-tournament]');if(del)removeTournament(del.dataset.deleteTournament)});
+  document.addEventListener('click',event=>{const jump=event.target.closest('[data-tournament-jump]');if(!jump)return;const targets={overview:'tournamentOverview',competition:'tournamentCompetition',clubs:'tournamentClubs'};scrollToArenaTarget(document.getElementById(targets[jump.dataset.tournamentJump]))});
   document.getElementById('resetDemoBtn')?.addEventListener('click',()=>{tournaments=copy(seeds);selectedId=tournaments[0].id;localStorage.removeItem(KEY);renderAll()});
   document.getElementById('tournamentModal').addEventListener('click',event=>{if(event.target.id==='tournamentModal')closeModal('tournamentModal')});
 
   renderAll();updateAdminUI();
 })();
+
