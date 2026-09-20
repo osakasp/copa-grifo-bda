@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDARedesign?.version >= 1) return;
+  if (window.ArenaBDARedesign?.version >= 2) return;
 
   const TOURNAMENT_KEY = 'bda-v3-tournaments';
   const MATCH_KEY = 'bda-v3-confrontos';
@@ -403,11 +403,14 @@
       home.dataset.currentTournament = String(tournament.id || '');
       const eyebrow = home.querySelector('.now-head .eyebrow');
       if (eyebrow) {
-        eyebrow.textContent = normalize(tournament.status) === 'em andamento'
+        const label = normalize(tournament.status) === 'em andamento'
           ? 'Campeonato em andamento'
           : normalize(tournament.status) === 'inscricoes abertas'
             ? 'Próxima competição'
             : 'Destaque da Arena';
+        // Writing identical text still emits a childList mutation. This observer
+        // sees that mutation, so unconditional writes create a frame-by-frame loop.
+        if (eyebrow.textContent !== label) eyebrow.textContent = label;
       }
     }
   }
@@ -431,7 +434,7 @@
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
   window.ArenaBDARedesign = Object.freeze({
-    version: 1,
+    version: 2,
     refresh: syncContext,
     currentTournament: () => currentTournament(),
     accentFor: tournament => ({ ...accentFor(tournament) })
