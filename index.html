@@ -50,7 +50,7 @@
     (() => {
       'use strict';
 
-      const REV = '20260919-7';
+      const REV = '20260919-8';
       const previewSource = `./preview-v2.html?v=${REV}`;
       const boot = document.getElementById('arenaBoot');
       const title = document.getElementById('loadingTitle');
@@ -97,7 +97,7 @@
       // acontecer em cascata. Precarregamos os módulos para transformar a fila de rede em
       // downloads paralelos e mantemos a execução na ordem segura.
       function preloadScripts(scripts) {
-        scripts.slice(0, 2).forEach(src => {
+        scripts.forEach(src => {
           if (document.head.querySelector('link[data-arena-preload="true"][href="' + src + '"]')) return;
           const link = document.createElement('link');
           link.rel = 'preload';
@@ -319,6 +319,11 @@
 
           const adminButton = element?.closest('#adminBtn');
           if (!adminButton) return;
+
+          // Começa o download do pacote administrativo no primeiro toque.
+          // O download ocorre em paralelo; a execução continua respeitando dependências.
+          preloadScripts([...firebaseScripts, ...cloudScripts]);
+
           const authReady = Boolean(window.ArenaBDAAuth?.auth);
           if (cloudReady && authReady) return;
 
