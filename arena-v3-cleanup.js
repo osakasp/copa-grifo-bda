@@ -1,10 +1,10 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAV3Cleanup?.version >= 31) return;
+  if (window.ArenaBDAV3Cleanup?.version >= 32) return;
 
-  const BUILD = 'v133';
-  const REV = '20260920-2';
+  const BUILD = 'v134';
+  const REV = '20260920-3';
   const SUPER_LEAGUE_RULE_SRC = `./super-league-rule.js?v=${REV}`;
   const SUPER_LEAGUE_SYNC_SRC = `./arena-super-league-sync-gate.js?v=${REV}`;
   const REDESIGN_SRC = `./arena-redesign-v1.js?v=${REV}`;
@@ -162,6 +162,11 @@
     }
   }
 
+  function ensureTeamPageModules() {
+    if (!document.querySelector('.page.active[data-page="teams"]') || !adminActive()) return;
+    ensureTeamEditorModule();
+  }
+
   function scheduleTournamentModules() {
     if (featureTask || !document.querySelector('.page.active[data-page="tournament"]')) return;
     const run = () => {
@@ -225,6 +230,7 @@
     scrubLegacyCopy();
     ensureRedesignModule();
     ensureMobilePolishModule();
+    ensureTeamPageModules();
     scheduleTournamentModules();
     announceBuild();
   }
@@ -246,11 +252,17 @@
 
   document.addEventListener('click', event => {
     if (!(event.target instanceof Element)) return;
+    if (event.target.closest('[data-go="teams"],[data-mobile-go="teams"],[data-sheet-go="teams"]')) {
+      window.setTimeout(scheduleCleanup, 0);
+    }
     if (event.target.closest('[data-go="tournament"],[data-mobile-go="tournament"],[data-sheet-go="tournament"],[data-open-tournament],[data-home-tournament]')) {
       window.setTimeout(scheduleTournamentModules, 0);
     }
   }, true);
-  window.addEventListener('popstate', () => window.setTimeout(scheduleTournamentModules, 0));
+  window.addEventListener('popstate', () => window.setTimeout(() => {
+    scheduleCleanup();
+    scheduleTournamentModules();
+  }, 0));
 
   function addedNodeNeedsCleanup(node) {
     if (!(node instanceof Element)) return false;
@@ -271,7 +283,7 @@
   observer.observe(document.documentElement, { childList:true, subtree:true });
 
   window.ArenaBDAV3Cleanup = Object.freeze({
-    version:31,
+    version:32,
     build:BUILD,
     revision:REV,
     documentMode:'single',

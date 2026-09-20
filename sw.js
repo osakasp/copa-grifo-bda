@@ -1,5 +1,5 @@
-const VERSION = 'v150-runtime-lite';
-const REV = '20260920-2';
+const VERSION = 'v151-team-registration';
+const REV = '20260920-3';
 const AUTH_REV = '20260825-5';
 const AUTH_CONSUMERS_REV = '20260825-4';
 const SITE_HEALTH_REV = '20260825-6';
@@ -40,7 +40,7 @@ const SHELL = [
   `./preview-v2.html?v=${REV}`,
   './favicon.svg',
   './site.webmanifest',
-  './arena-runtime.bundle.js?v=20260814-4',
+  `./arena-runtime.bundle.js?v=${REV}`,
   `./confrontos-validos.js?v=${REV}`,
   `./super-league-guard.js?v=${REV}`,
   `./arena-bda.js?v=${REV}`,

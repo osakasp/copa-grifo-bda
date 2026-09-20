@@ -50,7 +50,7 @@
     (() => {
       'use strict';
 
-      const REV = '20260920-2';
+      const REV = '20260920-3';
       const previewSource = `./preview-v2.html?v=${REV}`;
       const boot = document.getElementById('arenaBoot');
       const title = document.getElementById('loadingTitle');
@@ -65,7 +65,7 @@
         'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js'
       ];
       const coreScripts = [
-        './arena-runtime.bundle.js?v=20260814-4',
+        `./arena-runtime.bundle.js?v=${REV}`,
         `./confrontos-validos.js?v=${REV}`,
         `./super-league-guard.js?v=${REV}`,
         `./arena-bda.js?v=${REV}`,

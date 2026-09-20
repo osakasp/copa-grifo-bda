@@ -2,7 +2,7 @@
   'use strict';
 
   const MAX_FILE_BYTES = 6 * 1024 * 1024;
-  const MAX_IMAGE_SIDE = 360;
+  const MAX_IMAGE_SIDE = 240;
   let pendingBadge = '';
 
   const styles = document.createElement('style');
@@ -122,8 +122,36 @@
     } catch (error) {
       teams = previousValue;
       renderTeams();
-      toast('Não foi possível salvar o escudo neste navegador');
+      toast(error?.name === 'QuotaExceededError'
+        ? 'O armazenamento deste aparelho está cheio'
+        : 'Não foi possível salvar o escudo neste navegador');
       return false;
+    }
+  }
+
+  function persistRegistration(previousValue) {
+    try {
+      save(STORAGE.teams, teams);
+      return { saved: true, badgeSaved: true };
+    } catch (error) {
+      const registeredTeam = teams[0];
+
+      // O cadastro do clube é mais importante que a imagem. Em aparelhos com o
+      // localStorage quase cheio, tentamos novamente sem o data URL do escudo.
+      if (registeredTeam?.badge) {
+        delete registeredTeam.badge;
+        try {
+          save(STORAGE.teams, teams);
+          return { saved: true, badgeSaved: false };
+        } catch {}
+      }
+
+      teams = previousValue;
+      renderTeams();
+      toast(error?.name === 'QuotaExceededError'
+        ? 'O armazenamento deste aparelho está cheio. Libere espaço e tente novamente.'
+        : 'Não foi possível registrar o time');
+      return { saved: false, badgeSaved: false };
     }
   }
 
@@ -222,20 +250,9 @@
       outputSize
     );
 
-    const preferredType =
-      file.type === 'image/png'
-        ? 'image/png'
-        : 'image/webp';
-
-    const preferredQuality =
-      preferredType === 'image/png'
-        ? undefined
-        : 0.9;
-
-    return canvas.toDataURL(
-      preferredType,
-      preferredQuality
-    );
+    // WebP mantém transparência e reduz bastante o uso do armazenamento local,
+    // que é compartilhado com campeonatos, placares e outras imagens da Arena.
+    return canvas.toDataURL('image/webp', 0.78);
   }
 
   function openBadgePicker(index) {
@@ -520,12 +537,22 @@
         return;
       }
 
+      const duplicate = teams.some(team =>
+        String(team?.name || '').trim().toLocaleLowerCase('pt-BR') ===
+        name.toLocaleLowerCase('pt-BR')
+      );
+
+      if (duplicate) {
+        toast('Este time já está cadastrado');
+        return;
+      }
+
       const previousValue = clone(teams);
 
       const team = {
         name,
         master,
-        code,
+        code: code.toUpperCase(),
         status
       };
 
@@ -535,7 +562,9 @@
 
       teams.unshift(team);
 
-      if (!persistTeams(previousValue)) {
+      const result = persistRegistration(previousValue);
+
+      if (!result.saved) {
         return;
       }
 
@@ -545,7 +574,16 @@
       updateFormPreview();
       renderTeams();
 
-      toast('Time registrado com escudo');
+      window.dispatchEvent(new CustomEvent('arena:team-registered', {
+        detail: { name, hasBadge: result.badgeSaved && Boolean(team.badge) }
+      }));
+      window.dispatchEvent(new CustomEvent('arena:teams-updated', {
+        detail: { source: 'team-registration', name }
+      }));
+
+      toast(result.badgeSaved
+        ? 'Time registrado. Sincronizando com a nuvem...'
+        : 'Time registrado sem o escudo porque o armazenamento está cheio');
     });
   }
 

@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = 'v128-no-sync-reload';
+  const VERSION = 'v129-team-save-queue';
   const COLLECTION = 'arenaData';
   const META_ID = 'meta';
   const MAX_ITEM_BYTES = 800 * 1024;
@@ -41,12 +41,14 @@
   const nativeRemoveItem = Storage.prototype.removeItem;
 
   const timers = new Map();
+  const pendingUploads = new Set();
   const seenRevisions = {};
   const knownCounts = {};
   let applyingRemote = false;
   let cloudInitialized = false;
   let currentMeta = null;
   let syncBusy = false;
+  let remoteBusy = false;
   let statusElement = null;
   let uploadButton = null;
   let downloadButton = null;
@@ -351,11 +353,14 @@
     }));
   }
 
-  function applyRemoteDatasets(remote) {
+  function applyRemoteDatasets(remote, { preservePending = true } = {}) {
     const changedNames = [];
     applyingRemote = true;
     try {
       Object.entries(remote).forEach(([name, values]) => {
+        // Um cadastro local ainda não enviado nunca deve ser substituído por um
+        // snapshot anterior da nuvem. O envio pendente gera uma nova revisão.
+        if (preservePending && pendingUploads.has(name)) return;
         const config = DATASETS[name];
         const nextValues = name === 'tournaments'
           ? normalizeTournaments(values, { markRemoteMigration: true })
@@ -391,7 +396,7 @@
   }
 
   async function uploadAll() {
-    if (syncBusy || !authCore.isAdmin()) return;
+    if (syncBusy || remoteBusy || !authCore.isAdmin()) return;
     syncBusy = true;
     setStatus('Enviando', 'warn');
     try {
@@ -435,11 +440,16 @@
       notify(errorMessage(error));
     } finally {
       syncBusy = false;
+      flushPendingUploads(350);
     }
   }
 
   async function uploadDataset(name) {
-    if (syncBusy || applyingRemote || !cloudInitialized || !authCore.isAdmin()) return;
+    if (!DATASETS[name] || !authCore.isAdmin()) return false;
+    if (syncBusy || remoteBusy || applyingRemote || !cloudInitialized) {
+      pendingUploads.add(name);
+      return false;
+    }
     syncBusy = true;
     setStatus('Salvando', 'warn');
     try {
@@ -465,14 +475,19 @@
         revisions: { ...(currentMeta?.revisions || {}), [name]: revision }
       };
       if (name === 'tournaments') pendingTournamentCloudRepair = false;
+      pendingUploads.delete(name);
       setStatus('Sincronizado', 'ok');
+      return true;
     } catch (error) {
       console.error(error);
       if (name === 'tournaments') pendingTournamentCloudRepair = true;
+      pendingUploads.delete(name);
       setStatus('Erro na nuvem', 'error', errorMessage(error));
       notify(errorMessage(error));
+      return false;
     } finally {
       syncBusy = false;
+      flushPendingUploads(350);
     }
   }
 
@@ -521,7 +536,7 @@
       currentMeta = meta;
       cloudInitialized = true;
       updateControls();
-      const changedNames = applyRemoteDatasets(remote);
+      const changedNames = applyRemoteDatasets(remote, { preservePending: !forceNotice });
       setStatus('Sincronizado', 'ok');
 
       if (changedNames.length) {
@@ -537,14 +552,34 @@
     } finally {
       syncBusy = false;
       scheduleTournamentCloudRepair();
+      flushPendingUploads(350);
     }
+  }
+
+  function scheduleUpload(name, delay = 700) {
+    if (!DATASETS[name] || applyingRemote || !authCore.isAdmin()) return;
+    pendingUploads.add(name);
+    clearTimeout(timers.get(name));
+    timers.set(name, setTimeout(() => {
+      timers.delete(name);
+      if (!pendingUploads.has(name)) return;
+      if (!authCore.isAdmin()) {
+        pendingUploads.delete(name);
+        return;
+      }
+      if (!cloudInitialized || syncBusy || remoteBusy || applyingRemote) return;
+      uploadDataset(name);
+    }, delay));
   }
 
   function scheduleUploadByKey(key, delay = 700) {
     const name = Object.keys(DATASETS).find(dataset => DATASETS[dataset].key === key);
-    if (!name || applyingRemote || !cloudInitialized || !authCore.isAdmin()) return;
-    clearTimeout(timers.get(name));
-    timers.set(name, setTimeout(() => uploadDataset(name), delay));
+    if (!name) return;
+    scheduleUpload(name, delay);
+  }
+
+  function flushPendingUploads(delay = 150) {
+    [...pendingUploads].forEach((name, index) => scheduleUpload(name, delay + (index * 120)));
   }
 
   function installStorageHooks() {
@@ -571,11 +606,19 @@
 
   authCore.subscribe(() => {
     updateControls();
-    if (authCore.isAdmin()) scheduleTournamentCloudRepair();
-    else setStatus(cloudInitialized ? 'Sincronizado' : 'Conectando', cloudInitialized ? 'ok' : '');
+    if (authCore.isAdmin()) {
+      scheduleTournamentCloudRepair();
+      flushPendingUploads();
+    } else {
+      pendingUploads.clear();
+      timers.forEach(timer => clearTimeout(timer));
+      timers.clear();
+      setStatus(cloudInitialized ? 'Sincronizado' : 'Conectando', cloudInitialized ? 'ok' : '');
+    }
   });
 
   window.addEventListener('arena:teams-prepared-for-cloud', () => scheduleUploadByKey(DATASETS.teams.key, 200));
+  window.addEventListener('arena:team-registered', () => scheduleUploadByKey(DATASETS.teams.key, 120));
 
   metaRef.onSnapshot(async snapshot => {
     if (!snapshot.exists || !snapshot.data().initialized) {
@@ -602,10 +645,12 @@
     if (!changedNames.length) {
       setStatus('Sincronizado', 'ok');
       scheduleTournamentCloudRepair();
+      flushPendingUploads(180);
       return;
     }
 
     setStatus('Atualizando', 'warn');
+    remoteBusy = true;
     try {
       const remote = {};
       for (const name of changedNames) {
@@ -623,6 +668,9 @@
       console.error(error);
       setStatus('Erro na nuvem', 'error', errorMessage(error));
       notify(errorMessage(error));
+    } finally {
+      remoteBusy = false;
+      flushPendingUploads(180);
     }
   }, error => {
     console.error(error);
@@ -636,7 +684,7 @@
     downloadAll,
     uploadDataset,
     isReady: () => cloudInitialized,
-    isBusy: () => syncBusy,
+    isBusy: () => syncBusy || remoteBusy,
     meta: () => currentMeta ? clone(currentMeta) : null
   });
 })();
