@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDATeamEditor?.version >= 1) return;
+  if (window.ArenaBDATeamEditor?.version >= 2) return;
 
   const TEAM_KEY = 'bda-v2-teams';
   const TOURNAMENT_KEY = 'bda-v3-tournaments';
@@ -36,6 +36,11 @@
   function teams() {
     const value = read(TEAM_KEY, []);
     return Array.isArray(value) ? value : [];
+  }
+
+  function syncGlobalTeams(list) {
+    if (!Array.isArray(window.teams)) return;
+    window.teams.splice(0, window.teams.length, ...list);
   }
 
   function isAdmin() {
@@ -249,8 +254,8 @@
     if (file.size > MAX_FILE_BYTES) throw new Error('O escudo deve ter no máximo 8 MB');
     const source = await fileData(file);
     const image = await loadImage(source);
-    let size = 512;
-    let quality = .86;
+    let size = 240;
+    let quality = .78;
     let output = '';
 
     for (let attempt = 0; attempt < 5; attempt += 1) {
@@ -265,8 +270,8 @@
       const height = Math.max(1, Math.round(image.height * scale));
       context.drawImage(image, Math.round((size - width) / 2), Math.round((size - height) / 2), width, height);
       output = canvas.toDataURL('image/webp', quality);
-      if (output.length < 620000) break;
-      size = Math.max(320, Math.round(size * .82));
+      if (output.length < 180000) break;
+      size = Math.max(160, Math.round(size * .82));
       quality = Math.max(.58, quality - .08);
     }
     return output;
@@ -363,42 +368,75 @@
     schedule();
   }
 
-  function saveTeam(event) {
+  async function saveTeam(event) {
     event.preventDefault();
     if (!isAdmin()) return notify('Apenas administradores podem editar times');
 
-    const oldName = currentName;
-    const name = String(document.getElementById('arenaTeamEditorName')?.value || '').trim();
-    const master = String(document.getElementById('arenaTeamEditorMaster')?.value || '').trim();
-    const code = String(document.getElementById('arenaTeamEditorCode')?.value || '').trim().toUpperCase().slice(0, 4) || initials(name);
-    const status = String(document.getElementById('arenaTeamEditorTeamStatus')?.value || 'Confirmado').trim();
-    if (!validTeamName(name)) return notify('Digite um nome válido para o time');
+    const submit = event.submitter || event.currentTarget?.querySelector?.('button[type="submit"]');
+    const originalLabel = submit?.textContent || 'Salvar time';
+    if (submit) {
+      submit.disabled = true;
+      submit.textContent = 'Salvando...';
+    }
 
-    const list = teams();
-    const index = list.findIndex(team => norm(team?.name) === norm(oldName));
-    const duplicateIndex = list.findIndex((team, teamIndex) => teamIndex !== index && norm(team?.name) === norm(name));
-    if (duplicateIndex >= 0) return notify('Já existe outro time cadastrado com esse nome');
+    try {
+      const oldName = currentName;
+      const name = String(document.getElementById('arenaTeamEditorName')?.value || '').trim();
+      const master = String(document.getElementById('arenaTeamEditorMaster')?.value || '').trim();
+      const code = String(document.getElementById('arenaTeamEditorCode')?.value || '').trim().toUpperCase().slice(0, 4) || initials(name);
+      const status = String(document.getElementById('arenaTeamEditorTeamStatus')?.value || 'Confirmado').trim();
+      if (!validTeamName(name)) throw new Error('Digite um nome válido para o time');
 
-    const previous = index >= 0 ? list[index] : {};
-    const badge = removeBadge ? '' : (pendingBadge ?? previous.badge ?? '');
-    const nextTeam = {
-      ...previous,
-      name,
-      master,
-      code,
-      status,
-      badge,
-      updatedAt: Date.now()
-    };
+      const list = teams();
+      const index = list.findIndex(team => norm(team?.name) === norm(oldName));
+      const duplicateIndex = list.findIndex((team, teamIndex) => teamIndex !== index && norm(team?.name) === norm(name));
+      if (duplicateIndex >= 0) throw new Error('Já existe outro time cadastrado com esse nome');
 
-    if (index >= 0) list[index] = nextTeam;
-    else list.push(nextTeam);
+      const previous = index >= 0 ? list[index] : {};
+      const badge = removeBadge ? '' : (pendingBadge ?? previous.badge ?? '');
+      const nextTeam = {
+        ...previous,
+        name,
+        master,
+        code,
+        status,
+        badge,
+        updatedAt: Date.now()
+      };
 
-    localStorage.setItem(TEAM_KEY, JSON.stringify(list));
-    const renamed = renameReferences(oldName, name);
-    dispatchUpdates({ oldName, name, created: index < 0, renamed: renamed.tournaments || renamed.matches });
-    notify(index >= 0 ? 'Time atualizado' : 'Time cadastrado');
-    close();
+      if (index >= 0) list[index] = nextTeam;
+      else list.push(nextTeam);
+
+      let badgeDropped = false;
+      try {
+        localStorage.setItem(TEAM_KEY, JSON.stringify(list));
+      } catch (error) {
+        if (!badge || removeBadge) throw error;
+        nextTeam.badge = previous.badge || '';
+        if (index >= 0) list[index] = nextTeam;
+        else list[list.length - 1] = nextTeam;
+        localStorage.setItem(TEAM_KEY, JSON.stringify(list));
+        badgeDropped = true;
+      }
+
+      syncGlobalTeams(list);
+      const renamed = renameReferences(oldName, name);
+      dispatchUpdates({ oldName, name, created: index < 0, renamed: renamed.tournaments || renamed.matches });
+      notify(badgeDropped
+        ? 'Time salvo, mas o escudo não coube no armazenamento deste aparelho'
+        : (index >= 0 ? 'Time atualizado' : 'Time cadastrado'));
+      close();
+    } catch (error) {
+      console.error('[Arena BDA] Falha ao salvar time', error);
+      notify(error?.name === 'QuotaExceededError'
+        ? 'O armazenamento deste aparelho está cheio. Não foi possível salvar o time.'
+        : (error?.message || 'Não foi possível salvar o time'));
+    } finally {
+      if (submit) {
+        submit.disabled = false;
+        submit.textContent = originalLabel;
+      }
+    }
   }
 
   function teamFromElement(target) {
@@ -505,6 +543,7 @@
       if (!confirm(`Excluir ${team.name} do cadastro de times?`)) return;
       list.splice(index, 1);
       localStorage.setItem(TEAM_KEY, JSON.stringify(list));
+      syncGlobalTeams(list);
       dispatchUpdates({ name: team.name, removed: true });
       notify('Time removido do cadastro');
       return;
@@ -538,7 +577,7 @@
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
   window.ArenaBDATeamEditor = Object.freeze({
-    version: 1,
+    version: 2,
     open,
     refresh,
     teams: () => clone(teams())
