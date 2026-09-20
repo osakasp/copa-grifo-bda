@@ -1,5 +1,5 @@
-const VERSION = 'v148-mobile-smooth';
-const REV = '20260919-18';
+const VERSION = 'v149-runtime-lite';
+const REV = '20260920-1';
 const AUTH_REV = '20260825-5';
 const AUTH_CONSUMERS_REV = '20260825-4';
 const SITE_HEALTH_REV = '20260825-6';
@@ -44,43 +44,24 @@ const SHELL = [
   `./confrontos-validos.js?v=${REV}`,
   `./super-league-guard.js?v=${REV}`,
   `./arena-bda.js?v=${REV}`,
-  `./pontos-corridos.js?v=20260919-3`,
+  `./arena-interface.bundle.js?v=${REV}`,
+  `./arena-mobile-performance.js?v=${REV}`,
   `./arena-home-active.js?v=${REV}`,
   `./arena-lazy-features.js?v=${REV}`,
-  `./arena-interface.bundle.js?v=${REV}`,\n  `./arena-mobile-performance.js?v=${REV}`,
-  AUTH_SRC,
-  AUTH_CONSUMERS_SRC,
-  SITE_HEALTH_SRC,
-  CLEANUP_SRC,
-  SUPER_LEAGUE_RULE_SRC,
-  SUPER_LEAGUE_SYNC_SRC,
-  REDESIGN_SRC,
-  DESIGN_POLISH_SRC,
-  MOBILE_POLISH_SRC,
-  MOBILE_BRACKET_SRC,
-  PROVISIONAL_KNOCKOUT_SRC,
-  TEAM_EDITOR_SRC,
-  TEAM_CLOUD_SYNC_SRC,
-  TOURNAMENT_TRIM_SRC,
-  MATCH_DETAILS_SRC,
-  MATCH_MEDIA_SRC,
-  SCORER_PHOTOS_SRC,
-  FLASH_DRAW_ENGINE_SRC,
-  FLASH_KNOCKOUT_ENGINE_SRC,
-  FLASH_CUPS_SRC,
-  CHAMPION_PUBLISH_SRC,
-  './arena-pro-motion.js?v=20260818-1',
-  `./super-league-runtime-fix.js?v=${REV}`,
-  './bda-logo.js?v=20260819-1'
+  CLEANUP_SRC
 ];
 
 async function precacheFresh() {
   const cache = await caches.open(CACHE.shell);
-  await Promise.allSettled(SHELL.map(async url => {
-    const request = new Request(url, { cache:'reload' });
-    const response = await fetch(request, { cache:'no-store' });
-    if (canCache(request, response)) await cache.put(request, response.clone());
-  }));
+  const batchSize = 4;
+  for (let index = 0; index < SHELL.length; index += batchSize) {
+    const batch = SHELL.slice(index, index + batchSize);
+    await Promise.allSettled(batch.map(async url => {
+      const request = new Request(url, { cache:'reload' });
+      const response = await fetch(request, { cache:'no-store' });
+      if (canCache(request, response)) await cache.put(request, response.clone());
+    }));
+  }
 }
 
 self.addEventListener('install', event => {
@@ -115,7 +96,7 @@ self.addEventListener('message', event => {
   if (event.data?.type === 'PURGE_OLD_ARENA_CACHES') {
     event.waitUntil(caches.keys().then(keys => Promise.all(keys
       .filter(key => !ACTIVE_CACHES.has(key) && (/^arena-bda-/.test(key) || /^copa-grifo-/.test(key)))
-      .map(key => caches.delete(key))));
+      .map(key => caches.delete(key)))));
   }
 });
 

@@ -415,7 +415,7 @@
     document.getElementById('rankingClub').focus();
   }
 
-  function submitEntry(event) {
+  async function submitEntry(event) {
     event.preventDefault();
     if (!isAdmin) return;
 
@@ -444,7 +444,7 @@
     toast(current ? 'Campeão atualizado' : 'Clube adicionado aos campeões');
   }
 
-  function deleteCurrentEntry() {
+  async function deleteCurrentEntry() {
     if (!isAdmin || !Number.isInteger(editingEntryIndex)) return;
     const entry = rankingEntries[editingEntryIndex];
     if (!entry || !confirm(`Excluir ${entry.club} da lista de campeões?`)) return;

@@ -50,7 +50,7 @@
     (() => {
       'use strict';
 
-      const REV = '20260919-9';
+      const REV = '20260920-1';
       const previewSource = `./preview-v2.html?v=${REV}`;
       const boot = document.getElementById('arenaBoot');
       const title = document.getElementById('loadingTitle');
@@ -66,7 +66,6 @@
       ];
       const coreScripts = [
         './arena-runtime.bundle.js?v=20260814-4',
-        './bda-logo.js?v=20260819-1',
         `./confrontos-validos.js?v=${REV}`,
         `./super-league-guard.js?v=${REV}`,
         `./arena-bda.js?v=${REV}`,
@@ -76,6 +75,7 @@
         `./arena-lazy-features.js?v=${REV}`,
         `./arena-v3-cleanup.js?v=${REV}`
       ];
+      const criticalScriptCount = 6;
       const cloudScripts = [
         './firebase-auth.js?v=20260825-5',
         './notificacoes-bda.js?v=20260816-3',
@@ -109,7 +109,7 @@
           document.head.appendChild(link);
         });
       }
-      preloadScripts(coreScripts);
+      preloadScripts(coreScripts.slice(0, criticalScriptCount));
 
       if ('serviceWorker' in navigator && location.protocol !== 'file:') {
         window.addEventListener('load', () => {
@@ -344,18 +344,18 @@
         }, true);
       }
 
-      function scheduleCloudWhenQuiet(delay = 8000) {
+      function scheduleCloudWhenQuiet(delay = 12000) {
         clearTimeout(cloudIdleTimer);
         cloudIdleTimer = window.setTimeout(() => {
           if (cloudPromise) return;
           const quietFor = performance.now() - lastInteractionAt;
-          if (document.hidden || quietFor < 4000) {
-            scheduleCloudWhenQuiet(Math.max(1200, 4000 - quietFor));
+          if (document.hidden || quietFor < 5000) {
+            scheduleCloudWhenQuiet(Math.max(1600, 5000 - quietFor));
             return;
           }
           const startCloudWhenIdle = () => {
-            if (performance.now() - lastInteractionAt < 3000) {
-              scheduleCloudWhenQuiet(1800);
+            if (performance.now() - lastInteractionAt < 5000) {
+              scheduleCloudWhenQuiet(2200);
               return;
             }
             ensureCloud('idle').catch(error => console.error('[Arena BDA] Recursos online não carregaram', error));
@@ -398,8 +398,8 @@
 
         // Apenas o núcleo de navegação é carregado antes da primeira interação.
         // Recursos de campeonatos/classificação ficam para depois, evitando picos de CPU.
-        const firstScripts = coreScripts.slice(0, 6);
-        const backgroundScripts = coreScripts.slice(6);
+        const firstScripts = coreScripts.slice(0, criticalScriptCount);
+        const backgroundScripts = coreScripts.slice(criticalScriptCount);
 
         await loadOrderedBatch(firstScripts, coreFailures, 12000);
         if (generation !== loadGeneration) return;

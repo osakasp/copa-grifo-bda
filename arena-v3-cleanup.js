@@ -1,10 +1,10 @@
 (() => {
   'use strict';
 
-  if (window.ArenaBDAV3Cleanup?.version >= 30) return;
+  if (window.ArenaBDAV3Cleanup?.version >= 31) return;
 
-  const BUILD = 'v132';
-  const REV = '20260825-2';
+  const BUILD = 'v133';
+  const REV = '20260920-1';
   const SUPER_LEAGUE_RULE_SRC = `./super-league-rule.js?v=${REV}`;
   const SUPER_LEAGUE_SYNC_SRC = `./arena-super-league-sync-gate.js?v=${REV}`;
   const REDESIGN_SRC = `./arena-redesign-v1.js?v=${REV}`;
@@ -40,6 +40,7 @@
   ];
 
   let announced = false;
+  let featureTask = 0;
 
   function versionOf(value) {
     const parsed = Number(value?.version || 0);
@@ -120,10 +121,53 @@
   }
 
   function ensureSuperLeagueCloud() {
-    const active = document.querySelector('#giManager[data-tid="bda-super-league"]');
+    const page = document.querySelector('.page.active[data-page="tournament"]');
+    const active = page?.querySelector('#giManager[data-tid="bda-super-league"]');
     if (!active || typeof window.ArenaBDAEnsureCloud !== 'function') return;
     window.ArenaBDAEnsureCloud('super-league-public-sync').catch(() => {});
     window.ArenaBDASuperLeagueSyncGate?.startSync?.(false)?.catch?.(() => {});
+  }
+
+  function adminActive() {
+    return Boolean(
+      window.ArenaBDAAuth?.isAdmin?.()
+      || document.documentElement.classList.contains('arena-admin-authenticated')
+    );
+  }
+
+  function ensureTournamentModules() {
+    const page = document.querySelector('.page.active[data-page="tournament"]');
+    if (!page) return;
+
+    // A sincronização e os editores não disputam CPU com a tela inicial.
+    ensureTeamCloudSyncModule();
+    if (adminActive()) ensureTeamEditorModule();
+
+    const manager = page.querySelector('#giManager') || document.querySelector('#giManager');
+    if (!manager) return;
+
+    ensureTournamentTrimModule();
+    ensureMatchDetailsModule();
+    ensureMatchMediaModule();
+    ensureScorerPhotosModule();
+
+    if (manager.dataset.tid === 'bda-super-league') {
+      ensureSuperLeagueRuleModule();
+      ensureSuperLeagueSyncModule();
+      ensureMobileBracketModule();
+      ensureProvisionalKnockoutModule();
+      ensureSuperLeagueCloud();
+    }
+  }
+
+  function scheduleTournamentModules() {
+    if (featureTask || !document.querySelector('.page.active[data-page="tournament"]')) return;
+    const run = () => {
+      featureTask = 0;
+      ensureTournamentModules();
+    };
+    if ('requestIdleCallback' in window) featureTask = window.requestIdleCallback(run, { timeout:900 });
+    else featureTask = window.setTimeout(run, 120);
   }
 
   function neutralizeLegacyAdminModal() {
@@ -140,7 +184,8 @@
     document.querySelectorAll(LEGACY_SELECTORS.join(',')).forEach(node => node.remove());
     document.querySelectorAll('.bottom-nav,.arena-mobile-nav').forEach(nav => {
       const visible = [...nav.querySelectorAll('button')].filter(button => button.isConnected && !button.hidden);
-      if (visible.length) nav.style.gridTemplateColumns = `repeat(${visible.length},minmax(0,1fr))`;
+      const columns = visible.length ? `repeat(${visible.length},minmax(0,1fr))` : '';
+      if (columns && nav.style.gridTemplateColumns !== columns) nav.style.gridTemplateColumns = columns;
     });
     const moreCount = document.querySelector('.arena-side-more-toggle .arena-nav-copy small');
     if (moreCount) {
@@ -178,17 +223,7 @@
     scrubLegacyCopy();
     ensureRedesignModule();
     ensureMobilePolishModule();
-    ensureSuperLeagueRuleModule();
-    ensureSuperLeagueSyncModule();
-    ensureMobileBracketModule();
-    ensureProvisionalKnockoutModule();
-    ensureTeamCloudSyncModule();
-    ensureTeamEditorModule();
-    ensureTournamentTrimModule();
-    ensureMatchDetailsModule();
-    ensureMatchMediaModule();
-    ensureScorerPhotosModule();
-    ensureSuperLeagueCloud();
+    scheduleTournamentModules();
     announceBuild();
   }
 
@@ -201,14 +236,40 @@
     });
   }
 
-  ['arena:bundle-loaded','arena:cloud-ready','arena:tournaments-updated','arena:matches-updated','arena:super-league-cloud-synced']
+  ['arena:bundle-loaded','arena:cloud-ready','arena:permissions-updated']
     .forEach(type => window.addEventListener(type, scheduleCleanup));
 
-  const observer = new MutationObserver(scheduleCleanup);
+  ['arena:tournaments-updated','arena:matches-updated','arena:super-league-cloud-synced']
+    .forEach(type => window.addEventListener(type, scheduleTournamentModules));
+
+  document.addEventListener('click', event => {
+    if (!(event.target instanceof Element)) return;
+    if (event.target.closest('[data-go="tournament"],[data-mobile-go="tournament"],[data-sheet-go="tournament"],[data-open-tournament],[data-home-tournament]')) {
+      window.setTimeout(scheduleTournamentModules, 0);
+    }
+  }, true);
+  window.addEventListener('popstate', () => window.setTimeout(scheduleTournamentModules, 0));
+
+  function addedNodeNeedsCleanup(node) {
+    if (!(node instanceof Element)) return false;
+    const legacySelector = LEGACY_SELECTORS.join(',');
+    if (node.matches(legacySelector) || node.querySelector(legacySelector)) return true;
+    if (node.matches('#giManager') || node.querySelector('#giManager')) return true;
+    if (node.matches('script[src]')) {
+      const src = String(node.getAttribute('src') || '');
+      return LEGACY_SCRIPT_PARTS.some(part => src.includes(part));
+    }
+    return false;
+  }
+
+  const observer = new MutationObserver(mutations => {
+    const relevant = mutations.some(mutation => [...mutation.addedNodes].some(addedNodeNeedsCleanup));
+    if (relevant) scheduleCleanup();
+  });
   observer.observe(document.documentElement, { childList:true, subtree:true });
 
   window.ArenaBDAV3Cleanup = Object.freeze({
-    version:30,
+    version:31,
     build:BUILD,
     revision:REV,
     documentMode:'single',
