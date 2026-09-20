@@ -1,5 +1,5 @@
-const VERSION = 'v147-admin-fast';
-const REV = '20260919-17';
+const VERSION = 'v148-mobile-smooth';
+const REV = '20260919-18';
 const AUTH_REV = '20260825-5';
 const AUTH_CONSUMERS_REV = '20260825-4';
 const SITE_HEALTH_REV = '20260825-6';
@@ -47,7 +47,7 @@ const SHELL = [
   `./pontos-corridos.js?v=20260919-3`,
   `./arena-home-active.js?v=${REV}`,
   `./arena-lazy-features.js?v=${REV}`,
-  `./arena-interface.bundle.js?v=${REV}`,
+  `./arena-interface.bundle.js?v=${REV}`,\n  `./arena-mobile-performance.js?v=${REV}`,
   AUTH_SRC,
   AUTH_CONSUMERS_SRC,
   SITE_HEALTH_SRC,
