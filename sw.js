@@ -1,5 +1,5 @@
-const VERSION = 'v149-runtime-lite';
-const REV = '20260920-1';
+const VERSION = 'v150-runtime-lite';
+const REV = '20260920-2';
 const AUTH_REV = '20260825-5';
 const AUTH_CONSUMERS_REV = '20260825-4';
 const SITE_HEALTH_REV = '20260825-6';

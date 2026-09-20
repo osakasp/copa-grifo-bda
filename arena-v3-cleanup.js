@@ -4,7 +4,7 @@
   if (window.ArenaBDAV3Cleanup?.version >= 31) return;
 
   const BUILD = 'v133';
-  const REV = '20260920-1';
+  const REV = '20260920-2';
   const SUPER_LEAGUE_RULE_SRC = `./super-league-rule.js?v=${REV}`;
   const SUPER_LEAGUE_SYNC_SRC = `./arena-super-league-sync-gate.js?v=${REV}`;
   const REDESIGN_SRC = `./arena-redesign-v1.js?v=${REV}`;
@@ -12,7 +12,7 @@
   const MOBILE_BRACKET_SRC = `./arena-mobile-bracket-v4.js?v=${REV}`;
   const PROVISIONAL_KNOCKOUT_SRC = `./arena-provisional-knockout.js?v=${REV}`;
   const TEAM_EDITOR_SRC = `./arena-team-editor.js?v=${REV}`;
-  const TEAM_CLOUD_SYNC_SRC = './arena-team-cloud-sync.js?v=20260920-1';
+  const TEAM_CLOUD_SYNC_SRC = './arena-team-cloud-sync.js?v=20260920-2';
   const TOURNAMENT_TRIM_SRC = `./arena-tournament-trim.js?v=${REV}`;
   const MATCH_DETAILS_SRC = `./arena-match-details.js?v=${REV}`;
   const MATCH_MEDIA_SRC = `./arena-match-media.js?v=${REV}`;
