@@ -50,7 +50,7 @@
     (() => {
       'use strict';
 
-      const REV = '20260920-4';
+      const REV = '20260920-5';
       const previewSource = `./preview-v2.html?v=${REV}`;
       const boot = document.getElementById('arenaBoot');
       const title = document.getElementById('loadingTitle');
@@ -75,7 +75,7 @@
         `./arena-lazy-features.js?v=${REV}`,
         `./arena-v3-cleanup.js?v=${REV}`
       ];
-      const criticalScriptCount = 6;
+      const criticalScriptCount = 2;
       const cloudScripts = [
         './firebase-auth.js?v=20260825-5',
         './notificacoes-bda.js?v=20260816-3',
@@ -330,16 +330,19 @@
 
           event.preventDefault();
           event.stopImmediatePropagation();
+          const previousLabel = adminButton.textContent;
           adminButton.setAttribute('aria-busy', 'true');
           adminButton.textContent = 'CARREGANDO...';
-          showTransition('Preparando acesso administrativo', 'Carregando login e sincronização sem trocar a interface...');
           ensureCloud('admin').then(async () => {
             if (loadGeneration <= 0 || !window.ArenaBDAAuth?.auth) throw new Error('Autenticação não ficou disponível');
-            await settleAndReveal(loadGeneration, 140);
+            adminButton.removeAttribute('aria-busy');
+            adminButton.textContent = previousLabel;
             document.getElementById('adminBtn')?.click();
           }).catch(error => {
             console.error('[Arena BDA] Falha ao preparar login', error);
-            showLoadError('O acesso administrativo não terminou de carregar. Tente novamente.');
+            adminButton.removeAttribute('aria-busy');
+            adminButton.textContent = previousLabel;
+            window.showToast?.('O acesso administrativo demorou para carregar. Tente novamente.');
           });
         }, true);
       }
@@ -393,6 +396,11 @@
         if (generation !== loadGeneration) return;
         installCloudTriggers();
 
+        // A página já está utilizável neste ponto. O núcleo complementar não deve
+        // manter o visitante preso atrás de uma tela de carregamento.
+        document.documentElement.dataset.arenaCriticalReady = 'shell';
+        await settleAndReveal(generation, 0);
+
         const coreFailures = [];
         const startedAt = performance.now();
 
@@ -405,7 +413,6 @@
         if (generation !== loadGeneration) return;
 
         document.documentElement.dataset.arenaCriticalReady = coreFailures.length ? 'partial' : 'true';
-        await settleAndReveal(generation, 0);
 
         const backgroundFailures = [];
         const finishBackground = async () => {
