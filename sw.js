@@ -1,5 +1,5 @@
-const VERSION = 'v168-liga-a-fixtures';
-const REV = '20260920-20';
+const VERSION = 'v169-liga-b-fixtures';
+const REV = '20260920-21';
 const AUTH_REV = '20260825-5';
 const AUTH_CONSUMERS_REV = '20260825-4';
 const SITE_HEALTH_REV = '20260825-6';
@@ -232,4 +232,3 @@ self.addEventListener('fetch', event => {
   if (request.destination === 'image') return event.respondWith(imageCacheFirst(request));
   if (['script','style','font','manifest'].includes(request.destination)) event.respondWith(staleWhileRevalidate(request));
 });
-
