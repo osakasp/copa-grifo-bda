@@ -1,5 +1,5 @@
-const VERSION = 'v166-portal-network-first';
-const REV = '20260920-18';
+const VERSION = 'v167-portal-summary';
+const REV = '20260920-19';
 const AUTH_REV = '20260825-5';
 const AUTH_CONSUMERS_REV = '20260825-4';
 const SITE_HEALTH_REV = '20260825-6';
