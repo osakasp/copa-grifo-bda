@@ -1,5 +1,5 @@
-const VERSION = 'v169-liga-b-fixtures';
-const REV = '20260920-21';
+const VERSION = 'v170-dark-theme';
+const REV = '20260921-01';
 const AUTH_REV = '20260825-5';
 const AUTH_CONSUMERS_REV = '20260825-4';
 const SITE_HEALTH_REV = '20260825-6';
