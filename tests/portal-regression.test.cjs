@@ -16,6 +16,9 @@ check('Não publica resultados de jogos inexistentes', html.includes('keys.some(
 check('Inscrição reverte se salvar falhar', html.includes('t.pendingTeams=previousPending;return'));
 check('Auditoria de tabelas disponível', html.includes("auditButton.textContent='Verificar tabelas'"));
 check('Auditoria detecta confrontos repetidos', html.includes('pairSeen.has(key)'));
+check('Auditoria detecta resultados órfãos', html.includes('resultado órfão de jogo'));
+check('Auditoria detecta folgas ausentes', html.includes('folga não informada'));
+check('Auditoria confere quantidade de jogos', html.includes('quantidade de confrontos incompatível'));
 check('Auditoria detecta folgas inconsistentes', html.includes('folga inconsistente'));
 // Verifica também a sintaxe JavaScript do script embutido, sem executar o DOM.
 const vm = require('node:vm');
