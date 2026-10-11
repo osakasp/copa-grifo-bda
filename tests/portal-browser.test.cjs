@@ -5,7 +5,8 @@ const assert = require('node:assert/strict');
 (async()=>{
  const browser=await chromium.launch({headless:true});
  try{
-  const page=await browser.newPage({viewport:{width:390,height:844},acceptDownloads:true});
+  const context=await browser.newContext({viewport:{width:390,height:844},acceptDownloads:true});
+  const page=await context.newPage();
   const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
   page.on('dialog',dialog=>{void dialog.accept().catch(()=>{});});
