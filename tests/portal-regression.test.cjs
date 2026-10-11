@@ -38,4 +38,32 @@ const rules = fs.readFileSync(require('node:path').join(__dirname, '..', 'firest
 check('Coleção de campeonatos protegida', rules.includes('match /portalChampionships/{championshipId}'));
 check('E-mail verificado obrigatório para escrita', rules.includes('request.auth.token.email_verified == true'));
 check('Exclusão de campeonatos bloqueada', /match \/portalChampionships\/\{championshipId\}[\s\S]*?allow delete: if false;/.test(rules));
+// Executa os confrontos do calendário e verifica rodadas e folgas.
+const fixtureSource = html.match(/const ligaAMatches=([\\s\\S]*?);\\s*const ligaBMatches=([\\s\\S]*?);\\s*const ligaBByes=([\\s\\S]*?);\\s*const seeds=/);
+check('Calendários das ligas encontrados', Boolean(fixtureSource));
+const [ligaA, ligaB, ligaBByes] = vm.runInNewContext('['+fixtureSource[1]+','+fixtureSource[2]+','+fixtureSource[3]+']');
+const verifyFixture = (name, rounds, clubs, byes) => {
+  assert.equal(rounds.length, clubs-1+(clubs%2), name+': quantidade de rodadas');
+  const allPairs=new Set(), allClubs=new Set();
+  rounds.forEach((round, r)=>{
+    assert.equal(round.length, Math.floor(clubs/2),name+': jogos na rodada '+(r+1));
+    const used=new Set();
+    round.forEach(pair=>{
+      assert.equal(pair.length,2,name+': confronto inválido');
+      assert.notEqual(pair[0],pair[1],name+': clube enfrenta a si mesmo');
+      pair.forEach(team=>{assert.ok(!used.has(team),name+': clube repetido na rodada');used.add(team);allClubs.add(team)});
+      const key=[...pair].sort().join('|');
+      assert.ok(!allPairs.has(key),name+': confronto duplicado '+key);
+      allPairs.add(key);
+    });
+    if(byes){assert.ok(!used.has(byes[r]),name+': folga conflitante');allClubs.add(byes[r])}
+  });
+  assert.equal(allClubs.size,clubs,name+': quantidade de clubes');
+  assert.equal(allPairs.size,clubs*(clubs-1)/2,name+': todos contra todos');
+};
+verifyFixture('Liga A',ligaA,12);
+verifyFixture('Liga B',ligaB,17,ligaBByes);
+assert.equal(ligaBByes[0],'Cruzeiro FC BDA','Liga B: folga da rodada 1');
+assert.ok(ligaB[0].some(pair=>pair[0]==='Real City BDA'&&pair[1]==='Esperança BDA'),'Liga B: Real City x Esperança na rodada 1');
+check('Calendários de Liga A e Liga B consistentes',true);
 console.log('Testes estáticos concluídos. Testes reais de navegador ainda necessários.');
