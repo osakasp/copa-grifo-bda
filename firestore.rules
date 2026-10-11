@@ -328,6 +328,26 @@ service cloud.firestore {
         && request.resource.data.status == 'visible';
     }
 
+    // Dados públicos de competições: somente administradores autenticados alteram.
+    // Migração deve ocorrer manualmente após backup e conferência dos confrontos.
+    match /portalChampionships/{championshipId} {
+      allow get, list: if true;
+      allow create, update: if isArenaAdmin()
+        && request.resource.data.keys().hasOnly([
+          'id', 'name', 'participants', 'results', 'updatedAt', 'schemaVersion'
+        ])
+        && request.resource.data.id == championshipId
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.participants is list
+        && request.resource.data.participants.size() <= 100
+        && request.resource.data.results is map
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
+
     match /arenaData/{documentId} {
       allow get: if !isRegistration(documentId) || isArenaAdmin();
       allow list: if isArenaAdmin() || isPublicArenaDataset();
