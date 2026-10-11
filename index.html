@@ -233,6 +233,14 @@
       let incoming;
       try{incoming=JSON.parse(event.newValue)}catch{return}
       if(!Array.isArray(incoming))return;
+      const safeIncoming=incoming.every(remote=>{
+        if(!remote||typeof remote!=='object'||!seeds.some(seed=>seed.id===remote.id))return false;
+        const seed=seeds.find(seed=>seed.id===remote.id);
+        if(!remote.results||typeof remote.results!=='object'||Array.isArray(remote.results))return false;
+        const validKeys=new Set((seed.matches||[]).flatMap((round,r)=>round.map((_,m)=>resultKey(r,m))));
+        return Object.entries(remote.results).every(([key,res])=>validKeys.has(key)&&res&&scoreValue(res.home)!==null&&scoreValue(res.away)!==null);
+      });
+      if(!safeIncoming){console.warn('Alteração externa ignorada: placares ou competições inválidos.');return}
       if(Object.keys(draftResults).length){
         alert('Os dados mudaram em outra aba. Termine ou descarte a edição e recarregue a página para evitar conflitos.');
         return;
