@@ -176,7 +176,8 @@
         changes.push({t,results,history,updated:Number.isFinite(entry.lastResultUpdate)?entry.lastResultUpdate:null});
       }
       if(!changes.length){alert('O backup não contém resultados compatíveis para restaurar.');return}
-      if(!confirm('Restaurar placares de '+changes.length+' competição(ões) deste backup? Os calendários e clubes serão preservados. Esta ação substitui os placares locais dessas competições.'))return;
+      const totalMatches=changes.reduce((sum,item)=>sum+Object.keys(item.results).length,0);
+      if(!confirm('Restaurar '+totalMatches+' placar(es) de '+changes.length+' competição(ões) deste backup? Os calendários e clubes serão preservados. Esta ação substitui os placares locais dessas competições.'))return;
       const previous=changes.map(({t})=>({t,results:t.results,history:t.resultHistory,updated:t.lastResultUpdate}));
       for(const {t,results,history,updated} of changes){t.results=results;t.resultHistory=history;t.lastResultUpdate=updated}
       if(!persist()){for(const {t,results,history,updated} of previous){t.results=results;t.resultHistory=history;t.lastResultUpdate=updated}return}
