@@ -145,10 +145,12 @@
       let payload;
       try{payload=JSON.parse(await file.text())}catch{alert('Arquivo JSON inválido.');return}
       if(payload?.schemaVersion!==1||payload?.source!=='arena-bda-local'||!Array.isArray(payload.tournaments)){alert('Este arquivo não é um backup compatível do Arena BDA.');return}
+      if(payload.tournaments.length>tournaments.length){alert('Backup contém mais competições do que o portal reconhece. Nada foi restaurado.');return}
+      if(Object.keys(draftResults).length){alert('Há placares em edição. Salve ou descarte as alterações antes de restaurar um backup.');return}
       const changes=[],seenIds=new Set();
       for(const entry of payload.tournaments){
         const t=tournaments.find(x=>x.id===entry?.id);
-        if(!t)continue;
+        if(!t){alert('Backup contém competição desconhecida. Nada foi restaurado.');return}
         if(seenIds.has(t.id)){alert('Backup contém a competição '+t.name+' duplicada. Nada foi restaurado.');return}
         seenIds.add(t.id);
         if(!entry.results||typeof entry.results!=='object'||Array.isArray(entry.results)){alert('Resultados ausentes ou inválidos no backup de '+t.name+'.');return}
