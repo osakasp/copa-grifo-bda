@@ -39,7 +39,7 @@ check('Coleção de campeonatos protegida', rules.includes('match /portalChampio
 check('E-mail verificado obrigatório para escrita', rules.includes('request.auth.token.email_verified == true'));
 check('Exclusão de campeonatos bloqueada', /match \/portalChampionships\/\{championshipId\}[\s\S]*?allow delete: if false;/.test(rules));
 // Executa os confrontos do calendário e verifica rodadas e folgas.
-const fixtureSource = html.match(/const ligaAMatches=([\\s\\S]*?);\\s*const ligaBMatches=([\\s\\S]*?);\\s*const ligaBByes=([\\s\\S]*?);\\s*const seeds=/);
+const fixtureSource = html.match(/const ligaAMatches=([\s\S]*?);\s*const ligaBMatches=([\s\S]*?);\s*const ligaBByes=([\s\S]*?);\s*const seeds=/);
 check('Calendários das ligas encontrados', Boolean(fixtureSource));
 const [ligaA, ligaB, ligaBByes] = vm.runInNewContext('['+fixtureSource[1]+','+fixtureSource[2]+','+fixtureSource[3]+']');
 const verifyFixture = (name, rounds, clubs, byes) => {
