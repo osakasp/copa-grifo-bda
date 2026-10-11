@@ -17,6 +17,9 @@ check('Inscrição reverte se salvar falhar', html.includes('t.pendingTeams=prev
 check('Restauração de backup disponível', html.includes("importButton.textContent='Restaurar backup'"));
 check('Importação valida origem e versão do backup', html.includes("payload?.source!=='arena-bda-local'"));
 check('Importação restringe resultados aos jogos cadastrados', html.includes('!validKeys.has(key)||!res'));
+check('Importação bloqueia competições duplicadas', html.includes('if(seenIds.has(t.id))'));
+check('Importação valida histórico de resultados', html.includes('const snapshot=validateResults(item?.results)'));
+check('Importação rejeita histórico inválido', html.includes('Histórico de resultados inválido'));
 check('Importação reverte alterações quando armazenamento falha', html.includes('if(!persist()){for(const {t,results,history,updated} of previous)'));
 check('Auditoria de tabelas disponível', html.includes("auditButton.textContent='Verificar tabelas'"));
 check('Auditoria detecta confrontos repetidos', html.includes('pairSeen.has(key)'));
