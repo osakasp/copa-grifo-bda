@@ -145,18 +145,33 @@
       let payload;
       try{payload=JSON.parse(await file.text())}catch{alert('Arquivo JSON inválido.');return}
       if(payload?.schemaVersion!==1||payload?.source!=='arena-bda-local'||!Array.isArray(payload.tournaments)){alert('Este arquivo não é um backup compatível do Arena BDA.');return}
-      const changes=[];
+      const changes=[],seenIds=new Set();
       for(const entry of payload.tournaments){
         const t=tournaments.find(x=>x.id===entry?.id);
-        if(!t||!entry.results||typeof entry.results!=='object'||Array.isArray(entry.results))continue;
+        if(!t)continue;
+        if(seenIds.has(t.id)){alert('Backup contém a competição '+t.name+' duplicada. Nada foi restaurado.');return}
+        seenIds.add(t.id);
+        if(!entry.results||typeof entry.results!=='object'||Array.isArray(entry.results)){alert('Resultados ausentes ou inválidos no backup de '+t.name+'.');return}
         const validKeys=new Set((t.matches||[]).flatMap((round,r)=>round.map((_,m)=>resultKey(r,m))));
-        const results={};let valid=true;
-        for(const [key,res] of Object.entries(entry.results)){
-          if(!validKeys.has(key)||!res||scoreValue(res.home)===null||scoreValue(res.away)===null){valid=false;break}
-          results[key]={home:scoreValue(res.home),away:scoreValue(res.away)};
+        const validateResults=data=>{
+          if(!data||typeof data!=='object'||Array.isArray(data))return null;
+          const checked={};
+          for(const [key,res] of Object.entries(data)){
+            if(!validKeys.has(key)||!res||scoreValue(res.home)===null||scoreValue(res.away)===null)return null;
+            checked[key]={home:scoreValue(res.home),away:scoreValue(res.away)};
+          }
+          return checked;
+        };
+        const results=validateResults(entry.results);
+        if(!results){alert('Backup contém placares inválidos em '+t.name+'. Nenhuma alteração foi aplicada.');return}
+        const history=[];
+        if(entry.resultHistory!==undefined&&!Array.isArray(entry.resultHistory)){alert('Histórico inválido no backup de '+t.name+'.');return}
+        for(const item of (entry.resultHistory||[]).slice(-10)){
+          const snapshot=validateResults(item?.results);
+          if(!snapshot||!Number.isFinite(item.at)){alert('Histórico de resultados inválido em '+t.name+'.');return}
+          history.push({at:item.at,results:snapshot});
         }
-        if(!valid){alert('Backup contém placares inválidos em '+t.name+'. Nenhuma alteração foi aplicada.');return}
-        changes.push({t,results,history:Array.isArray(entry.resultHistory)?entry.resultHistory.slice(-10):[],updated:Number.isFinite(entry.lastResultUpdate)?entry.lastResultUpdate:null});
+        changes.push({t,results,history,updated:Number.isFinite(entry.lastResultUpdate)?entry.lastResultUpdate:null});
       }
       if(!changes.length){alert('O backup não contém resultados compatíveis para restaurar.');return}
       if(!confirm('Restaurar placares de '+changes.length+' competição(ões) deste backup? Os calendários e clubes serão preservados. Esta ação substitui os placares locais dessas competições.'))return;
