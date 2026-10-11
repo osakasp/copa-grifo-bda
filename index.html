@@ -233,8 +233,10 @@
       let incoming;
       try{incoming=JSON.parse(event.newValue)}catch{return}
       if(!Array.isArray(incoming))return;
+      const seenRemoteIds=new Set();
       const safeIncoming=incoming.every(remote=>{
-        if(!remote||typeof remote!=='object'||!seeds.some(seed=>seed.id===remote.id))return false;
+        if(!remote||typeof remote!=='object'||!seeds.some(seed=>seed.id===remote.id)||seenRemoteIds.has(remote.id))return false;
+        seenRemoteIds.add(remote.id);
         const seed=seeds.find(seed=>seed.id===remote.id);
         if(!remote.results||typeof remote.results!=='object'||Array.isArray(remote.results))return false;
         const validKeys=new Set((seed.matches||[]).flatMap((round,r)=>round.map((_,m)=>resultKey(r,m))));
