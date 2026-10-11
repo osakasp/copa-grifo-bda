@@ -14,6 +14,10 @@ check('Desfazer placares reverte alterações se salvar falhar', html.includes('
 check('Publicação restaura histórico e data em falha', html.includes('t.resultHistory=previousHistory;t.lastResultUpdate=previousUpdated;return'));
 check('Não publica resultados de jogos inexistentes', html.includes('keys.some(key=>!validKeys.has(key))'));
 check('Inscrição reverte se salvar falhar', html.includes('t.pendingTeams=previousPending;return'));
+check('Restauração de backup disponível', html.includes("importButton.textContent='Restaurar backup'"));
+check('Importação valida origem e versão do backup', html.includes("payload?.source!=='arena-bda-local'"));
+check('Importação restringe resultados aos jogos cadastrados', html.includes('!validKeys.has(key)||!res'));
+check('Importação reverte alterações quando armazenamento falha', html.includes('if(!persist()){for(const {t,results,history,updated} of previous)'));
 check('Auditoria de tabelas disponível', html.includes("auditButton.textContent='Verificar tabelas'"));
 check('Auditoria detecta confrontos repetidos', html.includes('pairSeen.has(key)'));
 check('Auditoria detecta resultados órfãos', html.includes('resultado órfão de jogo'));
