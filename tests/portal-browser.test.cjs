@@ -8,7 +8,7 @@ const assert = require('node:assert/strict');
   const page=await browser.newPage({viewport:{width:390,height:844},acceptDownloads:true});
   const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
-  page.on('dialog',dialog=>dialog.accept());
+  page.on('dialog',dialog=>{void dialog.accept().catch(()=>{});});
   await page.goto(pathToFileURL(path.resolve(__dirname,'../index.html')).href);
   await page.evaluate(()=>localStorage.setItem('bda-portal-state-v2',JSON.stringify([{id:'liga-b',participants:{corrompido:true}}])));
   await page.reload();
