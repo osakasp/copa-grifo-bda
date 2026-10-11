@@ -48,6 +48,7 @@ for (const [value, expected] of [[0,0],['0',0],['12',12],[99,99],['',null],[' ',
 check('Validação funcional de placares aprovada', true);
 check('Falha de leitura inicial do armazenamento tratada', html.includes("console.warn('Armazenamento indisponível:'"));
 check('Salvamento detecta alterações concorrentes', html.includes('localStorage.getItem(PORTAL_KEY)!==lastPersistedRaw'));
+check('Evento entre abas rejeita competições ou placares inválidos', html.includes('if(!safeIncoming)') && html.includes('validKeys.has(key)'));
 check('Evento entre abas atualiza versão conhecida', html.includes('lastPersistedRaw=event.newValue'));
 check('Abas locais recebem alterações de armazenamento', html.includes("window.addEventListener('storage',event=>"));
 check('Rascunhos protegidos de alterações externas', html.includes('if(Object.keys(draftResults).length)'));
