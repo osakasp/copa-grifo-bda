@@ -63,6 +63,24 @@ const assert = require('node:assert/strict');
     buffer:Buffer.from(JSON.stringify(badBackup))
   });
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('bda-portal-state-v2')).find(t=>t.id==='liga-b').results['0:0'].home),3);
+  // Duas abas: a segunda deve detectar que seu estado ficou desatualizado.
+  const second=await browser.newPage({viewport:{width:390,height:844}});
+  try{
+    const alerts=[];
+    second.on('dialog',dialog=>{alerts.push(dialog.message());void dialog.accept().catch(()=>{});});
+    await second.goto(pathToFileURL(path.resolve(__dirname,'../index.html')).href);
+    await second.locator('[data-open="liga-b"]').click();
+    await second.locator('[data-view="admin"]').click();
+    await page.locator('[data-open="liga-b"]').click();
+    await page.locator('[data-view="admin"]').click();
+    const firstScores=page.locator('[data-results-form] .score-input');
+    await firstScores.nth(0).fill('1');
+    await firstScores.nth(1).fill('0');
+    await page.locator('[data-results-form] button[type="submit"]').click();
+    await second.waitForTimeout(150);
+    assert.equal(await second.evaluate(()=>JSON.parse(localStorage.getItem('bda-portal-state-v2')).find(t=>t.id==='liga-b').results['0:0'].home),1);
+    assert.equal(alerts.length,0,'Sincronização entre abas sem rascunho não deve gerar alerta');
+  }finally{await second.close()}
   assert.deepEqual(errors,[],'Erros JavaScript no navegador: '+errors.join('; '));
   console.log('OK: navegador Chromium mobile, placar, recarga, classificação, desfazer, exportação e restauração válida/inválida');
  }finally{await browser.close()}
