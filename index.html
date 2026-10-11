@@ -91,7 +91,7 @@
     const readJson=k=>{try{const v=JSON.parse(localStorage.getItem(k));return Array.isArray(v)?v:null}catch{return null}};
     const saved=readJson(PORTAL_KEY)||readJson(oldKey)||[]; // Nunca gravar seeds automaticamente por cima de dados locais.
     const tournaments=seeds.map(seed=>{const old=saved.find(t=>t.id===seed.id)||{};return {...seed,participants:Array.from(new Set([...(seed.participants||[]),...(old.participants||[])])),pendingTeams:Array.isArray(old.pendingTeams)?old.pendingTeams:[],results:old.results&&typeof old.results==='object'&&!Array.isArray(old.results)?old.results:{},resultHistory:Array.isArray(old.resultHistory)?old.resultHistory.slice(-10):[],lastResultUpdate:Number.isFinite(old.lastResultUpdate)?old.lastResultUpdate:null}});
-    const persist=()=>{try{localStorage.setItem(PORTAL_KEY,JSON.stringify(tournaments));return true}catch(e){console.error('Falha ao salvar dados locais:',e);alert('Não foi possível salvar os dados neste navegador. Verifique o espaço disponível e as permissões.');return false}};
+    let lastPersistedRaw=localStorage.getItem(PORTAL_KEY);const persist=()=>{try{if(localStorage.getItem(PORTAL_KEY)!==lastPersistedRaw){alert('Os dados foram alterados em outra aba. Recarregue a página antes de salvar para evitar sobrescrever resultados.');return false}const nextRaw=JSON.stringify(tournaments);localStorage.setItem(PORTAL_KEY,nextRaw);lastPersistedRaw=nextRaw;return true}catch(e){console.error('Falha ao salvar dados locais:',e);alert('Não foi possível salvar os dados neste navegador. Verifique o espaço disponível e as permissões.');return false}};
     let filter='Todos',currentId=null,currentView='matches',roundChoice='all',draftResults={};
     const grid=document.getElementById('grid'),detail=document.getElementById('detail'),count=document.getElementById('count'),activeCount=document.getElementById('activeCount'),openCount=document.getElementById('openCount'),clubCount=document.getElementById('clubCount');
     const visible=()=>filter==='Todos'?tournaments:filter==='Abertos'?tournaments.filter(t=>['Em andamento','Inscrições abertas','Planejado'].includes(t.status)):tournaments.filter(t=>t.status==='Finalizado');
@@ -179,6 +179,7 @@
         alert('Os dados mudaram em outra aba. Termine ou descarte a edição e recarregue a página para evitar conflitos.');
         return;
       }
+      lastPersistedRaw=event.newValue;
       for(const t of tournaments){
         const remote=incoming.find(x=>x&&x.id===t.id);
         if(!remote)continue;
