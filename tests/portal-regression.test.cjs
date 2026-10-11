@@ -33,6 +33,8 @@ for (const [value, expected] of [[0,0],['0',0],['12',12],[99,99],['',null],[' ',
   assert.equal(scoreValue(value),expected,'Placar inválido: '+String(value));
 }
 check('Validação funcional de placares aprovada', true);
+check('Abas locais recebem alterações de armazenamento', html.includes("window.addEventListener('storage',event=>"));
+check('Rascunhos protegidos de alterações externas', html.includes('if(Object.keys(draftResults).length)'));
 check('Histórico restaurado após recarga', html.includes('resultHistory:Array.isArray(old.resultHistory)'));
 check('Última atualização restaurada após recarga', html.includes('lastResultUpdate:Number.isFinite(old.lastResultUpdate)'));
 const rules = fs.readFileSync(require('node:path').join(__dirname, '..', 'firestore.rules'), 'utf8');
