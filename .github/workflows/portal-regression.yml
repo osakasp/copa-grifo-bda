@@ -4,6 +4,7 @@ on:
     paths:
       - 'index.html'
       - 'tests/portal-regression.test.cjs'
+      - 'tests/portal-browser.test.cjs'
       - '.github/workflows/portal-regression.yml'
   workflow_dispatch:
 jobs:
@@ -18,3 +19,18 @@ jobs:
           node-version: '22'
       - name: Run portal regression checks
         run: node tests/portal-regression.test.cjs
+  browser:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright and Chromium
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Run mobile browser smoke tests
+        run: node tests/portal-browser.test.cjs
