@@ -1,0 +1,20 @@
+name: Portal regression checks
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'tests/portal-regression.test.cjs'
+      - '.github/workflows/portal-regression.yml'
+  workflow_dispatch:
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run portal regression checks
+        run: node tests/portal-regression.test.cjs
