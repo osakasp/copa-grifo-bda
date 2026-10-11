@@ -77,7 +77,7 @@ const assert = require('node:assert/strict');
     await firstScores.nth(0).fill('1');
     await firstScores.nth(1).fill('0');
     await page.locator('[data-results-form] button[type="submit"]').click();
-    await second.waitForTimeout(150);
+    await second.waitForFunction(()=>JSON.parse(localStorage.getItem('bda-portal-state-v2')).find(t=>t.id==='liga-b').results['0:0']?.home===1);
     assert.equal(await second.evaluate(()=>JSON.parse(localStorage.getItem('bda-portal-state-v2')).find(t=>t.id==='liga-b').results['0:0'].home),1);
     assert.equal(alerts.length,0,'Sincronização entre abas sem rascunho não deve gerar alerta');
   }finally{await second.close()}
