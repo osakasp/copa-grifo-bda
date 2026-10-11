@@ -64,7 +64,7 @@ const assert = require('node:assert/strict');
   });
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('bda-portal-state-v2')).find(t=>t.id==='liga-b').results['0:0'].home),3);
   // Duas abas: a segunda deve detectar que seu estado ficou desatualizado.
-  const second=await browser.newPage({viewport:{width:390,height:844}});
+  const second=await page.context().newPage();
   try{
     const alerts=[];
     second.on('dialog',dialog=>{alerts.push(dialog.message());void dialog.accept().catch(()=>{});});
