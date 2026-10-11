@@ -36,6 +36,8 @@ for (const [value, expected] of [[0,0],['0',0],['12',12],[99,99],['',null],[' ',
   assert.equal(scoreValue(value),expected,'Placar inválido: '+String(value));
 }
 check('Validação funcional de placares aprovada', true);
+check('Salvamento detecta alterações concorrentes', html.includes('localStorage.getItem(PORTAL_KEY)!==lastPersistedRaw'));
+check('Evento entre abas atualiza versão conhecida', html.includes('lastPersistedRaw=event.newValue'));
 check('Abas locais recebem alterações de armazenamento', html.includes("window.addEventListener('storage',event=>"));
 check('Rascunhos protegidos de alterações externas', html.includes('if(Object.keys(draftResults).length)'));
 check('Histórico restaurado após recarga', html.includes('resultHistory:Array.isArray(old.resultHistory)'));
