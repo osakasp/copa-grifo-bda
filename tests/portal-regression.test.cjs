@@ -17,7 +17,7 @@ check('Auditoria detecta confrontos repetidos', html.includes('pairSeen.has(key)
 check('Auditoria detecta folgas inconsistentes', html.includes('folga inconsistente'));
 // Verifica também a sintaxe JavaScript do script embutido, sem executar o DOM.
 const vm = require('node:vm');
-const inlineScripts = [...html.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi)].map(m => m[1]).filter(Boolean);
+const inlineScripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m => m[1]).filter(Boolean);
 check('Script embutido presente', inlineScripts.length > 0);
 inlineScripts.forEach((script, index) => {
   assert.doesNotThrow(() => new vm.Script(script, {filename:'index.html:inline-'+index}), 'Sintaxe JavaScript inválida');
