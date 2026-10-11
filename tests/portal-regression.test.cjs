@@ -15,4 +15,14 @@ check('Inscrição reverte se salvar falhar', html.includes('t.pendingTeams=prev
 check('Auditoria de tabelas disponível', html.includes("auditButton.textContent='Verificar tabelas'"));
 check('Auditoria detecta confrontos repetidos', html.includes('pairSeen.has(key)'));
 check('Auditoria detecta folgas inconsistentes', html.includes('folga inconsistente'));
+// Verifica também a sintaxe JavaScript do script embutido, sem executar o DOM.
+const vm = require('node:vm');
+const inlineScripts = [...html.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi)].map(m => m[1]).filter(Boolean);
+check('Script embutido presente', inlineScripts.length > 0);
+inlineScripts.forEach((script, index) => {
+  assert.doesNotThrow(() => new vm.Script(script, {filename:'index.html:inline-'+index}), 'Sintaxe JavaScript inválida');
+});
+check('Sintaxe JavaScript válida', true);
+check('Histórico restaurado após recarga', html.includes('resultHistory:Array.isArray(old.resultHistory)'));
+check('Última atualização restaurada após recarga', html.includes('lastResultUpdate:Number.isFinite(old.lastResultUpdate)'));
 console.log('Testes estáticos concluídos. Testes reais de navegador ainda necessários.');
