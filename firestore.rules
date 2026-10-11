@@ -333,6 +333,7 @@ service cloud.firestore {
     match /portalChampionships/{championshipId} {
       allow get, list: if true;
       allow create, update: if isArenaAdmin()
+        && request.auth.token.email_verified == true
         && request.resource.data.keys().hasOnly([
           'id', 'name', 'participants', 'results', 'updatedAt', 'schemaVersion'
         ])
