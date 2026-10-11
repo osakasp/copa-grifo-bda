@@ -17,6 +17,7 @@ check('Inscrição reverte se salvar falhar', html.includes('t.pendingTeams=prev
 check('Restauração de backup disponível', html.includes("importButton.textContent='Restaurar backup'"));
 check('Importação valida origem e versão do backup', html.includes("payload?.source!=='arena-bda-local'"));
 check('Importação restringe resultados aos jogos cadastrados', html.includes('!validKeys.has(key)||!res'));
+check('Confirmação de restauração mostra quantidade de placares', html.includes('const totalMatches=changes.reduce('));
 check('Importação bloqueia competições desconhecidas', html.includes('Backup contém competição desconhecida'));
 check('Importação bloqueia edição de placares pendente', html.includes('Há placares em edição. Salve ou descarte'));
 check('Importação bloqueia competições duplicadas', html.includes('if(seenIds.has(t.id))'));
