@@ -25,7 +25,7 @@ inlineScripts.forEach((script, index) => {
 });
 check('Sintaxe JavaScript válida', true);
 // Exercita a mesma função de validação usada pela interface, não apenas a presença do texto.
-const scoreMatch = html.match(/const scoreValue=(v=>\\{[^;]*;[^;]*;[^;]*;[^;]*;\\});/);
+const scoreMatch = html.match(/const scoreValue=(v=>\{[^\n]+\});/);
 check('Validador de placares encontrado', Boolean(scoreMatch));
 const scoreValue = vm.runInNewContext('('+scoreMatch[1]+')');
 for (const [value, expected] of [[0,0],['0',0],['12',12],[99,99],['',null],[' ',null],['-1',null],['100',null],['1.5',null],['1e1',null],['0x10',null],[null,null],[undefined,null],[true,null]]) {
