@@ -89,8 +89,8 @@
     const esc=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
     const PORTAL_KEY='bda-portal-state-v2',oldKey='bda-v3-tournaments';
     const readJson=k=>{try{const v=JSON.parse(localStorage.getItem(k));return Array.isArray(v)?v:null}catch{return null}};
-    const saved=readJson(PORTAL_KEY)||readJson(oldKey)||[];
-    const tournaments=seeds.map(seed=>{const old=saved.find(t=>t.id===seed.id)||{};return {...seed,participants:Array.from(new Set([...(seed.participants||[]),...(old.participants||[])])),pendingTeams:Array.isArray(old.pendingTeams)?old.pendingTeams:[],results:old.results&&typeof old.results==='object'?old.results:{}}});
+    const saved=readJson(PORTAL_KEY)||readJson(oldKey)||[]; // Nunca gravar seeds automaticamente por cima de dados locais.
+    const tournaments=seeds.map(seed=>{const old=saved.find(t=>t.id===seed.id)||{};return {...seed,participants:Array.from(new Set([...(seed.participants||[]),...(old.participants||[])])),pendingTeams:Array.isArray(old.pendingTeams)?old.pendingTeams:[],results:old.results&&typeof old.results==='object'&&!Array.isArray(old.results)?old.results:{},resultHistory:Array.isArray(old.resultHistory)?old.resultHistory.slice(-10):[],lastResultUpdate:Number.isFinite(old.lastResultUpdate)?old.lastResultUpdate:null}});
     const persist=()=>{try{localStorage.setItem(PORTAL_KEY,JSON.stringify(tournaments));return true}catch(e){console.error('Falha ao salvar dados locais:',e);alert('Não foi possível salvar os dados neste navegador. Verifique o espaço disponível e as permissões.');return false}};
     let filter='Todos',currentId=null,currentView='matches',roundChoice='all',draftResults={};
     const grid=document.getElementById('grid'),detail=document.getElementById('detail'),count=document.getElementById('count'),activeCount=document.getElementById('activeCount'),openCount=document.getElementById('openCount'),clubCount=document.getElementById('clubCount');
