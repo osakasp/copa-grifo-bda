@@ -26,4 +26,8 @@ inlineScripts.forEach((script, index) => {
 check('Sintaxe JavaScript válida', true);
 check('Histórico restaurado após recarga', html.includes('resultHistory:Array.isArray(old.resultHistory)'));
 check('Última atualização restaurada após recarga', html.includes('lastResultUpdate:Number.isFinite(old.lastResultUpdate)'));
+const rules = fs.readFileSync(require('node:path').join(__dirname, '..', 'firestore.rules'), 'utf8');
+check('Coleção de campeonatos protegida', rules.includes('match /portalChampionships/{championshipId}'));
+check('E-mail verificado obrigatório para escrita', rules.includes('request.auth.token.email_verified == true'));
+check('Exclusão de campeonatos bloqueada', /match \/portalChampionships\/\{championshipId\}[\s\S]*?allow delete: if false;/.test(rules));
 console.log('Testes estáticos concluídos. Testes reais de navegador ainda necessários.');
