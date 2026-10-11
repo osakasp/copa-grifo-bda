@@ -7,7 +7,7 @@ check('Página mantém idioma pt-BR', html.includes('lang="pt-BR"'));
 check('Liga A preservada', html.includes("id:'liga-a'"));
 check('Liga B preservada', html.includes("id:'liga-b'"));
 check('Backup JSON disponível', html.includes("backupButton.textContent='Exportar backup'"));
-check('Não interpreta campos vazios como zero', html.includes("String(v).trim()===''"));
+check('Não interpreta campos vazios como zero', html.includes('if(!/^(0|[1-9][0-9]?)$/.test(raw))return null'));
 check('Limite de gols aplicado', html.includes('n>=0&&n<=99'));
 check('Erros de persistência comunicados', html.includes('Falha ao salvar dados locais'));
 check('Desfazer placares reverte alterações se salvar falhar', html.includes('t.results=previousResults;t.resultHistory=previousHistory'));
