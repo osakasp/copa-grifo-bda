@@ -128,6 +128,46 @@
     });
     const backupHost=document.querySelector('main')||document.body;
     backupHost.appendChild(backupButton);
+    // Importação explícita: somente placares/histórico/solicitações; nunca substitui calendário ou clubes oficiais.
+    const importButton=document.createElement('button');
+    importButton.type='button';
+    importButton.textContent='Restaurar backup';
+    importButton.style.cssText=backupButton.style.cssText;
+    const importInput=document.createElement('input');
+    importInput.type='file';
+    importInput.accept='.json,application/json';
+    importInput.hidden=true;
+    importButton.addEventListener('click',()=>importInput.click());
+    importInput.addEventListener('change',async()=>{
+      const file=importInput.files?.[0];importInput.value='';
+      if(!file)return;
+      if(file.size>2*1024*1024){alert('Backup muito grande. Limite: 2 MB.');return}
+      let payload;
+      try{payload=JSON.parse(await file.text())}catch{alert('Arquivo JSON inválido.');return}
+      if(payload?.schemaVersion!==1||payload?.source!=='arena-bda-local'||!Array.isArray(payload.tournaments)){alert('Este arquivo não é um backup compatível do Arena BDA.');return}
+      const changes=[];
+      for(const entry of payload.tournaments){
+        const t=tournaments.find(x=>x.id===entry?.id);
+        if(!t||!entry.results||typeof entry.results!=='object'||Array.isArray(entry.results))continue;
+        const validKeys=new Set((t.matches||[]).flatMap((round,r)=>round.map((_,m)=>resultKey(r,m))));
+        const results={};let valid=true;
+        for(const [key,res] of Object.entries(entry.results)){
+          if(!validKeys.has(key)||!res||scoreValue(res.home)===null||scoreValue(res.away)===null){valid=false;break}
+          results[key]={home:scoreValue(res.home),away:scoreValue(res.away)};
+        }
+        if(!valid){alert('Backup contém placares inválidos em '+t.name+'. Nenhuma alteração foi aplicada.');return}
+        changes.push({t,results,history:Array.isArray(entry.resultHistory)?entry.resultHistory.slice(-10):[],updated:Number.isFinite(entry.lastResultUpdate)?entry.lastResultUpdate:null});
+      }
+      if(!changes.length){alert('O backup não contém resultados compatíveis para restaurar.');return}
+      if(!confirm('Restaurar placares de '+changes.length+' competição(ões) deste backup? Os calendários e clubes serão preservados. Esta ação substitui os placares locais dessas competições.'))return;
+      const previous=changes.map(({t})=>({t,results:t.results,history:t.resultHistory,updated:t.lastResultUpdate}));
+      for(const {t,results,history,updated} of changes){t.results=results;t.resultHistory=history;t.lastResultUpdate=updated}
+      if(!persist()){for(const {t,results,history,updated} of previous){t.results=results;t.resultHistory=history;t.lastResultUpdate=updated}return}
+      draftResults={};render();if(currentId)renderDetail();
+      alert('Backup restaurado neste navegador. Os calendários não foram alterados.');
+    });
+    backupHost.appendChild(importButton);
+    backupHost.appendChild(importInput);
     // Auditoria somente leitura: não altera clubes, rodadas nem resultados.
     const auditButton=document.createElement('button');
     auditButton.type='button';
