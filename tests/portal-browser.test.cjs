@@ -9,10 +9,9 @@ const assert = require('node:assert/strict');
   const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
   page.on('dialog',dialog=>dialog.accept());
-  await page.addInitScript(()=>{
-    localStorage.setItem('bda-portal-state-v2',JSON.stringify([{id:'liga-b',participants:{corrompido:true}}]));
-  });
   await page.goto(pathToFileURL(path.resolve(__dirname,'../index.html')).href);
+  await page.evaluate(()=>localStorage.setItem('bda-portal-state-v2',JSON.stringify([{id:'liga-b',participants:{corrompido:true}}])));
+  await page.reload();
   assert.ok(await page.locator('[data-open="liga-b"]').count(),'Dados locais malformados não devem impedir abertura');
   await page.evaluate(()=>localStorage.removeItem('bda-portal-state-v2'));
   await page.reload();
