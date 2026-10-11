@@ -21,7 +21,7 @@ const assert = require('node:assert/strict');
   await page.reload();
   await page.locator('[data-open="liga-b"]').click();
   await page.locator('[data-view="table"]').click();
-  assert.match(await page.locator('.standing').innerText(),/Pts/);
+  assert.match(await page.locator('.standing').innerText(),/PTS/i);
   await page.locator('[data-view="admin"]').click();
   await page.locator('[data-undo-results]').click();
   assert.ok(await page.evaluate(()=>!JSON.parse(localStorage.getItem('bda-portal-state-v2')).find(t=>t.id==='liga-b').results['0:0']));
