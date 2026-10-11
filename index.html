@@ -164,6 +164,27 @@
       alert(warnings.length?'Auditoria encontrou '+warnings.length+' alerta(s):\\n\\n'+warnings.slice(0,20).join('\\n')+(warnings.length>20?'\\n...':''):'Nenhuma inconsistência estrutural detectada nas tabelas locais. Isso não confirma os resultados oficiais.');
     });
     backupHost.appendChild(auditButton);
+    // Mantém abas do mesmo navegador atualizadas sem sobrescrever rascunhos em edição.
+    window.addEventListener('storage',event=>{
+      if(event.key!==PORTAL_KEY||!event.newValue)return;
+      let incoming;
+      try{incoming=JSON.parse(event.newValue)}catch{return}
+      if(!Array.isArray(incoming))return;
+      if(Object.keys(draftResults).length){
+        alert('Os dados mudaram em outra aba. Termine ou descarte a edição e recarregue a página para evitar conflitos.');
+        return;
+      }
+      for(const t of tournaments){
+        const remote=incoming.find(x=>x&&x.id===t.id);
+        if(!remote)continue;
+        if(remote.results&&typeof remote.results==='object'&&!Array.isArray(remote.results))t.results=remote.results;
+        if(Array.isArray(remote.pendingTeams))t.pendingTeams=remote.pendingTeams;
+        if(Array.isArray(remote.resultHistory))t.resultHistory=remote.resultHistory.slice(-10);
+        if(Number.isFinite(remote.lastResultUpdate)||remote.lastResultUpdate===null)t.lastResultUpdate=remote.lastResultUpdate;
+      }
+      render();
+      if(currentId)renderDetail();
+    });
     render();
   })();
   </script>
