@@ -12,4 +12,7 @@ check('Limite de gols aplicado', html.includes('n>=0&&n<=99'));
 check('Erros de persistência comunicados', html.includes('Falha ao salvar dados locais'));
 check('Desfazer placares reverte alterações se salvar falhar', html.includes('t.results=previousResults;t.resultHistory=previousHistory'));
 check('Inscrição reverte se salvar falhar', html.includes('t.pendingTeams=previousPending;return'));
+check('Auditoria de tabelas disponível', html.includes("auditButton.textContent='Verificar tabelas'"));
+check('Auditoria detecta confrontos repetidos', html.includes('pairSeen.has(key)'));
+check('Auditoria detecta folgas inconsistentes', html.includes('folga inconsistente'));
 console.log('Testes estáticos concluídos. Testes reais de navegador ainda necessários.');
