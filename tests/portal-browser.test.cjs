@@ -82,6 +82,20 @@ const assert = require('node:assert/strict');
     assert.equal(await second.evaluate(()=>JSON.parse(localStorage.getItem('bda-portal-state-v2')).find(t=>t.id==='liga-b').results['0:0'].home),1);
     assert.equal(alerts.length,0,'Sincronização entre abas sem rascunho não deve gerar alerta');
   }finally{await second.close()}
+  // Uma atualização inválida de outra aba não pode substituir o placar exibido.
+  const rogue=await context.newPage();
+  try{
+    await rogue.goto(pathToFileURL(path.resolve(__dirname,'../index.html')).href);
+    await page.locator('[data-view="matches"]').click();
+    const before=await page.locator('#detail').innerText();
+    await rogue.evaluate(()=>{
+      const tournaments=JSON.parse(localStorage.getItem('bda-portal-state-v2'));
+      tournaments.find(t=>t.id==='liga-b').results={'999:999':{home:99,away:0}};
+      localStorage.setItem('bda-portal-state-v2',JSON.stringify(tournaments));
+    });
+    await page.waitForTimeout(100);
+    assert.equal(await page.locator('#detail').innerText(),before,'Dados externos inválidos não podem alterar a tela');
+  }finally{await rogue.close()}
   assert.deepEqual(errors,[],'Erros JavaScript no navegador: '+errors.join('; '));
   console.log('OK: navegador Chromium mobile, placar, recarga, classificação, desfazer, exportação e restauração válida/inválida');
  }finally{await browser.close()}
