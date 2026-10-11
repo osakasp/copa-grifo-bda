@@ -139,10 +139,12 @@
         if(!Array.isArray(t.matches)||!t.matches.length)continue;
         const participants=new Set(t.participants||[]);
         const pairSeen=new Set();
+        const validResultKeys=new Set();
         t.matches.forEach((round,r)=>{
           const roundSeen=new Set();
           if(!Array.isArray(round)){warnings.push(t.name+': rodada '+(r+1)+' inválida');return}
           round.forEach((pair,m)=>{
+            validResultKeys.add(resultKey(r,m));
             if(!Array.isArray(pair)||pair.length!==2){warnings.push(t.name+': jogo inválido na rodada '+(r+1));return}
             const [home,away]=pair;
             if(!participants.has(home)||!participants.has(away))warnings.push(t.name+': clube não cadastrado na rodada '+(r+1));
@@ -159,7 +161,10 @@
           });
           const bye=t.byes?.[r];
           if(bye&&(roundSeen.has(bye)||!participants.has(bye)))warnings.push(t.name+': folga inconsistente na rodada '+(r+1));
+          if(participants.size%2===1&&roundSeen.size===participants.size-1&&!bye)warnings.push(t.name+': folga não informada na rodada '+(r+1));
         });
+        for(const key of Object.keys(t.results||{}))if(!validResultKeys.has(key))warnings.push(t.name+': resultado órfão de jogo '+key);
+        if(t.format==='Pontos corridos'&&pairSeen.size!==participants.size*(participants.size-1)/2)warnings.push(t.name+': quantidade de confrontos incompatível com turno único');
       }
       alert(warnings.length?'Auditoria encontrou '+warnings.length+' alerta(s):\\n\\n'+warnings.slice(0,20).join('\\n')+(warnings.length>20?'\\n...':''):'Nenhuma inconsistência estrutural detectada nas tabelas locais. Isso não confirma os resultados oficiais.');
     });
