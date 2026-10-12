@@ -1,4 +1,4 @@
-const VERSION = 'v172-admin-score-edit';
+const VERSION = 'portal-v2-20261012-1';
 const REV = '20260922-02';
 const AUTH_REV = '20260825-5';
 const AUTH_CONSUMERS_REV = '20260825-4';
@@ -38,7 +38,13 @@ const SHELL = [
   './',
   './index.html',
   './favicon.svg',
-  './site.webmanifest'
+  './site.webmanifest',
+  './portal.css?v=20261012-1',
+  './portal-data.js?v=20261012-1',
+  './portal-core.js?v=20261012-1',
+  './portal-config.js?v=20261012-1',
+  './portal-sync.js?v=20261012-1',
+  './portal.js?v=20261012-1'
 ];
 
 async function precacheFresh() {
