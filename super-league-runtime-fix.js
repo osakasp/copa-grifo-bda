@@ -91,7 +91,8 @@
   }
 
   function qualifiers() {
-    return DEFAULT_QUALIFIERS;
+    const t=readTournament(), q=Number(t?.qualifiersPerGroup ?? t?.groupSettings?.qualifiersPerGroup ?? t?.groupGenerator?.qualifiers);
+    return [2,3].includes(q) ? q : DEFAULT_QUALIFIERS;
   }
 
   function configStamp(tournament) {
@@ -156,9 +157,8 @@
   }
 
   function canonicalizeTournament(remote = {}) {
-    const source = chooseConfigSource(remote);
-    if (source) return buildTournament(remote, tournamentGroups(source), DEFAULT_QUALIFIERS, configStamp(source));
-    return buildTournament(remote, DEFAULT_GROUPS, DEFAULT_QUALIFIERS, 1);
+    // Existing editions own their regulation; reading cannot choose a different one.
+    return clone(remote.id ? remote : (readTournament() || remote));
   }
 
   function replaceGuardFacade() {
@@ -176,30 +176,7 @@
     });
   }
 
-  function ensureDefaultConfiguration() {
-    const list = readTournamentList();
-    const index = list.findIndex(item => String(item?.id || '') === SUPER_LEAGUE_ID);
-    if (index < 0) return false;
-    const current = list[index];
-    const configuredQualifiers = Number(
-      current?.qualifiersPerGroup
-      ?? current?.groupSettings?.qualifiersPerGroup
-      ?? current?.groupGenerator?.qualifiers
-      ?? 0
-    );
-    if (hasUserConfig(current) && configuredQualifiers === DEFAULT_QUALIFIERS) {
-      replaceGuardFacade();
-      return false;
-    }
-    const next = [...list];
-    next[index] = buildTournament(current, tournamentGroups(current), DEFAULT_QUALIFIERS, Math.max(1, configStamp(current)));
-    localStorage.setItem(TOURNAMENT_KEY, JSON.stringify(next));
-    replaceGuardFacade();
-    window.dispatchEvent(new CustomEvent('arena:tournaments-updated', {
-      detail:{ tournamentId:SUPER_LEAGUE_ID, reason:'super-league-direct-top2-default' }
-    }));
-    return true;
-  }
+  function ensureDefaultConfiguration() { return false; }
 
   function aliasMap(groups = tournamentGroups()) {
     const map = new Map();

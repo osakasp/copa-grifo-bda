@@ -72,3 +72,26 @@ test('accessibility, layout, touch targets, console, asset and DOM budgets',asyn
  await page.goto('/');await page.screenshot({path:testInfo.outputPath('home.png'),fullPage:true});await page.locator('[data-open="liga-b"]').click();await page.screenshot({path:testInfo.outputPath('liga-b.png'),fullPage:true});
  const metrics=await page.evaluate(()=>({nodes:document.querySelectorAll('*').length,matchCards:document.querySelectorAll('.match').length,assets:performance.getEntriesByType('resource').length}));expect(metrics.matchCards).toBe(8);await testInfo.attach('metrics',{body:JSON.stringify(metrics),contentType:'application/json'});
 });
+test('configured sync updates an idle editor and preserves conflicting drafts',async({page})=>{
+ const tournament=init().find(t=>t.id==='liga-b');
+ await page.addInitScript(({calendar})=>{
+  window.__remote={calendar,revision:0,results:{}};
+  window.__mockTransport={
+   onAuth(fn){fn({uid:'test-admin',email:'claboleirosdeatitude@gmail.com',emailVerified:true});return()=>{};},
+   watch(id,fn){window.__publish=fn;fn(window.__remote);return()=>{};},
+   async commit({patch,revision}){if(revision!==window.__remote.revision)throw new Error('Conflito remoto');window.__remote={...window.__remote,revision:revision+1,results:{...window.__remote.results,...patch}};},
+   async signIn(){},async signOut(){}
+  };
+ },{calendar:C.calendar(tournament)});
+ await page.route(/portal-config\.js/,r=>r.fulfill({contentType:'text/javascript',body:'window.ArenaPortalConfig={enabled:true,firebase:{projectId:"demo-arena-bda"},expectedProjectId:"demo-arena-bda"};'}));
+ const adapter=require('node:fs').readFileSync('portal-sync.js','utf8');
+ await page.route(/portal-sync\.js/,r=>r.fulfill({contentType:'text/javascript',body:adapter+'\nwindow.ArenaPortalSync={...window.ArenaPortalSync,firebaseTransport:()=>window.__mockTransport};'}));
+ await page.route(/https:\/\/www\.gstatic\.com\/firebasejs\//,r=>r.fulfill({contentType:'text/javascript',body:'window.firebase={apps:[{name:"arena-portal-v2"}]};'}));
+ await open(page);await admin(page);await expect(scores(page).nth(0)).toBeVisible();
+ await page.evaluate(()=>{window.__remote={...window.__remote,revision:1,results:{'0:0':{home:2,away:1}}};window.__publish(window.__remote);});await expect(scores(page).nth(0)).toHaveValue('2');
+ await scores(page).nth(0).fill('3');await page.getByRole('button',{name:'Salvar no servidor',exact:true}).click();await expect(page.locator('#notice')).toContainText('confirmados pelo servidor');
+ // The metadata snapshot may arrive after the transaction acknowledgement.
+ await page.evaluate(()=>window.__publish(window.__remote));await expect(scores(page).nth(0)).toHaveValue('3');
+ await scores(page).nth(0).fill('4');await page.evaluate(()=>{window.__remote={...window.__remote,revision:3,results:{'0:0':{home:5,away:1}}};window.__publish(window.__remote);});
+ await expect(page.locator('#notice')).toContainText('rascunho foi preservado');await expect(scores(page).nth(0)).toHaveValue('4');await page.getByRole('button',{name:'Salvar no servidor',exact:true}).click();await expect(page.locator('#notice')).toContainText('Conflito');expect(await saved(page)).toBeNull();
+});

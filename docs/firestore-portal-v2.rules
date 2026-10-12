@@ -37,7 +37,8 @@ service cloud.firestore {
           && request.resource.data.away is int && request.resource.data.away >= 0 && request.resource.data.away <= 99
           && request.resource.data.cleared is bool
           && (!request.resource.data.cleared || (request.resource.data.home == 0 && request.resource.data.away == 0))
-          && stamp(id);
+          && stamp(id)
+          && key in getAfter(/databases/$(database)/documents/portalV2/$(id)/events/$(string(request.resource.data.revision))).data.keys;
         allow delete: if false;
       }
       match /events/{event} {

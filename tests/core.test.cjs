@@ -96,3 +96,37 @@ test('legacy transport no longer removes Supercopa or forces 12 clubs/two turns'
  const values=[{id:'supercopa',name:'Supercopa BDA'},{id:'liga-b',maxTeams:17,matchSettings:{leagueTurns:1}},{id:'liga-a-copy',name:'Liga A BDA',custom:42}];
  assert.deepEqual(JSON.parse(JSON.stringify(normalize(values))),values);assert.throws(()=>normalize({}));
 });
+
+test('legacy catalog loading preserves editions, empty lists and corrupt raw data',()=>{
+ const source=fs.readFileSync('arena-bda.js','utf8');
+ const code=source.slice(source.indexOf('  function load(){'),source.indexOf('  function safe('));
+ const records=[{id:'supercopa',name:'Supercopa BDA'},{id:'copa-aguia',participants:['A']},{id:'liga-a-copy',name:'Liga A BDA'},{id:'liga-b',maxTeams:17}];
+ for(const raw of [JSON.stringify(records),'[]','{broken',null]){
+  const storage=memory();if(raw!==null)storage.setItem('key',raw);let writes=0;const original=storage.setItem;storage.setItem=(...args)=>{writes++;original(...args);};
+  const context={localStorage:storage,KEY:'key',seeds:[{id:'fallback'}],copy:C.clone,storageBlocked:false,console:{warn(){}},toast(){}};
+  vm.runInNewContext(code+';tournaments=load();',context);
+  assert.equal(storage.getItem('key'),raw);assert.equal(writes,0);
+  if(raw==='{broken'){assert.equal(context.storageBlocked,true);assert.equal(vm.runInNewContext('persist([])',context),false);assert.equal(writes,0);}
+  else if(raw!==null)assert.deepEqual(JSON.parse(JSON.stringify(context.tournaments)),JSON.parse(raw));
+ }
+});
+test('legacy guard preserves Supercopa and a configured Super League without any writes',()=>{
+ const source=fs.readFileSync('super-league-guard.js','utf8');
+ const code=source.slice(source.indexOf('  function withoutSupercopa('),source.indexOf('  function ensureRemovalStyles()'));
+ const records=[{id:'supercopa',name:'Supercopa BDA'},{id:'bda-super-league',qualifiersPerGroup:3,participants:['Custom club']}],raw=JSON.stringify(records);
+ const storage=memory();storage.setItem('key',raw);storage.setItem=()=>{throw new Error('Unexpected write');};
+ const context={localStorage:storage,TOURNAMENT_KEY:'key',SUPER_LEAGUE_ID:'bda-super-league',DEFAULT_TOURNAMENTS:[],clone:C.clone};
+ vm.runInNewContext(code,context);assert.equal(vm.runInNewContext('removeSupercopaFromStorage()',context),false);vm.runInNewContext('installSupercopaRemovalGuard()',context);
+ assert.deepEqual(JSON.parse(JSON.stringify(vm.runInNewContext('readTournaments()',context))),records);
+ assert.deepEqual(JSON.parse(JSON.stringify(vm.runInNewContext('protectSuperLeague()',context))),records[1]);assert.equal(storage.getItem('key'),raw);
+});
+test('legacy runtime preserves the existing Super League regulation on read',()=>{
+ const source=fs.readFileSync('super-league-runtime-fix.js','utf8');
+ const slice=(a,b)=>source.slice(source.indexOf(a),source.indexOf(b,source.indexOf(a)));
+ for(const q of [2,3]){
+  const tournament={id:'bda-super-league',qualifiersPerGroup:q,custom:true};
+  const context={clone:C.clone,readTournament:()=>tournament,DEFAULT_QUALIFIERS:2};
+  vm.runInNewContext(slice('  function qualifiers()','  function configStamp(')+slice('  function canonicalizeTournament(','  function replaceGuardFacade(')+slice('  function ensureDefaultConfiguration()','  function aliasMap('),context);
+  assert.equal(vm.runInNewContext('qualifiers()',context),q);assert.equal(vm.runInNewContext('ensureDefaultConfiguration()',context),false);assert.deepEqual(JSON.parse(JSON.stringify(vm.runInNewContext('canonicalizeTournament()',context))),tournament);
+ }
+});

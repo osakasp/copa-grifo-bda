@@ -96,9 +96,9 @@
     })();
     const app=await sdkPromise;if(id!==currentId)return;
     sync=window.ArenaPortalSync.createSync({transport:window.ArenaPortalSync.firebaseTransport(window.firebase,app),tournament:tournaments.find(t=>t.id===id),onState:state=>{
-      if(id!==currentId)return;const wasWritable=cloud?.canWrite;cloud=state;updateDataStatus();
-      if(dirty()){if(draftRevision!==null&&state.revision!==draftRevision)notify('Os resultados oficiais mudaram. Seu rascunho foi preservado; exporte e recarregue antes de salvar.');return;}
-      if(view!=='admin'||wasWritable!==state.canWrite)renderDetail();
+      if(id!==currentId)return;const wasWritable=cloud?.canWrite,previousRevision=cloud?.revision;cloud=state;updateDataStatus();
+      if(dirty()){if(!busy&&draftRevision!==null&&state.revision!==draftRevision)notify('Os resultados oficiais mudaram. Seu rascunho foi preservado; exporte e recarregue antes de salvar.');return;}
+      if(view!=='admin'||wasWritable!==state.canWrite||previousRevision!==state.revision)renderDetail();
     }});sync.start();
   }
   function renderRecovery() {

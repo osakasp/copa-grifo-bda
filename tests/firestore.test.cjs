@@ -13,10 +13,10 @@ before(async()=>{
 after(async()=>env?.cleanup());
 beforeEach(async()=>{await env.clearFirestore();await env.withSecurityRulesDisabled(async ctx=>{await setDoc(doc(ctx.firestore(),'portalV2/ liga-b'.replace(' ','')),{calendar:C.calendar(t),allowedMatchKeys:C.matchKeys(t),revision:0,updatedAt:new Date(0),updatedBy:'migration'});});});
 const dbFor=(email,verified=true)=>email?env.authenticatedContext('user',{email,email_verified:verified}).firestore():env.unauthenticatedContext().firestore();
-function batch(db,{key='0:0',home=2,away=1,revision=1,calendar,uid='user',cleared=false,audit=true}={}){
+function batch(db,{key='0:0',home=2,away=1,revision=1,calendar,uid='user',cleared=false,audit=true,auditKey=key}={}){
  const b=writeBatch(db),base='portalV2/liga-b',stamp={revision,updatedAt:serverTimestamp(),updatedBy:uid};
  b.update(doc(db,base),{...stamp,...(calendar?{calendar}:{})});b.set(doc(db,base+'/results/'+key),{home,away,cleared,...stamp});
- if(audit)b.set(doc(db,base+'/events/'+revision),{...stamp,keys:[key]});return b.commit();
+ if(audit)b.set(doc(db,base+'/events/'+revision),{...stamp,keys:[auditKey]});return b.commit();
 }
 test('public can read migrated competition but cannot write/create/delete',async()=>{
  const db=dbFor();await assertSucceeds(getDoc(doc(db,'portalV2/liga-b')));await assertFails(batch(db));await assertFails(deleteDoc(doc(db,'portalV2/liga-b')));await assertFails(setDoc(doc(db,'portalV2/new'),{}));
@@ -33,7 +33,7 @@ test('negative, fractional, too large and wrong-type scores fail in server rules
 });
 test('unknown game, fixture mutation, skipped revision, wrong actor and missing audit fail',async()=>{
  const db=dbFor('claboleirosdeatitude@gmail.com');
- for(const options of [{key:'999:999'},{calendar:'tampered'},{revision:2},{uid:'other'},{audit:false},{cleared:true,home:3}])await assertFails(batch(db,options));
+ for(const options of [{key:'999:999'},{calendar:'tampered'},{revision:2},{uid:'other'},{audit:false},{auditKey:'0:1'},{cleared:true,home:3}])await assertFails(batch(db,options));
 });
 test('stale updates fail and clearing uses an explicit tombstone instead of deleting',async()=>{
  const db=dbFor('claboleirosdeatitude@gmail.com');await assertSucceeds(batch(db));await assertFails(batch(db));await assertSucceeds(batch(db,{revision:2,cleared:true,home:0,away:0}));assert.equal((await getDoc(doc(db,'portalV2/liga-b/results/0:0'))).data().cleared,true);

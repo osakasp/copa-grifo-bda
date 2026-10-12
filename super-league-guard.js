@@ -64,48 +64,13 @@
     return id === 'supercopa' || id.startsWith('super-copa-bda-') || name.includes('supercopabda');
   }
 
-  function withoutSupercopa(values) {
-    return Array.isArray(values) ? values.filter(item => !isSupercopa(item)) : [];
-  }
-
-  function installSupercopaRemovalGuard() {
-    if (Storage.prototype.setItem.__arenaNoSupercopa) return;
-
-    const guardedSetItem = function(key, value) {
-      let nextValue = value;
-      if (this === localStorage && key === TOURNAMENT_KEY) {
-        try {
-          const parsed = JSON.parse(value);
-          if (Array.isArray(parsed)) nextValue = JSON.stringify(withoutSupercopa(parsed));
-        } catch {}
-      }
-      return nativeStorageSetItem.call(this, key, nextValue);
-    };
-
-    Object.defineProperty(guardedSetItem, '__arenaNoSupercopa', { value: true });
-    Storage.prototype.setItem = guardedSetItem;
-  }
-
-  function removeSupercopaFromStorage() {
-    try {
-      const raw = localStorage.getItem(TOURNAMENT_KEY);
-      if (!raw) return false;
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return false;
-      const cleaned = withoutSupercopa(parsed);
-      if (cleaned.length === parsed.length) return false;
-      nativeStorageSetItem.call(localStorage, TOURNAMENT_KEY, JSON.stringify(cleaned));
-      window.dispatchEvent(new CustomEvent('arena:tournaments-updated', {
-        detail: { reason: 'supercopa-removed', count: cleaned.length }
-      }));
-      return true;
-    } catch (error) {
-      console.warn('[Arena BDA] Não foi possível remover a Supercopa do armazenamento', error);
-      return false;
-    }
-  }
+  // Compatibility entry points retained without destructive automatic migrations.
+  function withoutSupercopa(values) { return Array.isArray(values) ? clone(values) : []; }
+  function installSupercopaRemovalGuard() {}
+  function removeSupercopaFromStorage() { return false; }
 
   function canonicalTournament(current = {}) {
+    if (current.id) return clone(current);
     const canonical = {
       ...current,
       id: SUPER_LEAGUE_ID,
@@ -161,50 +126,8 @@
   }
 
   function protectSuperLeague() {
-    const tournaments = readTournaments();
-    const index = tournaments.findIndex(item => String(item?.id || '').toLowerCase() === SUPER_LEAGUE_ID);
-
-    if (index >= 0) {
-      const current = tournaments[index] || {};
-      const canonical = canonicalTournament(current);
-      const currentGroups = current?.groupSettings?.groups || current?.groupGenerator?.groups || [];
-      const hasOldZombieName = (current.participants || []).some(name => normalizeToken(name) === 'zombiebda')
-        || currentGroups.some(group => (group?.teams || []).some(name => normalizeToken(name) === 'zombiebda'));
-      const configuredQualifiers = Number(
-        current?.qualifiersPerGroup
-        ?? current?.groupSettings?.qualifiersPerGroup
-        ?? current?.groupGenerator?.qualifiers
-        ?? 0
-      );
-      const needsMigration = Number(current.superLeagueProtectionVersion || 0) < PROTECTION_VERSION
-        || configuredQualifiers !== 2
-        || hasOldZombieName;
-
-      if (!needsMigration) return clone(current);
-
-      const next = clone(tournaments);
-      next[index] = canonical;
-      try {
-        localStorage.setItem(TOURNAMENT_KEY, JSON.stringify(next));
-        window.dispatchEvent(new CustomEvent('arena:tournaments-updated', {
-          detail: { reason: 'super-league-canonical-name-migration', tournamentId: SUPER_LEAGUE_ID }
-        }));
-      } catch (error) {
-        console.warn('[Arena BDA] Não foi possível atualizar o nome oficial do Zombie FC BDA', error);
-      }
-      return clone(canonical);
-    }
-
-    const next = clone(tournaments);
-    next.push(canonicalTournament());
-
-    try {
-      localStorage.setItem(TOURNAMENT_KEY, JSON.stringify(next));
-    } catch (error) {
-      console.warn('[Arena BDA] Não foi possível proteger a BDA Super League', error);
-    }
-
-    return clone(next[next.length - 1]);
+    const current = readTournaments().find(item => String(item?.id || '') === SUPER_LEAGUE_ID);
+    return current ? clone(current) : null;
   }
 
   function ensureRemovalStyles() {
@@ -212,8 +135,7 @@
     const style = document.createElement('style');
     style.id = 'arenaNoCommunityStyles';
     style.textContent = `
-      ${COMMUNITY_SELECTORS},
-      [data-featured="supercopa"]{display:none!important}
+      ${COMMUNITY_SELECTORS}{display:none!important}
       #adminModal .member-auth-tabs,
       #adminModal [data-auth-mode="register"],
       #memberNameLabel,
@@ -239,37 +161,7 @@
   }
 
   let redirectingSupercopa = false;
-  function removeSupercopaUI() {
-    document.querySelectorAll('[data-featured="supercopa"]').forEach(node => node.remove());
-
-    document.querySelectorAll('[data-open-tournament],[data-home-tournament],[data-tournament-id]').forEach(node => {
-      const id = node.dataset.openTournament || node.dataset.homeTournament || node.dataset.tournamentId || '';
-      if (!isSupercopa({ id, name: node.textContent })) return;
-      const card = node.closest('.arena-card,.arena-home-card,[data-tournament-card],article');
-      if (card) card.remove();
-      else node.remove();
-    });
-
-    const detail = document.getElementById('arenaDetail');
-    const title = detail?.querySelector('h1,h2,h3');
-    if (!title || !isSupercopa({ name: title.textContent })) return;
-
-    const fallback = [...document.querySelectorAll('[data-open-tournament]')]
-      .find(node => !isSupercopa({
-        id: node.dataset.openTournament,
-        name: node.textContent
-      }));
-
-    if (fallback && !redirectingSupercopa) {
-      redirectingSupercopa = true;
-      setTimeout(() => {
-        try { fallback.click(); }
-        finally { redirectingSupercopa = false; }
-      }, 0);
-    } else {
-      detail.innerHTML = '';
-    }
-  }
+  function removeSupercopaUI() { /* Existing competitions remain visible. */ }
 
   function setText(selector, text) {
     const element = document.querySelector(selector);
@@ -386,17 +278,6 @@
       event.stopImmediatePropagation();
       window.navigate?.('home');
       return;
-    }
-
-    const tournamentTrigger = target.closest('[data-open-tournament],[data-home-tournament],[data-tournament-id]');
-    if (tournamentTrigger) {
-      const id = tournamentTrigger.dataset.openTournament || tournamentTrigger.dataset.homeTournament || tournamentTrigger.dataset.tournamentId || '';
-      if (isSupercopa({ id, name: tournamentTrigger.textContent })) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        removeSupercopaUI();
-        return;
-      }
     }
 
     const adminButton = target.closest('#adminBtn');

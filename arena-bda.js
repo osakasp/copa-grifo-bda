@@ -13,6 +13,7 @@
   if (!page) return;
 
   const oldBracket = page.innerHTML;
+  let storageBlocked = false;
   let tournaments = load();
   let selectedId = tournaments[0]?.id || '';
   let editingId = null;
@@ -56,62 +57,24 @@
     const touch=window.matchMedia?.('(hover: none), (pointer: coarse)')?.matches;
     node.scrollIntoView({behavior:touch?'auto':'smooth',block});
   }
-  function dedupeOfficialLeagues(values){
-    if(!Array.isArray(values)) return [];
-    const seenLigaA=false;
-    let keptLigaA=false;
-    return values.filter(item=>{
-      const id=String(item?.id||'');
-      const name=String(item?.name||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').trim().toLowerCase();
-      if(id==='liga-a' || name==='liga a bda'){
-        if(keptLigaA) return false;
-        keptLigaA=true;
-      }
-      return true;
-    });
-  }
   function load(){
     try{
-      const value=JSON.parse(localStorage.getItem(KEY));
-      if(!Array.isArray(value)||!value.length){
-        const fresh=copy(seeds);
-        localStorage.setItem(KEY,JSON.stringify(fresh));
-        return fresh;
-      }
-      const baseCleaned=value.filter(item=>String(item?.id)!=='copa-aguia'&&!/copa\s+águia/i.test(String(item?.name||'')));
-
-      // Mantém somente a Liga A oficial. Duplicatas criadas com outro ID são descartadas.
-      const canonicalLigaA=baseCleaned.find(item=>String(item?.id)==='liga-a');
-      const cleaned=baseCleaned.filter(item=>{
-        const id=String(item?.id||'');
-        const name=String(item?.name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
-        if(id==='liga-a') return item===canonicalLigaA;
-        return name!=='liga a bda';
-      });
-
-      // As ligas oficiais são estruturais: se uma delas for apagada, ela volta
-      // com a mesma configuração da outra divisão, pronta para receber os clubes.
-      const requiredLeagues = ['liga-a','liga-b'];
-      requiredLeagues.forEach(id => {
-        const current = cleaned.find(item => String(item?.id) === id);
-        const seed = seeds.find(item => item.id === id);
-        if (!current) {
-          if (seed) cleaned.push(copy(seed));
-        } else if (id === 'liga-a' && seed && (!Array.isArray(current.participants) || current.participants.length < 2)) {
-          current.participants = copy(seed.participants);
-          current.matchSettings = copy(seed.matchSettings);
-        }
-      });
-
-      if(JSON.stringify(cleaned)!==JSON.stringify(value))localStorage.setItem(KEY,JSON.stringify(cleaned));
-      return cleaned;
-    }catch{
-      const fresh=copy(seeds);
-      try{localStorage.setItem(KEY,JSON.stringify(fresh))}catch{}
-      return fresh;
+      const raw=localStorage.getItem(KEY);
+      if(raw===null)return copy(seeds);
+      const value=JSON.parse(raw);
+      if(!Array.isArray(value)||value.some(t=>!t||typeof t!=='object'||Array.isArray(t)||typeof t.id!=='string'))throw new Error('Cadastro local inválido');
+      // Opening the catalog must never migrate, filter or replace persisted data.
+      return value;
+    }catch(error){
+      storageBlocked=true;
+      console.warn('[Arena BDA] Dados locais preservados; exporte o armazenamento bruto antes de recuperar.',error);
+      return copy(seeds);
     }
   }
-  function persist(previous){try{localStorage.setItem(KEY,JSON.stringify(tournaments));return true}catch{if(previous)tournaments=previous;toast('Não foi possível salvar os campeonatos');return false}}
+  function persist(previous){
+    if(storageBlocked){if(previous)tournaments=previous;toast('Gravação bloqueada. Exporte os dados brutos na central de backups.');return false;}
+    try{localStorage.setItem(KEY,JSON.stringify(tournaments));return true}catch{if(previous)tournaments=previous;toast('Não foi possível salvar os campeonatos');return false}
+  }
   function safe(value){return String(value||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;')}
   function slug(value){return String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||`campeonato-${Date.now()}`}
   function fileData(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error('Falha ao ler a imagem'));reader.readAsDataURL(file)})}
@@ -123,14 +86,7 @@
   function renderCards(){const grid=document.getElementById('arenaGrid');if(!grid)return;const items=list();grid.innerHTML=items.length?items.map(card).join(''):'<div class="empty" style="grid-column:1/-1">Nenhum campeonato neste filtro.</div>'}
   function renderFilters(){const counts={Todos:tournaments.length,Abertos:tournaments.filter(t=>['Inscrições abertas','Em andamento'].includes(t.status)).length,Planejado:tournaments.filter(t=>t.status==='Planejado').length,Finalizado:tournaments.filter(t=>t.status==='Finalizado').length};document.querySelectorAll('[data-arena-filter]').forEach(btn=>{const active=btn.dataset.arenaFilter===filter;btn.classList.toggle('active',active);btn.setAttribute('aria-pressed',active?'true':'false');btn.dataset.count=String(counts[btn.dataset.arenaFilter]||0)})}
   function renderDetail(){const root=document.getElementById('arenaDetail');if(!root)return;const t=tournaments.find(item=>item.id===selectedId)||tournaments[0];if(!t){root.innerHTML='<div class="empty">Nenhum campeonato publicado.</div>';return}selectedId=t.id;const clubs=Array.isArray(t.participants)?t.participants:[];const emptyClubs=isAdmin?'Nenhum clube selecionado. Edite o campeonato para escolher os participantes.':'Os participantes desta edição ainda não foram publicados.';const clubSummary=clubs.length===0?'Nenhum time confirmado nesta edição':clubs.length===1?'1 time confirmado nesta edição':`${clubs.length} times confirmados nesta edição`;root.innerHTML=`<div class="arena-detail-nav"><span>${escapeHtml(t.badge||'🏆')} ${escapeHtml(t.name)}</span><nav><button type="button" data-tournament-jump="overview">Visão geral</button><button type="button" data-tournament-jump="competition">Competição</button><button type="button" data-tournament-jump="clubs">Clubes</button></nav></div><div class="arena-hero" id="tournamentOverview">${t.banner?`<img src="${safe(t.banner)}" alt="Banner de ${escapeHtml(t.name)}">`:''}<div class="arena-hero-copy"><div class="arena-hero-labels"><span>${escapeHtml(t.status)}</span><span>${escapeHtml(t.edition||'Nova edição')}</span></div><span class="arena-hero-symbol">${escapeHtml(t.badge||'🏆')}</span><h2>${escapeHtml(t.name)}</h2><p>${escapeHtml(t.description||'Campeonato oficial do Clã BDA.')}</p>${isAdmin?`<div class="arena-actions"><button class="secondary" type="button" data-edit-tournament="${escapeHtml(t.id)}">Editar campeonato</button>${t.locked?'':`<button class="danger" type="button" data-delete-tournament="${escapeHtml(t.id)}">Excluir campeonato</button>`}</div>`:''}</div></div><div class="arena-stats"><div class="arena-stat"><span>Formato</span><b>${escapeHtml(t.format||'A definir')}</b></div><div class="arena-stat"><span>Fase atual</span><b>${escapeHtml(t.phase||'Preparação')}</b></div><div class="arena-stat"><span>Participantes</span><b>${clubs.length}<small> / ${Number(t.maxTeams)||'∞'}</small></b></div><div class="arena-stat"><span>Situação</span><b>${escapeHtml(t.status||'Planejado')}</b></div></div><section id="tournamentCompetition" aria-label="Jogos e classificação">${t.legacy?`<div class="arena-legacy">${oldBracket}</div>`:'<span class="arena-competition-anchor" aria-hidden="true"></span>'}</section><section class="arena-club-section" id="tournamentClubs"><div class="section-head"><div><span class="eyebrow">Elenco da competição</span><h2>Clubes participantes</h2><p>${clubSummary}</p></div></div>${clubs.length?`<div class="arena-clubs">${clubs.map((name,index)=>`<span class="arena-club"><i>${index+1}</i>${escapeHtml(name)}</span>`).join('')}</div>`:`<div class="arena-placeholder">${emptyClubs}</div>`}</section>`}
-  function renderAll(){
-    const cleaned=dedupeOfficialLeagues(tournaments);
-    if(cleaned.length!==tournaments.length){
-      tournaments=cleaned;
-      try{localStorage.setItem(KEY,JSON.stringify(tournaments))}catch{}
-    }
-    renderFilters();renderCards();renderDetail();renderHome();updateStats()
-  }
+  function renderAll(){renderFilters();renderCards();renderDetail();renderHome();updateStats()}
 
   function buildPage(){page.innerHTML=`<section class="arena-page-hero"><div><span class="eyebrow">Central oficial de competições</span><h1>Campeonatos BDA</h1><p>Copas, ligas, resultados e classificações em uma única arena.</p></div><aside><b>${tournaments.length}</b><span>competições registradas</span><button class="primary" id="createTournamentBtn" type="button" hidden>+ Criar campeonato</button></aside></section><div class="arena-catalog-head"><div><span class="eyebrow">Escolha uma competição</span><h2>Temporadas da Arena</h2></div><div class="arena-toolbar" aria-label="Filtrar campeonatos"><button class="arena-filter active" type="button" data-arena-filter="Todos">Todos</button><button class="arena-filter" type="button" data-arena-filter="Abertos">Abertos</button><button class="arena-filter" type="button" data-arena-filter="Planejado">Planejados</button><button class="arena-filter" type="button" data-arena-filter="Finalizado">Finalizados</button></div></div><div class="arena-grid" id="arenaGrid"></div><div class="arena-detail" id="arenaDetail"></div>`}
   function buildModal(){const modal=document.createElement('div');modal.className='modal-backdrop';modal.id='tournamentModal';modal.innerHTML=`<div class="modal"><h2 id="tournamentModalTitle">Criar campeonato</h2><p>Monte uma copa ou liga para o Clã BDA.</p><form id="tournamentForm"><div class="form-grid two"><label>Nome<input id="tName" required maxlength="55" placeholder="Copa dos Campeões BDA"></label><label>Edição<input id="tEdition" maxlength="35" placeholder="1ª edição"></label><label>Formato<select id="tFormat"><option>Mata-mata</option><option>Pontos corridos</option><option>Grupos + mata-mata</option><option>Turno e returno</option></select></label><label>Limite de times<input id="tMax" type="number" min="2" max="64" value="16"></label><label>Status<select id="tStatus"><option>Planejado</option><option>Inscrições abertas</option><option>Em andamento</option><option>Finalizado</option></select></label><label>Fase atual<input id="tPhase" maxlength="45" placeholder="Inscrições"></label><label>Símbolo<input id="tBadge" maxlength="4" placeholder="🏆"></label><label>Prazo<input id="tDeadline" maxlength="45" placeholder="24h por fase"></label><label style="grid-column:1/-1">Descrição<textarea id="tDescription" maxlength="260"></textarea></label><label style="grid-column:1/-1">Banner<input id="tBanner" type="file" accept="image/png,image/jpeg,image/webp"><div class="arena-banner-preview" id="tBannerPreview"></div></label><div style="grid-column:1/-1"><label>Clubes participantes</label><div class="arena-team-options" id="tTeams"></div></div></div><div class="form-actions"><button type="button" class="secondary" data-close="tournamentModal">Cancelar</button><button class="primary" type="submit">Salvar</button></div></form></div>`;document.body.appendChild(modal)}
@@ -158,7 +114,7 @@
   document.getElementById('adminCreateTournamentBtn').addEventListener('click',()=>openEditor());
   document.addEventListener('click',event=>{const f=event.target.closest('[data-arena-filter]');if(f){filter=f.dataset.arenaFilter;renderFilters();renderCards();return}const open=event.target.closest('[data-open-tournament]');if(open){selectedId=open.dataset.openTournament;renderCards();renderDetail();scrollToArenaTarget(document.getElementById('arenaDetail'));return}const home=event.target.closest('[data-home-tournament]');if(home){selectedId=home.dataset.homeTournament;navigate('tournament');renderAll();return}const edit=event.target.closest('[data-edit-tournament]');if(edit){openEditor(edit.dataset.editTournament);return}const del=event.target.closest('[data-delete-tournament]');if(del)removeTournament(del.dataset.deleteTournament)});
   document.addEventListener('click',event=>{const jump=event.target.closest('[data-tournament-jump]');if(!jump)return;const targets={overview:'tournamentOverview',competition:'tournamentCompetition',clubs:'tournamentClubs'};scrollToArenaTarget(document.getElementById(targets[jump.dataset.tournamentJump]))});
-  document.getElementById('resetDemoBtn')?.addEventListener('click',()=>{tournaments=copy(seeds);selectedId=tournaments[0].id;localStorage.removeItem(KEY);renderAll()});
+  document.getElementById('resetDemoBtn')?.addEventListener('click',()=>toast('Use a central de backups do portal para revisar uma restauração. Nenhum registro foi apagado.'));
   document.getElementById('tournamentModal').addEventListener('click',event=>{if(event.target.id==='tournamentModal')closeModal('tournamentModal')});
 
   renderAll();updateAdminUI();
