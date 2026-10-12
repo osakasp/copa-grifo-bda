@@ -1,7 +1,7 @@
 {
   "name": "Arena BDA",
   "short_name": "Arena BDA",
-  "description": "Campeonatos oficiais, clubes, resultados e comunidade do Clã BDA",
+  "description": "Campeonatos, clubes, rodadas e resultados do Clã BDA",
   "id": "./",
   "start_url": "./",
   "scope": "./",
@@ -10,7 +10,9 @@
   "background_color": "#07100c",
   "theme_color": "#07100c",
   "lang": "pt-BR",
-  "categories": ["sports", "entertainment", "social"],
+  "categories": [
+    "sports"
+  ],
   "icons": [
     {
       "src": "./favicon.svg",

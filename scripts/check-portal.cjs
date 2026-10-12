@@ -1,0 +1,13 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{execFileSync}=require('node:child_process'),zlib=require('node:zlib');
+const html=fs.readFileSync('index.html','utf8');
+assert.match(html,/<html lang="pt-BR">/);assert.ok(!/<script[^>]*>\s*[^<\s]/.test(html),'No inline production scripts');
+const assets=[...html.matchAll(/(?:src|href)="(\.\/[^"?#]+)(?:\?[^"#]*)?"/g)].map(m=>m[1]);
+assets.forEach(file=>assert.ok(fs.existsSync(file),'Missing local resource '+file));
+for(const file of fs.readdirSync('.').filter(f=>f.endsWith('.js')))execFileSync(process.execPath,['--check',file]);
+for(const dir of ['scripts','tests'])for(const file of fs.readdirSync(dir).filter(f=>f.endsWith('.cjs')))execFileSync(process.execPath,['--check',path.join(dir,file)]);
+const portalAssets=['index.html','portal.css','portal-data.js','portal-core.js','portal.js','portal-config.js','portal-sync.js','favicon.svg','site.webmanifest'];
+const bytes=portalAssets.reduce((n,f)=>n+fs.statSync(f).size,0),gzip=portalAssets.reduce((n,f)=>n+zlib.gzipSync(fs.readFileSync(f)).length,0);
+assert.ok(bytes<160000,'Portal assets exceed 160 kB');assert.ok(gzip<50000,'Compressed portal assets exceed 50 kB');
+assert.equal(require('../portal-data.js').length,4);
+console.log('Portal: syntax and local references passed; '+bytes+' bytes raw, '+gzip+' bytes gzip across '+portalAssets.length+' assets.');

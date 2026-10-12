@@ -75,57 +75,11 @@
     return clone(item);
   }
 
-  function normalizeTournaments(values, { markRemoteMigration = false } = {}) {
-    const raw = Array.isArray(values) ? clone(values) : [];
-    const withoutSupercopa = raw.filter(item => !isSupercopa(item));
-
-    // Existe uma única Liga A oficial. Duplicatas com outro ID/nome são removidas
-    // antes da sincronização, sem alterar a Liga B.
-    const canonicalLigaA = withoutSupercopa.find(item => String(item?.id || '') === 'liga-a');
-    const next = withoutSupercopa.filter(item => {
-      const id = String(item?.id || '');
-      const name = String(item?.name || '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
-      if (id === 'liga-a') return item === canonicalLigaA;
-      return name !== 'liga a bda';
-    });
-
-    // Liga A e Liga B são competições estruturais da Arena.
-    // A sincronização mantém as duas divisões independentes.
-    ['liga-a','liga-b'].forEach(id => {
-      const index = next.findIndex(item => String(item?.id || '') === id);
-      const seed = DEFAULT_TOURNAMENTS.find(item => item.id === id);
-      if (index < 0) {
-        if (seed) next.push(clone(seed));
-      } else if (seed) {
-        next[index] = {
-          ...clone(seed),
-          ...next[index],
-          format: 'Pontos corridos',
-          maxTeams: 12,
-          matchSettings: { leagueTurns: 2, pointsWin: 3, pointsDraw: 1, pointsLoss: 0 },
-          participants: Array.isArray(next[index].participants) && next[index].participants.length ? next[index].participants : clone(seed.participants)
-        };
-      }
-    });
-
-    const superLeagueIndex = next.findIndex(isSuperLeague);
-
-    if (superLeagueIndex >= 0) {
-      next[superLeagueIndex] = canonicalizeSuperLeague(next[superLeagueIndex]);
-    } else {
-      const local = readStored(DATASETS.tournaments.key, []).find(isSuperLeague);
-      let fallback = local || null;
-      if (!fallback) {
-        try { fallback = window.ArenaBDASuperLeagueGuard?.tournament?.() || null; }
-        catch { fallback = null; }
-      }
-      if (fallback) next.push(canonicalizeSuperLeague(fallback));
-    }
-
-    if (markRemoteMigration && stableStringify(raw) !== stableStringify(next)) {
-      pendingTournamentCloudRepair = true;
-    }
-    return next;
+  function normalizeTournaments(values) {
+    // Transport must not act as a migration: preserve Supercopa, duplicate IDs/names,
+    // league sizes, turns and unknown metadata. Reconciliation is an explicit task.
+    if (!Array.isArray(values)) throw new Error('Lista de campeonatos inválida');
+    return clone(values);
   }
 
   function stable(value) {

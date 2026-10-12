@@ -1,0 +1,23 @@
+{
+  "name": "arena-bda-portal",
+  "version": "2.1.0",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/core.test.cjs tests/sync.test.cjs && node scripts/test-flash-draw.js && node scripts/test-flash-knockout.js && node scripts/test-super-league-rule.js",
+    "test:browser": "playwright test",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-arena-bda --config firebase.test.json \"node --test tests/firestore.test.cjs\"",
+    "check": "node scripts/check-portal.cjs",
+    "serve": "node scripts/serve.cjs"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@firebase/rules-unit-testing": "6.0.0",
+    "@playwright/test": "1.58.2",
+    "firebase": "13.0.0",
+    "firebase-tools": "15.33.0"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "1.14.6",
+    "basic-ftp": "6.2.3"
+  }
+}
