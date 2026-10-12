@@ -88,3 +88,11 @@ test('score corrections and explicit clearing are reversible; no-op does not cre
 test('read-only audit reports errors without mutating tournament data',()=>{
  const t=league();t.matches[1][0]=t.matches[0][0];const before=JSON.stringify(t);assert.ok(C.audit(t).length);assert.equal(JSON.stringify(t),before);
 });
+
+test('legacy transport no longer removes Supercopa or forces 12 clubs/two turns',()=>{
+ const source=fs.readFileSync('firestore-sync.js','utf8');
+ const start=source.indexOf('  function normalizeTournaments('),end=source.indexOf('\n  function stable(',start);
+ const normalize=vm.runInNewContext('const clone=v=>JSON.parse(JSON.stringify(v));'+source.slice(start,end)+';normalizeTournaments');
+ const values=[{id:'supercopa',name:'Supercopa BDA'},{id:'liga-b',maxTeams:17,matchSettings:{leagueTurns:1}},{id:'liga-a-copy',name:'Liga A BDA',custom:42}];
+ assert.deepEqual(JSON.parse(JSON.stringify(normalize(values))),values);assert.throws(()=>normalize({}));
+});

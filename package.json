@@ -15,5 +15,9 @@
     "@playwright/test": "1.58.2",
     "firebase": "13.0.0",
     "firebase-tools": "15.33.0"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "1.14.6",
+    "basic-ftp": "6.2.3"
   }
 }

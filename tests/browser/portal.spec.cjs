@@ -27,7 +27,7 @@ test('save a 0x0 and 2x1, reload, calculate standings and undo',async({page})=>{
  await page.getByRole('button',{name:'Salvar neste navegador',exact:true}).click();await expect(page.locator('#notice')).toContainText('Resultados salvos');
  const t=(await saved(page)).find(t=>t.id==='liga-b');expect(t.results['0:0']).toEqual({home:2,away:1});expect(t.results['0:1']).toEqual({home:0,away:0});
  await page.reload();await page.locator('[data-view="table"]').click();await expect(page.getByRole('row').filter({hasText:'Boleiros FC BDA'}).locator('td').last()).toHaveText('3');
- await admin(page);await page.getByRole('button',{name:'Desfazer último salvamento'}).click();expect((await saved(page)).find(t=>t.id==='liga-b').results).toEqual({});
+ await admin(page);await page.getByRole('button',{name:'Desfazer último salvamento'}).click();await expect(page.locator('#notice')).toContainText('salvamento desfeito');expect((await saved(page)).find(t=>t.id==='liga-b').results).toEqual({});
  await expect(page.getByRole('button',{name:'Salvar neste navegador',exact:true})).toBeEnabled();
 });
 test('partial score is rejected and drafts survive tab-change cancellation',async({page})=>{
@@ -46,7 +46,7 @@ test('two tabs converge while a dirty editor rejects overwrites',async({page,con
 });
 test('backup previews, valid/invalid restore, raw export and recovery download',async({page})=>{
  await page.goto('/#backups');const backup=C.exportBackup(init());backup.tournaments[3].results={'0:0':{home:3,away:2}};
- await page.locator('#backupInput').setInputFiles({name:'backup.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(backup))});expect(await saved(page)).toBeNull();await page.getByRole('button',{name:'Confirmar restauração'}).click();expect((await saved(page))[3].results['0:0'].home).toBe(3);
+ await page.locator('#backupInput').setInputFiles({name:'backup.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(backup))});expect(await saved(page)).toBeNull();await page.getByRole('button',{name:'Confirmar restauração'}).click();await expect(page.locator('#backupPreview')).toContainText('Backup restaurado');expect((await saved(page))[3].results['0:0'].home).toBe(3);
  const bad=C.clone(backup);bad.tournaments[3].matches[0].reverse();await page.locator('#backupInput').setInputFiles({name:'bad.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(bad))});await expect(page.locator('#notice')).toContainText('divergente');await expect(page.locator('[data-restore]')).toHaveCount(0);expect((await saved(page))[3].results['0:0'].home).toBe(3);
  const promise=page.waitForEvent('download');await page.getByRole('button',{name:'Exportar backup',exact:true}).click();expect((await promise).suggestedFilename()).toMatch(/arena-bda-backup/);
  await page.getByRole('button',{name:'Verificar tabelas'}).click();await expect(page.locator('#auditReport')).toContainText('136 jogos');
@@ -54,7 +54,8 @@ test('backup previews, valid/invalid restore, raw export and recovery download',
 test('club requests, duplicate rejection, closed league protection and safe badge upload',async({page})=>{
  await open(page);await admin(page);await page.getByLabel('Nome do clube',{exact:true}).fill('  Novo   Clube ');await page.getByRole('button',{name:'Solicitar cadastro'}).click();await expect(page.locator('.pending-item')).toContainText('Novo Clube');await expect(page.locator('[data-approve]')).toHaveCount(0);
  await page.getByLabel('Nome do clube',{exact:true}).fill('NOVO CLUBE');await page.getByRole('button',{name:'Solicitar cadastro'}).click();await expect(page.locator('#notice')).toContainText('já está cadastrado');
- const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=','base64');
+ await page.locator('[name=badge]').setInputFiles({name:'broken.png',mimeType:'image/png',buffer:Buffer.from('invalid image')});await page.getByRole('button',{name:'Salvar escudo'}).click();await expect(page.locator('#notice')).toContainText('Imagem inválida');expect((await saved(page)).find(t=>t.id==='liga-b').teamProfiles||{}).toEqual({});
+ const png=Buffer.from(await page.evaluate(()=>{const canvas=document.createElement('canvas');canvas.width=16;canvas.height=16;const ctx=canvas.getContext('2d');ctx.fillStyle='#23dc8c';ctx.fillRect(0,0,16,16);return canvas.toDataURL('image/png').split(',')[1];}),'base64');
  await page.locator('[name=badge]').setInputFiles({name:'badge.png',mimeType:'image/png',buffer:png});await page.getByRole('button',{name:'Salvar escudo'}).click();await expect(page.locator('#notice')).toContainText('Escudo salvo');await page.locator('[data-view="clubs"]').click();await expect(page.locator('.team-badge img')).toHaveCount(1);
 });
 test('accessibility, layout, touch targets, console, asset and DOM budgets',async({page},testInfo)=>{
