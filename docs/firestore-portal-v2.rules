@@ -1,0 +1,57 @@
+// Candidate rules for staging/emulator only. Merge with existing rules ONLY after approval.
+// This file is not referenced by production firebase.json.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function admin() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in ['claboleirosdeatitude@gmail.com','miniamikaren@gmail.com'];
+    }
+    function parent(id) { return get(/databases/$(database)/documents/portalV2/$(id)); }
+    function after(id) { return getAfter(/databases/$(database)/documents/portalV2/$(id)); }
+    function stamp(id) {
+      return request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.revision == parent(id).data.revision + 1
+        && request.resource.data.revision == after(id).data.revision;
+    }
+    match /portalV2/{id} {
+      allow read: if true;
+      // Creation/fixtures/migration only through a separately approved administrative process.
+      allow create, delete: if false;
+      allow update: if admin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['revision','updatedAt','updatedBy'])
+        && request.resource.data.revision is int
+        && request.resource.data.revision == resource.data.revision + 1
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedBy == request.auth.uid
+        && getAfter(/databases/$(database)/documents/portalV2/$(id)/events/$(string(request.resource.data.revision))).data.updatedBy == request.auth.uid;
+      match /results/{key} {
+        allow read: if true;
+        allow create, update: if admin()
+          && key in parent(id).data.allowedMatchKeys
+          && request.resource.data.keys().hasAll(['home','away','cleared','revision','updatedAt','updatedBy'])
+          && request.resource.data.keys().hasOnly(['home','away','cleared','revision','updatedAt','updatedBy'])
+          && request.resource.data.home is int && request.resource.data.home >= 0 && request.resource.data.home <= 99
+          && request.resource.data.away is int && request.resource.data.away >= 0 && request.resource.data.away <= 99
+          && request.resource.data.cleared is bool
+          && (!request.resource.data.cleared || (request.resource.data.home == 0 && request.resource.data.away == 0))
+          && stamp(id);
+        allow delete: if false;
+      }
+      match /events/{event} {
+        allow read: if admin();
+        allow create: if admin()
+          && request.resource.data.keys().hasOnly(['revision','updatedAt','updatedBy','keys'])
+          && request.resource.data.keys is list
+          && request.resource.data.keys.size() > 0 && request.resource.data.keys.size() <= 20
+          && request.resource.data.keys.hasOnly(parent(id).data.allowedMatchKeys)
+          && event == string(request.resource.data.revision)
+          && stamp(id);
+        allow update, delete: if false;
+      }
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}
