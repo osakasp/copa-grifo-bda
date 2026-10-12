@@ -1,21 +1,11 @@
-# Security Policy
+# Segurança do Arena BDA
 
-## Supported Versions
+O portal público e as ferramentas antigas possuem modos de armazenamento diferentes. `localStorage` é privado ao navegador, pode ser alterado pelo próprio usuário e não é uma fonte de resultados oficiais.
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+A sincronização do novo portal é opcional e permanece desligada. Sua ativação exige regras verificadas no servidor, autenticação administrativa, reconciliação de dados e autorização de publicação. Consulte [o procedimento de ativação](docs/MIGRACAO-FIREBASE-PORTAL.md).
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+Não coloque senhas, tokens, contas de serviço ou backups de produção em arquivos públicos, issues ou logs de CI. A configuração pública do SDK Firebase não substitui regras de acesso.
 
-## Reporting a Vulnerability
+Para relatar uma vulnerabilidade, use o canal privado de segurança do GitHub do repositório, caso habilitado, ou contate o responsável por um canal privado existente. Não publique credenciais, dados pessoais ou detalhes de exploração de produção em uma issue pública. Inclua passos reproduzíveis com dados sintéticos, versão/commit e impacto observado. Não há SLA de resposta definido neste repositório.
 
-Use this section to tell people how to report a vulnerability.
-
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+As regras em `docs/firestore-portal-v2.rules` são candidatas, usadas apenas pelo emulador; não substituir as regras completas de produção por esse arquivo. O workflow de testes não publica regras nem modifica dados remotos.
