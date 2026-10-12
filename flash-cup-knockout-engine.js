@@ -9,7 +9,7 @@
     .replace(/[\u0300-\u036f]/g, '')
     .trim()
     .toLowerCase();
-  const hasScore = value => value !== '' && value != null && !Number.isNaN(Number(value));
+  const hasScore = value => (typeof value === 'number' || typeof value === 'string') && /^(0|[1-9][0-9]?)$/.test(String(value).trim());
 
   function winner(match) {
     const decision = String(match?.decision || '');

@@ -47,3 +47,7 @@ assert.equal(final.champion, 'B');
 assert.equal(final.runnerUp, 'A');
 
 console.log('Mata-mata Flash validado: avanço, pênaltis, WO, pendências e campeão consistentes.');
+
+for (const value of [' ', -1, 100, '1e1', '1.5', true, Infinity]) {
+  assert.equal(engine.winner(match('Final', 'A', 'B', value, 0)), '', 'Invalid goals cannot advance a team');
+}
